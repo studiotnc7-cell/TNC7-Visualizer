@@ -1,0 +1,2340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNC7 Visualizer</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b?text=TNC7">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Poppins:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-main: #0f1115;
+            --bg-panel: #161a22;
+            --border-color: #2a3142;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --btn-bg: #1e2430;
+            --btn-hover: #2d3748;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .panel-header {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .btn-custom {
+            background-color: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .btn-custom:hover { background-color: var(--btn-hover); }
+        .btn-active { background-color: #10b981; border-color: #10b981; color: #ffffff; }
+        .btn-danger { border-color: rgba(239, 68, 68, 0.5); color: var(--accent-red); }
+        .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 4px;
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--accent-yellow);
+            cursor: pointer;
+            margin-top: -4px;
+            box-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+        
+        select.custom-select, input[type=text].custom-input {
+            appearance: none;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            width: 100%;
+            outline: none;
+        }
+        select.custom-select { cursor: pointer; }
+        input[type=text].custom-input:focus { border-color: var(--text-secondary); }
+
+        .top-bar {
+            height: 48px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            justify-content: space-between;
+            background-color: var(--bg-main);
+            flex-shrink: 0;
+        }
+
+        .logo { font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .logo-text-viz { color: #facc15; }
+
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100vh - 48px);
+        }
+
+        .sidebar-left {
+            width: 330px;
+            background-color: var(--bg-main);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 8px;
+            padding-bottom: 24px;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-right {
+            width: 280px;
+            background-color: var(--bg-main);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 10px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-main);
+            padding: 16px;
+            gap: 16px;
+            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-container {
+            width: 100%;
+            /* Removed max-height and aspect-ratio, we'll control it via canvas styles and wrapper */
+            height: calc(100vh - 180px);
+            background-color: transparent; 
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+        
+        canvas#previewCanvas { 
+            /* Scale canvas visually to fit container while maintaining 16:9 aspect ratio */
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain;
+            display: block; 
+        }
+
+        .player-wrapper { width: 100%; flex-shrink: 0; margin-top: auto; }
+        .player-bar {
+            height: 60px;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        
+        .play-btn-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #0d9488;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .control-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .control-label { font-size: 0.75rem; color: var(--text-secondary); width: 40px; }
+
+        /* Notification Modal */
+        #notification-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        /* Playlist Styles */
+        .playlist-panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .playlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: var(--bg-main);
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .playlist-item:hover { background-color: var(--border-color); }
+        .playlist-item.active { border-left: 3px solid var(--accent-yellow); background-color: var(--btn-hover); }
+        .playlist-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 8px; }
+        .remove-track-btn { color: var(--accent-red); cursor: pointer; padding: 6px 10px; border-radius: 4px; background: transparent; border: none; outline: none; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; }
+        .remove-track-btn:hover { background-color: rgba(239, 68, 68, 0.2); }
+    </style>
+</head>
+<body>
+    <div id="notification-modal">Pesan Notifikasi</div>
+
+    <div class="top-bar">
+        <div class="flex items-center gap-4">
+            <div class="logo">
+                <i class="fa-solid fa-circle-play text-yellow-400"></i>
+                <span class="logo-text-viz">TNC7 Visualizer</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button class="btn-custom btn-active" onclick="document.getElementById('audioInput').click()">
+                <i class="fa-solid fa-music text-xs"></i> + Audio
+            </button>
+            <input type="file" id="audioInput" accept="audio/*" multiple class="hidden">
+            <button class="btn-custom" id="btnHapusAudio">Hapus Semua Audio</button>
+            
+            <div class="w-px h-4 bg-gray-700 mx-1"></div>
+            
+            <button class="btn-custom" onclick="document.getElementById('bgInput').click()">Background</button>
+            <input type="file" id="bgInput" accept="image/*" class="hidden">
+            <button class="btn-custom" id="btnHapusBg">Hapus Background</button>
+            
+            <div class="w-px h-4 bg-gray-700 mx-1"></div>
+            
+            <button class="btn-custom btn-danger ml-2" id="btnRekam">Rekam</button>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="sidebar-left">
+            
+            <!-- Visualizer Panel -->
+            <div class="panel">
+                <div class="panel-header">VISUALIZER</div>
+                
+                <div class="control-row" id="vizAlignGroup">
+                    <button class="btn-custom btn-active" data-val="tengah">Tengah</button>
+                    <button class="btn-custom" data-val="bawah">Bawah</button>
+                    <button class="btn-custom" data-val="full">Full (Wave)</button>
+                </div>
+                
+                <div class="control-row">
+                    <span class="control-label">Ukuran</span>
+                    <div class="flex-1">
+                        <input type="range" min="1" max="100" value="50" id="vizSizeSlider">
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label">Lebar</span>
+                    <div class="flex-1">
+                        <input type="range" min="1" max="100" value="50" id="vizWidthSlider">
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <!-- Added relative positioning wrapper to handle scroll events locally -->
+                    <select class="custom-select" id="vizTypeSelect">
+                        <!-- Expanded 100+ Options -->
+                        <optgroup label="Bars (Classic)">
+                            <option value="bars">Bars - Normal</option>
+                            <option value="bars_mirror">Bars - Mirrored</option>
+                            <option value="bars_top">Bars - Top Down</option>
+                            <option value="bars_split">Bars - Split Center</option>
+                            <option value="bars_stair">Bars - Staircase</option>
+                            <option value="bars_stair_inv">Bars - Inverted Stair</option>
+                            <option value="bars_dots">Bars - Dotted Line</option>
+                            <option value="bars_dash">Bars - Dashed</option>
+                            <option value="bars_triangle">Bars - Triangles</option>
+                            <option value="bars_diamond">Bars - Diamonds</option>
+                        </optgroup>
+                        <optgroup label="Waveforms">
+                            <option value="wave">Wave - Line</option>
+                            <option value="wave_fill">Wave - Filled</option>
+                            <option value="wave_mirror">Wave - Mirrored Line</option>
+                            <option value="wave_mirror_fill">Wave - Mirrored Filled</option>
+                            <option value="wave_smooth">Wave - Bezier Smooth</option>
+                            <option value="wave_blocky">Wave - Blocky Steps</option>
+                            <option value="wave_dots">Wave - Dots</option>
+                            <option value="wave_double">Wave - Double Helix</option>
+                            <option value="wave_pulse">Wave - Pulsing Line</option>
+                            <option value="wave_glitch">Wave - Glitch</option>
+                        </optgroup>
+                        <optgroup label="Circular (Ring)">
+                            <option value="circle">Circle - Lines Out</option>
+                            <option value="circle_in">Circle - Lines In</option>
+                            <option value="circle_both">Circle - Lines In/Out</option>
+                            <option value="circle_wave">Circle - Continuous Wave</option>
+                            <option value="circle_dots">Circle - Orbiting Dots</option>
+                            <option value="circle_blocks">Circle - Block Ring</option>
+                            <option value="circle_dash">Circle - Dashed Ring</option>
+                            <option value="circle_tri">Circle - Triangles Out</option>
+                            <option value="circle_flower">Circle - Flower Petals</option>
+                            <option value="circle_gear">Circle - Gear Teeth</option>
+                        </optgroup>
+                        <optgroup label="Geometric/Polygon">
+                            <option value="poly_triangle">Polygon - Triangle</option>
+                            <option value="poly_square">Polygon - Square</option>
+                            <option value="poly_pentagon">Polygon - Pentagon</option>
+                            <option value="poly_hexagon">Polygon - Hexagon</option>
+                            <option value="poly_oct">Polygon - Octagon</option>
+                            <option value="poly_star_5">Star - 5 Point</option>
+                            <option value="poly_star_8">Star - 8 Point</option>
+                            <option value="poly_pulse">Polygon - Pulse Morph</option>
+                            <option value="poly_spin">Polygon - Spin Morph</option>
+                            <option value="poly_fractal">Polygon - Simple Fractal</option>
+                        </optgroup>
+                        <optgroup label="Particles & Scatter">
+                            <option value="part_fountain">Particles - Fountain</option>
+                            <option value="part_rain">Particles - Rain</option>
+                            <option value="part_snow">Particles - Snow</option>
+                            <option value="part_orbit">Particles - Orbiting</option>
+                            <option value="part_explode">Particles - Explosion</option>
+                            <option value="part_matrix">Particles - Matrix Fall</option>
+                            <option value="part_fireflies">Particles - Fireflies</option>
+                            <option value="part_dust">Particles - Floating Dust</option>
+                            <option value="part_vortex">Particles - Vortex</option>
+                            <option value="part_grid">Particles - Grid Pop</option>
+                        </optgroup>
+                        <optgroup label="Symmetrical / Mandala">
+                            <option value="sym_4">Symmetry - 4 Axis</option>
+                            <option value="sym_6">Symmetry - 6 Axis</option>
+                            <option value="sym_8">Symmetry - 8 Axis</option>
+                            <option value="sym_12">Symmetry - 12 Axis</option>
+                            <option value="sym_kaleido">Symmetry - Kaleidoscope</option>
+                            <option value="sym_mandala_1">Mandala - Style 1</option>
+                            <option value="sym_mandala_2">Mandala - Style 2</option>
+                            <option value="sym_cross">Symmetry - Cross</option>
+                            <option value="sym_x">Symmetry - X Shape</option>
+                            <option value="sym_web">Symmetry - Spider Web</option>
+                        </optgroup>
+                        <optgroup label="Line Art & Strings">
+                            <option value="line_horiz">Lines - Horizontal Stack</option>
+                            <option value="line_vert">Lines - Vertical Stack</option>
+                            <option value="line_mesh">Lines - Wireframe Mesh</option>
+                            <option value="line_curve">Lines - Flowing Curves</option>
+                            <option value="line_zigzag">Lines - Zig Zag</option>
+                            <option value="line_laser">Lines - Laser Beams</option>
+                            <option value="line_grid">Lines - 3D Grid</option>
+                            <option value="line_tunnel">Lines - Tunnel</option>
+                            <option value="line_dna">Lines - DNA Strand</option>
+                            <option value="line_pulse">Lines - Pulse String</option>
+                        </optgroup>
+                        <optgroup label="Abstract & Minimal">
+                            <option value="abs_blob">Abstract - Liquid Blob</option>
+                            <option value="abs_rings">Abstract - Concentric Rings</option>
+                            <option value="abs_blocks">Abstract - Tetris Blocks</option>
+                            <option value="abs_orbs">Abstract - Floating Orbs</option>
+                            <option value="abs_splatter">Abstract - Paint Splatter</option>
+                            <option value="abs_geo_scatter">Abstract - Geo Scatter</option>
+                            <option value="abs_sonar">Abstract - Sonar Ping</option>
+                            <option value="abs_heartbeat">Abstract - EKG Heartbeat</option>
+                            <option value="abs_barcode">Abstract - Barcode</option>
+                            <option value="abs_crescent">Abstract - Crescent Moon</option>
+                        </optgroup>
+                         <optgroup label="3D Illusions (Fake 3D)">
+                            <option value="3d_cube">3D - Spinning Cube</option>
+                            <option value="3d_sphere">3D - Wire Sphere</option>
+                            <option value="3d_pyramid">3D - Pyramid</option>
+                            <option value="3d_cylinder">3D - Cylinder</option>
+                            <option value="3d_torus">3D - Torus Ring</option>
+                            <option value="3d_bars">3D - Extruded Bars</option>
+                            <option value="3d_plane">3D - Floor Plane</option>
+                            <option value="3d_ceiling">3D - Ceiling Plane</option>
+                            <option value="3d_hallway">3D - Hallway</option>
+                            <option value="3d_landscape">3D - Wire Landscape</option>
+                        </optgroup>
+                        <optgroup label="Experimental & Chaos">
+                            <option value="exp_noise">Chaos - Static Noise</option>
+                            <option value="exp_glitch">Chaos - Digital Glitch</option>
+                            <option value="exp_lines">Chaos - Random Lines</option>
+                            <option value="exp_tri">Chaos - Shattered Glass</option>
+                            <option value="exp_squiggles">Chaos - Squiggles</option>
+                            <option value="exp_ink">Chaos - Ink Bleed</option>
+                            <option value="exp_magnet">Chaos - Magnetic Field</option>
+                            <option value="exp_swirl">Chaos - Swirl</option>
+                            <option value="exp_radar">Chaos - Radar Sweep</option>
+                            <option value="exp_flash">Chaos - Strobe Flash</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Cuaca Panel -->
+            <div class="panel">
+                <div class="panel-header">CUACA</div>
+                <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap gap-1 flex-1" id="bgWeatherGroup">
+                        <button class="btn-custom btn-active" data-val="normal">Cerah</button>
+                        <button class="btn-custom" data-val="salju">Hujan Salju</button>
+                        <button class="btn-custom" data-val="hujan_emas">Hujan Emas</button>
+                        <button class="btn-custom" data-val="hujan_air">Hujan Air</button>
+                    </div>
+                </div>
+                <div class="control-row">
+                    <span class="control-label text-xs w-10">Lebat</span>
+                    <div class="flex-1">
+                        <input type="range" id="snowIntensitySlider" min="1" max="100" value="50">
+                    </div>
+                </div>
+                <div class="control-row">
+                    <span class="control-label text-xs w-10">Cepat</span>
+                    <div class="flex-1">
+                        <input type="range" id="weatherSpeedSlider" min="1" max="200" value="50">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Background Panel -->
+            <div class="panel">
+                <div class="panel-header">BACKGROUND</div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-gray-500 w-8">FX</span>
+                    <div class="flex flex-wrap gap-1 flex-1" id="bgEffectGroup">
+                        <button class="btn-custom btn-active" data-val="normal">Normal</button>
+                        <button class="btn-custom" data-val="denyut">Denyut</button>
+                        <button class="btn-custom" data-val="zoom">Zoom</button>
+                        <button class="btn-custom" data-val="shake">Gempa</button>
+                        <button class="btn-custom" data-val="pan">Pan</button>
+                        <button class="btn-custom" data-val="flash">Flash</button>
+                        <button class="btn-custom" data-val="hue">Warna (RGB)</button>
+                        <button class="btn-custom" data-val="ayun">Ayun</button>
+                    </div>
+                </div>
+                
+                <div class="control-row">
+                    <span class="control-label text-xs w-8">Gelap</span>
+                    <div class="flex-1"><input type="range" id="bgDarknessSlider" min="0" max="100" value="30"></div>
+                    <span class="control-label ml-1 text-xs w-10">Denyut</span>
+                    <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="50"></div>
+                </div>
+                
+                <div class="control-row hidden">
+                    <span class="control-label text-xs w-8">Warna</span>
+                    <input type="color" id="bgColorPicker" value="#0f1115" class="w-7 h-7 rounded cursor-pointer border border-gray-600 p-0 flex-shrink-0">
+                    <span class="text-[10px] text-gray-500 ml-1">(Terlihat jika BG kosong)</span>
+                </div>
+            </div>
+
+            <!-- Overlay Panel -->
+            <div class="panel">
+                <div class="panel-header">OVERLAY</div>
+                
+                <div class="flex items-center gap-2">
+                    <input type="file" id="overlayInput" accept="image/*,video/*" class="hidden">
+                    <button class="btn-custom" onclick="document.getElementById('overlayInput').click()">
+                        <span class="text-white">+ Overlay</span>
+                    </button>
+                    <button class="btn-custom" id="btnHapusOverlay">Hapus</button>
+                    <span class="text-xs text-gray-300 ml-1 truncate flex-1" id="overlayNameDisplay">Belum ada</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-gray-500 w-12 tracking-wider">BLEND</span>
+                    <div class="flex gap-1 flex-wrap" id="overlayBlendGroup">
+                        <button class="btn-custom btn-active" data-val="normal">Normal</button>
+                        <button class="btn-custom" data-val="screen">Hapus hitam</button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center text-[10px] justify-between w-full">
+                    <div class="flex items-center gap-1 w-1/3"><span class="text-gray-400">Ukr</span><input type="range" id="overlaySize" min="1" max="200" value="50" class="w-full"></div>
+                    <div class="flex items-center gap-1 w-1/3 px-1"><span class="text-gray-400">Opc</span><input type="range" id="overlayOpacity" min="0" max="100" value="100" class="w-full"></div>
+                    <div class="flex items-center gap-1 w-1/3"><span class="text-gray-400">Spd</span><input type="range" id="overlaySpeed" min="1" max="100" value="50" class="w-full"></div>
+                </div>
+                
+                <div class="flex items-start gap-2">
+                    <span class="text-[10px] font-bold text-gray-500 w-12 tracking-wider">ANIM</span>
+                    <div class="flex flex-wrap gap-1 flex-1" id="overlayAnimGroup">
+                        <button class="btn-custom btn-active" data-val="none">Tanpa anim</button>
+                        <button class="btn-custom" data-val="pan">Pan</button>
+                        <button class="btn-custom" data-val="denyut">Denyut</button>
+                        <button class="btn-custom" data-val="blitz">Blitz</button>
+                        <button class="btn-custom" data-val="flash">Flash</button>
+                        <button class="btn-custom" data-val="float">Float</button>
+                        <button class="btn-custom" data-val="shake">Shake</button>
+                        <button class="btn-custom" data-val="zoom">Zoom</button>
+                        <button class="btn-custom" data-val="putar_kanan">Putar &rarr;</button>
+                        <button class="btn-custom" data-val="putar_kiri">Putar &larr;</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header flex justify-between">
+                    <span>TEXT OVERLAY</span>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" id="textEnable" class="rounded border-gray-600 bg-gray-700 text-teal-500 focus:ring-teal-500">
+                        <span class="text-xs text-gray-300">Tampilkan</span>
+                    </label>
+                </div>
+                
+                <div class="control-row">
+                    <span class="control-label text-xs w-10">Teks</span>
+                    <div class="flex-1">
+                        <input type="text" id="textCustomInput" class="custom-input" placeholder="Otomatis (Nama Lagu)">
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label text-xs w-10">Font</span>
+                    <div class="flex-1">
+                        <select class="custom-select" id="textFontSelect">
+                            <option value="Inter">Inter (Modern)</option>
+                            <option value="Montserrat">Montserrat (Elegan)</option>
+                            <option value="Poppins">Poppins (Bulat)</option>
+                            <option value="Oswald">Oswald (Tinggi)</option>
+                            <option value="Bebas Neue">Bebas Neue (Tebal/Sinematik)</option>
+                            <option value="Righteous">Righteous (Tekno/Masa Depan)</option>
+                            <option value="Courier New">Courier (Glitch/Mono)</option>
+                            <option value="Impact">Impact (Bold/Meme)</option>
+                            <option value="Arial">Arial (Basic)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center text-[10px] justify-between w-full mt-1">
+                    <div class="flex items-center gap-1 w-1/2 pr-1">
+                        <span class="text-gray-400">Ukr</span>
+                        <input type="range" id="textSizeSlider" min="10" max="200" value="40" class="w-full">
+                    </div>
+                    <div class="flex items-center gap-1 w-1/2 pl-1">
+                        <span class="text-gray-400">Warna</span>
+                        <input type="color" id="textColorPicker" value="#ffffff" class="w-full h-5 rounded cursor-pointer border-0 p-0 bg-transparent">
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-2 mt-1 hidden">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">ALIGN</span>
+                    <div class="flex flex-wrap gap-1 flex-1" id="textAlignGroup">
+                        <button class="btn-custom" data-val="left"><i class="fa-solid fa-align-left"></i></button>
+                        <button class="btn-custom btn-active" data-val="center"><i class="fa-solid fa-align-center"></i></button>
+                        <button class="btn-custom" data-val="right"><i class="fa-solid fa-align-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-2 mt-1">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">POSISI</span>
+                    <div class="flex flex-wrap gap-1 flex-1" id="textPosGroup">
+                        <button class="btn-custom" data-pos="top-left">↖ Kiri Atas</button>
+                        <button class="btn-custom btn-active" data-pos="top-center">⬆ Tengah</button>
+                        <button class="btn-custom" data-pos="top-right">↗ Kanan Atas</button>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-2 mt-1">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">EFEK</span>
+                    <div class="flex flex-wrap gap-1 flex-1" id="textEffectGroup">
+                        <button class="btn-custom btn-active" data-val="none">Normal</button>
+                        <button class="btn-custom" data-val="shadow">Shadow</button>
+                        <button class="btn-custom" data-val="glow">Glow</button>
+                        <button class="btn-custom" data-val="outline">Outline</button>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label text-[10px] w-10">Level</span>
+                    <div class="flex-1">
+                        <input type="range" id="textIntensitySlider" min="1" max="100" value="50">
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-2">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">ANIM</span>
+                    <div class="flex flex-wrap gap-1 flex-1" id="textAnimGroup">
+                        <button class="btn-custom btn-active" data-val="none">Diam</button>
+                        <button class="btn-custom" data-val="blink">Blink</button>
+                        <button class="btn-custom" data-val="pulse">Pulse (Audio)</button>
+                        <button class="btn-custom" data-val="wave">Wave</button>
+                        <button class="btn-custom" data-val="glitch">Glitch</button>
+                        <button class="btn-custom" data-val="typewriter">Ketik</button>
+                    </div>
+                </div>
+
+                <div class="control-row mt-1">
+                    <span class="control-label text-[10px] w-10">Cepat</span>
+                    <div class="flex-1">
+                        <input type="range" id="textAnimSpeedSlider" min="1" max="200" value="50">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="main-content">
+            <div class="preview-container" id="canvas-wrapper">
+                <div id="recording-indicator" class="hidden absolute top-4 right-4 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold animate-pulse z-50">REC</div>
+                <div id="no-audio-text" class="absolute text-gray-500 font-medium z-10">Belum ada audio</div>
+                <canvas id="previewCanvas"></canvas>
+            </div>
+
+            <div class="player-wrapper">
+                <div class="player-bar">
+                    <div id="playPauseBtn" class="play-btn-circle">
+                        <i class="fa-solid fa-play ml-1"></i>
+                    </div>
+                    <div class="flex-1 flex flex-col gap-1 w-full overflow-hidden">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span id="player-title" class="hidden">Belum ada audio</span>
+                            <span id="track-name-display" class="font-medium truncate flex-1 mr-4 text-white">Belum ada audio</span>
+                            <span id="time-display" class="whitespace-nowrap">0:00 / 0:00</span>
+                        </div>
+                        <div id="progress-container" class="h-2 bg-[#2a3142] rounded-full cursor-pointer relative mt-1">
+                            <div id="progress-bar" class="h-full bg-[#0d9488] rounded-full w-0 pointer-events-none"></div>
+                            <div id="progress-handle" class="w-3 h-3 bg-white rounded-full absolute top-1/2 -translate-y-1/2 -ml-1.5 left-0 pointer-events-none shadow-md"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-right" id="sidebarRight">
+            <!-- Playlist Panel -->
+            <div class="panel playlist-panel" id="playlistPanel">
+                <div class="panel-header flex justify-between items-center">
+                    <span>PLAYLIST AUDIO</span>
+                    <span id="playlistCount" class="text-xs font-normal">0 lagu</span>
+                </div>
+                <div id="playlistContainer" class="flex flex-col gap-1">
+                    <!-- Playlist items will be injected here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- STREAMING_CHUNK:PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        const state = {
+            viz: { align: 'tengah', size: 0.5, width: 0.5, type: 'bars', offsetX: 0, offsetY: 0 },
+            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: 'normal', darkness: 0.3, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
+            overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
+            textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'center', animSpeed: 50 }
+        };
+
+        let bboxes = { viz: null, overlay: null, text: null };
+
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
+        const audioElement = new Audio();
+        
+        function showNotification(msg) {
+            const notif = document.getElementById('notification-modal');
+            notif.textContent = msg;
+            notif.style.opacity = '1';
+            setTimeout(() => { notif.style.opacity = '0'; }, 3000);
+        }
+
+        function bindButtonGroup(groupId, category, key) {
+            const group = document.getElementById(groupId);
+            if(!group) return;
+            const buttons = group.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => b.classList.remove('btn-active'));
+                    btn.classList.add('btn-active');
+                    state[category][key] = btn.getAttribute('data-val');
+                });
+            });
+        }
+
+        bindButtonGroup('vizAlignGroup', 'viz', 'align');
+        bindButtonGroup('bgEffectGroup', 'bg', 'effect');
+        bindButtonGroup('bgWeatherGroup', 'bg', 'weather');
+        
+        bindButtonGroup('overlayBlendGroup', 'overlay', 'blend');
+        bindButtonGroup('overlayAnimGroup', 'overlay', 'anim');
+
+        bindButtonGroup('textEffectGroup', 'textFx', 'effect');
+        bindButtonGroup('textAnimGroup', 'textFx', 'anim');
+        bindButtonGroup('textAlignGroup', 'textFx', 'align');
+
+        // --- STREAMING_CHUNK:Quick position snap for text overlay... ---
+        const textPosBtns = document.querySelectorAll('#textPosGroup button');
+        textPosBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                textPosBtns.forEach(b => b.classList.remove('btn-active'));
+                btn.classList.add('btn-active');
+                
+                const pos = btn.getAttribute('data-pos');
+                const w = canvas.width || 1280;
+                const h = canvas.height || 720;
+                const cx = w / 2;
+                
+                // Base coordinate in drawCanvas is: cx + offsetX, (h * 0.15) + offsetY
+                if (pos === 'top-left') {
+                    state.textFx.offsetX = -cx + 40;
+                    state.textFx.offsetY = -(h * 0.15) + 40;
+                    document.querySelector('#textAlignGroup button[data-val="left"]').click();
+                } else if (pos === 'top-right') {
+                    state.textFx.offsetX = cx - 40;
+                    state.textFx.offsetY = -(h * 0.15) + 40;
+                    document.querySelector('#textAlignGroup button[data-val="right"]').click();
+                } else if (pos === 'top-center') {
+                    state.textFx.offsetX = 0;
+                    state.textFx.offsetY = 0;
+                    document.querySelector('#textAlignGroup button[data-val="center"]').click();
+                }
+            });
+        });
+
+        document.getElementById('textEnable').addEventListener('change', (e) => { state.textFx.enabled = e.target.checked; });
+        document.getElementById('textCustomInput').addEventListener('input', (e) => { state.textFx.customText = e.target.value; });
+        
+        const textFontSelect = document.getElementById('textFontSelect');
+        textFontSelect.addEventListener('change', (e) => { state.textFx.font = e.target.value; });
+        
+        textFontSelect.addEventListener('wheel', (e) => {
+            e.preventDefault(); // Mencegah scroll halaman saat berada di atas elemen select
+            
+            const options = Array.from(textFontSelect.options);
+            const currentIndex = textFontSelect.selectedIndex;
+            
+            let nextIndex = currentIndex;
+            if (e.deltaY > 0) {
+                // Scroll bawah -> indeks bertambah
+                nextIndex = Math.min(currentIndex + 1, options.length - 1);
+            } else if (e.deltaY < 0) {
+                // Scroll atas -> indeks berkurang
+                nextIndex = Math.max(currentIndex - 1, 0);
+            }
+            
+            // Jika ada perubahan indeks
+            if (nextIndex !== currentIndex) {
+                textFontSelect.selectedIndex = nextIndex;
+                // Trigger event 'change' secara manual agar state font ikut terupdate
+                textFontSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        document.getElementById('textSizeSlider').addEventListener('input', (e) => { state.textFx.size = parseInt(e.target.value); });
+        document.getElementById('textColorPicker').addEventListener('input', (e) => { state.textFx.color = e.target.value; });
+        document.getElementById('textIntensitySlider').addEventListener('input', (e) => { state.textFx.intensity = parseInt(e.target.value); });
+        document.getElementById('textAnimSpeedSlider').addEventListener('input', (e) => { state.textFx.animSpeed = parseInt(e.target.value); });
+
+
+        document.getElementById('snowIntensitySlider').addEventListener('input', (e) => { state.bg.snowIntensity = parseInt(e.target.value); });
+        document.getElementById('weatherSpeedSlider').addEventListener('input', (e) => { state.bg.weatherSpeed = parseInt(e.target.value); });
+        
+        document.getElementById('overlaySize').addEventListener('input', (e) => { state.overlay.size = e.target.value / 100; });
+        document.getElementById('overlayOpacity').addEventListener('input', (e) => { state.overlay.opacity = e.target.value / 100; });
+        document.getElementById('overlaySpeed').addEventListener('input', (e) => { state.overlay.speed = e.target.value / 100; });
+
+        document.getElementById('overlayInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            document.getElementById('overlayNameDisplay').textContent = file.name;
+            
+            if (file.type.startsWith('video/')) {
+                const vid = document.createElement('video');
+                vid.src = url;
+                vid.loop = true;
+                vid.muted = true;
+                vid.play();
+                state.overlay.element = vid;
+                state.overlay.type = 'video';
+            } else {
+                const img = new Image();
+                img.src = url;
+                state.overlay.element = img;
+                state.overlay.type = 'image';
+            }
+        });
+
+        document.getElementById('btnHapusOverlay').addEventListener('click', () => {
+            state.overlay.element = null;
+            document.getElementById('overlayNameDisplay').textContent = "Belum ada";
+        });
+
+        document.getElementById('vizSizeSlider').addEventListener('input', (e) => { state.viz.size = e.target.value / 100; });
+        document.getElementById('vizWidthSlider').addEventListener('input', (e) => { state.viz.width = e.target.value / 100; });
+        
+        const vizTypeSelect = document.getElementById('vizTypeSelect');
+        vizTypeSelect.addEventListener('change', (e) => { state.viz.type = e.target.value; });
+        
+        // --- STREAMING_CHUNK:Adding mouse scroll support for select dropdown... ---
+        vizTypeSelect.addEventListener('wheel', (e) => {
+            e.preventDefault(); // Mencegah scroll halaman saat berada di atas elemen select
+            
+            // Ambil semua opsi yang bukan <optgroup> (hanya <option>)
+            const options = Array.from(vizTypeSelect.options);
+            const currentIndex = vizTypeSelect.selectedIndex;
+            
+            // Tentukan arah scroll (atas/bawah)
+            let nextIndex = currentIndex;
+            if (e.deltaY > 0) {
+                // Scroll bawah -> indeks bertambah
+                nextIndex = Math.min(currentIndex + 1, options.length - 1);
+            } else if (e.deltaY < 0) {
+                // Scroll atas -> indeks berkurang
+                nextIndex = Math.max(currentIndex - 1, 0);
+            }
+            
+            // Jika ada perubahan indeks
+            if (nextIndex !== currentIndex) {
+                vizTypeSelect.selectedIndex = nextIndex;
+                // Trigger event 'change' secara manual agar state visualizer ikut terupdate
+                vizTypeSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        document.getElementById('bgColorPicker').addEventListener('input', (e) => { state.bg.color = e.target.value; });
+        document.getElementById('bgDarknessSlider').addEventListener('input', (e) => { state.bg.darkness = e.target.value / 100; });
+        document.getElementById('bgPulseIntensitySlider').addEventListener('input', (e) => { state.bg.pulseIntensity = e.target.value / 100; });
+
+        // --- STREAMING_CHUNK:Audio setup and controls... ---
+        let audioContext;
+        let audioSource;
+        let analyser;
+        let dataArray;
+        let isPlaying = false;
+        
+        let snowflakes = [];
+        let raindrops = [];
+        let goldDrops = [];
+        
+        const maxSnowflakes = 150;
+        let particles = [];
+        const maxParticles = 200;
+        
+        let playlist = [];
+        let currentTrackIndex = -1;
+        
+        // State for typewriter effect
+        let typewriterProgress = 0;
+        let lastTrackForText = "";
+        let textTransitionStart = 0;
+
+        function createParticle(x, y, vX, vY, size, color) {
+            return { x, y, vX, vY, size, color, life: 1, maxLife: Math.random() * 50 + 20 };
+        }
+
+        function updateParticles() {
+             for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vX;
+                p.y += p.vY;
+                p.life -= 1;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+        
+        function resizeCanvas() {
+            // Set internal resolution to 1280x720 (HD) for consistent, high-quality recording
+            canvas.width = 1280;
+            canvas.height = 720;
+            // Visual scaling is handled by CSS object-fit
+        }
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 100); // Call once on load
+
+        function setupAudio() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            audioSource = audioContext.createMediaElementSource(audioElement);
+            
+            window.audioDest = audioContext.createMediaStreamDestination();
+            window.playbackGain = audioContext.createGain(); // Node khusus untuk mengatur volume ke speaker
+            
+            audioSource.connect(analyser); 
+            audioSource.connect(window.playbackGain); // Koneksikan audio ke GainNode
+            window.playbackGain.connect(audioContext.destination); // Koneksikan GainNode ke speaker
+            audioSource.connect(window.audioDest); // Rekaman tetap dapat audio langsung tanpa melewati GainNode
+            
+            analyser.fftSize = 256;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+        }
+
+        function loadTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            
+            setupAudio();
+            currentTrackIndex = index;
+            const file = playlist[index].file;
+            const url = URL.createObjectURL(file);
+            
+            audioElement.src = url;
+            document.getElementById('player-title').textContent = file.name;
+            document.getElementById('track-name-display').textContent = file.name;
+            document.getElementById('no-audio-text').style.display = 'none';
+            
+            renderPlaylist();
+            
+            if (isPlaying || isRecording) {
+                audioElement.play().catch(e => console.error("Playback failed:", e));
+            }
+        }
+
+        function renderPlaylist() {
+            const container = document.getElementById('playlistContainer');
+            const panel = document.getElementById('playlistPanel');
+            const sidebarRight = document.getElementById('sidebarRight');
+            document.getElementById('playlistCount').textContent = `${playlist.length} lagu`;
+            
+            // Memastikan sidebar kanan tetap selalu tampil
+            sidebarRight.style.display = 'flex';
+
+            container.innerHTML = '';
+            playlist.forEach((item, index) => {
+                const el = document.createElement('div');
+                el.className = `playlist-item ${index === currentTrackIndex ? 'active' : ''}`;
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'playlist-item-name';
+                nameSpan.textContent = item.file.name;
+                nameSpan.onclick = () => {
+                    loadTrack(index);
+                    playAudio(true); // force play when clicking a track
+                };
+                
+                // Diubah menggunakan <button> agar area klik (hitbox) lebih besar dan responsif
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-track-btn';
+                removeBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                removeBtn.title = 'Hapus lagu ini';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation(); // Mencegah klik terhitung sebagai memutar lagu
+                    removeTrack(index);
+                };
+
+                el.appendChild(nameSpan);
+                el.appendChild(removeBtn);
+                container.appendChild(el);
+            });
+        }
+
+        function removeTrack(index) {
+            if (index < 0 || index >= playlist.length) return;
+            playlist.splice(index, 1);
+            
+            // Memberikan respon visual ketika lagu dihapus
+            showNotification("Lagu berhasil dihapus");
+            
+            if (playlist.length === 0) {
+                clearAllAudio();
+            } else {
+                if (currentTrackIndex === index) {
+                    // if removing currently playing track, load the next one (or previous if it was the last)
+                    let nextIndex = index >= playlist.length ? playlist.length - 1 : index;
+                    loadTrack(nextIndex);
+                } else if (currentTrackIndex > index) {
+                    // adjust index if a track before the current one was removed
+                    currentTrackIndex--;
+                }
+                renderPlaylist();
+            }
+        }
+
+        function clearAllAudio() {
+            audioElement.pause();
+            audioElement.src = "";
+            playlist = [];
+            currentTrackIndex = -1;
+            document.getElementById('player-title').textContent = "Belum ada audio";
+            document.getElementById('track-name-display').textContent = "Belum ada audio";
+            document.getElementById('no-audio-text').style.display = 'block';
+            isPlaying = false;
+            updatePlayBtn();
+            renderPlaylist();
+            if(ctx) { ctx.clearRect(0,0,canvas.width,canvas.height); }
+        }
+
+        document.getElementById('audioInput').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            files.forEach(file => {
+                playlist.push({ file: file });
+            });
+
+            if (currentTrackIndex === -1 && playlist.length > 0) {
+                loadTrack(0);
+            } else {
+                renderPlaylist();
+            }
+            // Reset input so the same files can be selected again if needed
+            e.target.value = '';
+        });
+
+        document.getElementById('btnHapusAudio').addEventListener('click', clearAllAudio);
+
+        document.getElementById('bgInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                state.bg.image = url;
+                state.bg.imgElement = img;
+            };
+            img.src = url;
+        });
+
+        document.getElementById('btnHapusBg').addEventListener('click', () => {
+            state.bg.image = null;
+            state.bg.imgElement = null;
+        });
+
+        const playBtn = document.getElementById('playPauseBtn');
+        const timeDisplay = document.getElementById('time-display');
+        const progressBar = document.getElementById('progress-bar');
+        const progressHandle = document.getElementById('progress-handle');
+
+        function formatTime(s) {
+            if(isNaN(s)) return "0:00";
+            const min = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${min}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        audioElement.addEventListener('timeupdate', () => {
+            if (!audioElement.duration) return;
+            const current = audioElement.currentTime;
+            const duration = audioElement.duration;
+            
+            // Update teks waktu (contoh: 1:05 / 3:40)
+            timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+            
+            // Update panjang garis biru dan posisi titik putih
+            const percent = (current / duration) * 100;
+            progressBar.style.width = `${percent}%`;
+            progressHandle.style.left = `${percent}%`;
+        });
+
+        audioElement.addEventListener('loadedmetadata', () => {
+            // Tampilkan total waktu seketika saat lagu dimuat
+            timeDisplay.textContent = `0:00 / ${formatTime(audioElement.duration)}`;
+            progressBar.style.width = `0%`;
+            progressHandle.style.left = `0%`;
+        });
+
+        function updatePlayBtn() {
+            playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play ml-1"></i>';
+        }
+
+        function playAudio(forcePlay = false) {
+            if(!audioElement.src) return;
+            if(audioContext && audioContext.state === 'suspended') audioContext.resume();
+            
+            if(isPlaying && !forcePlay) {
+                audioElement.pause();
+                isPlaying = false;
+            } else {
+                audioElement.play().catch(e => console.error("Playback failed:", e));
+                isPlaying = true;
+            }
+            updatePlayBtn();
+        }
+
+        playBtn.addEventListener('click', () => playAudio());
+        
+        audioElement.addEventListener('ended', () => {
+            if (isRecording) {
+                if (currentTrackIndex < playlist.length - 1) {
+                    autoNextTrackIndex = currentTrackIndex + 1;
+                    stopRecording(false); // Stop rekam untuk unduh, lalu lanjut otomatis
+                } else {
+                    stopRecording(false); // Playlist selesai, stop rekam
+                }
+            } else {
+                if (currentTrackIndex < playlist.length - 1) {
+                    // Play next track
+                    loadTrack(currentTrackIndex + 1);
+                    playAudio(true);
+                } else {
+                    isPlaying = false;
+                    updatePlayBtn();
+                }
+            }
+        });
+
+        document.getElementById('progress-container').addEventListener('click', (e) => {
+            if(!audioElement.duration) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            audioElement.currentTime = ((e.clientX - rect.left) / rect.width) * audioElement.duration;
+        });
+
+        // --- STREAMING_CHUNK:Media recording logic... ---
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+        let autoNextTrackIndex = -1;
+        let exportDirectoryHandle = null; // Menyimpan izin akses folder untuk batch download
+
+        function startRecording() {
+            setupAudio();
+            
+            // Matikan suara (mute) yang keluar dari speaker saat merekam
+            if (window.playbackGain) window.playbackGain.gain.value = 0;
+
+            const canvasStream = canvas.captureStream(30);
+            
+            const combinedStream = new MediaStream([
+                ...canvasStream.getVideoTracks(),
+                ...window.audioDest.stream.getAudioTracks()
+            ]);
+            
+            let options = { videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000 };
+            
+            if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4d002a, mp4a.40.2"')) {
+                options.mimeType = 'video/mp4; codecs="avc1.4d002a, mp4a.40.2"';
+            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                options.mimeType = 'video/mp4';
+            } else {
+                options.mimeType = 'video/webm; codecs=vp9,opus'; // Fallback
+            }
+
+            mediaRecorder = new MediaRecorder(combinedStream, options);
+            
+            // Aktifkan background rendering agar animasi tidak berhenti saat tab di-minimize
+            isBackgroundRender = true;
+            if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('start');
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+            
+            mediaRecorder.onstop = async () => {
+                // Matikan background rendering
+                isBackgroundRender = false;
+                if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('stop');
+                requestAnimationFrame(() => renderLoop(false));
+
+                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                
+                // NAMA FILE OTOMATIS: samakan dengan nama file audio
+                let downloadName = 'viz_export';
+                if (currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
+                    let audioName = playlist[currentTrackIndex].file.name;
+                    // Hapus ekstensi audio (.mp3, .wav) agar nama video bersih (namalagu.mp4)
+                    downloadName = audioName.substring(0, audioName.lastIndexOf('.')) || audioName;
+                }
+                downloadName += '.mp4';
+                
+                // --- STREAMING_CHUNK:Simpan file ke folder otomatis tanpa popup block browser... ---
+                let saveSuccess = false;
+                
+                if (exportDirectoryHandle) {
+                    try {
+                        const fileHandle = await exportDirectoryHandle.getFileHandle(downloadName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        saveSuccess = true;
+                        showNotification("Video " + downloadName + " berhasil disimpan ke folder!");
+                    } catch (err) {
+                        console.error("Gagal menyimpan ke folder, mengalihkan ke unduhan normal:", err);
+                        // Jika akses gagal/hilang, kode di bawah akan dieksekusi sebagai cadangan
+                    }
+                }
+                
+                // Fallback (cara lama) jika pengguna belum memilih folder atau API tidak didukung
+                if (!saveSuccess) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = downloadName;
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+                    showNotification("Video " + downloadName + " berhasil diunduh!");
+                }
+                
+                recordedChunks = [];
+
+                // Logic Batch / Auto Next Record (Rekam lagu berikutnya secara otomatis)
+                if (autoNextTrackIndex !== -1 && autoNextTrackIndex < playlist.length) {
+                    let nextIdx = autoNextTrackIndex;
+                    autoNextTrackIndex = -1; // Reset trigger
+                    
+                    // Jeda lebih lama untuk memastikan file sebelumnya tersimpan dengan baik di browser
+                    setTimeout(() => {
+                        // Matikan state sebentar agar loadTrack tidak langsung memulai play secara prematur
+                        isPlaying = false;
+                        isRecording = false; // Setel ke false agar loadTrack tidak otomatis memutar lagu
+                        
+                        loadTrack(nextIdx);
+                        
+                        // Berikan waktu sejenak agar audio termuat ke buffer sebelum mulai merekam
+                        setTimeout(() => {
+                           startRecording();
+                        }, 500);
+                        
+                    }, 1500); // Jeda 1.5 detik antar lagu
+                } else {
+                    isRecording = false;
+                    // Nyalakan kembali suara (unmute) saat rekaman telah selesai/berhenti
+                    if (window.playbackGain) window.playbackGain.gain.value = 1; 
+
+                    const btn = document.getElementById('btnRekam');
+                    btn.textContent = 'Rekam';
+                    btn.classList.add('btn-danger');
+                    btn.classList.remove('bg-red-600', 'text-white', 'border-red-500');
+                    document.getElementById('recording-indicator').classList.add('hidden');
+                }
+            };
+            
+            mediaRecorder.start();
+            isRecording = true;
+            
+            const btn = document.getElementById('btnRekam');
+            btn.textContent = 'Stop Rekam';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('bg-red-600', 'text-white', 'border-red-500');
+            document.getElementById('recording-indicator').classList.remove('hidden');
+            
+            if(!isPlaying && audioElement.src) playAudio(true);
+        }
+
+        function stopRecording(manual = false) {
+            if (manual) autoNextTrackIndex = -1; // Batalkan antrean rekam otomatis jika user men-stop paksa
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+        
+        document.getElementById('btnRekam').addEventListener('click', async function() {
+            if(!isRecording) {
+                autoNextTrackIndex = -1; // Reset jika mulai manual
+                
+                // --- STREAMING_CHUNK:Minta akses folder untuk menyimpan otomatis... ---
+                if (playlist.length > 0 && window.showDirectoryPicker) {
+                    try {
+                        // Selalu meminta user memilih folder tujuan setiap kali mulai rekam baru
+                        exportDirectoryHandle = await window.showDirectoryPicker({
+                            mode: 'readwrite',
+                            id: 'tnc7_export_folder'
+                        });
+                    } catch (err) {
+                        console.warn("Pemilihan folder dibatalkan, menggunakan mode unduh standar.", err);
+                        // Tetap lanjut meskipun dibatalkan (akan fallback ke cara lama)
+                    }
+                }
+
+                if (playlist.length > 0) {
+                    // Setel isPlaying dan isRecording ke false sementara agar tidak terjadi putar ganda
+                    isPlaying = false;
+                    isRecording = false;
+                    
+                    // Auto kembali ke audio pertama dan mulai dari awal (detik 0)
+                    loadTrack(0);
+                    if (audioElement) audioElement.currentTime = 0;
+                    
+                    // Beri sedikit jeda agar audio buffer siap sebelum merekam
+                    setTimeout(() => {
+                        startRecording();
+                    }, 500);
+                } else {
+                    startRecording();
+                }
+            } else {
+                stopRecording(true); // Berhenti merekam secara manual
+            }
+        });
+
+        // --- STREAMING_CHUNK:Main rendering and visualizer loop... ---
+        
+        // Web Worker untuk menjaga frame rate tetap berjalan saat tab di-minimize (background)
+        const workerCode = `
+            let timer = null;
+            self.onmessage = function(e) {
+                if (e.data === 'start') {
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(() => self.postMessage('tick'), 1000 / 30); // Memaksa 30 FPS konstan
+                } else if (e.data === 'stop') {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            };
+        `;
+        const workerBlob = new Blob([workerCode], {type: 'application/javascript'});
+        const backgroundWorker = new Worker(URL.createObjectURL(workerBlob));
+        let isBackgroundRender = false;
+
+        backgroundWorker.onmessage = function() {
+            if (isBackgroundRender) {
+                renderLoop(true);
+            }
+        };
+
+        requestAnimationFrame(() => renderLoop(false));
+
+        function renderLoop(fromWorker = false) {
+            // Hanya gunakan requestAnimationFrame standar jika TIDAK sedang dikendalikan oleh Web Worker
+            if (!isBackgroundRender && !fromWorker) {
+                requestAnimationFrame(() => renderLoop(false));
+            }
+            
+            if ((isPlaying || isRecording) && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+            }
+            
+            drawCanvas();
+        }
+
+        function drawCanvas() {
+            if(!ctx || !canvas.width) return;
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            // Mengaktifkan penghalusan grafis kualitas tinggi untuk seluruh elemen di kanvas agar hasil rekaman lebih tajam
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            bboxes.viz = null;
+            bboxes.overlay = null;
+            bboxes.text = null;
+            
+            let audioReactivity = 0;
+            let bgAudioReactivity = 0; // Sensitivitas extra untuk background
+            if(dataArray) {
+                let sum = 0;
+                for(let i=0; i<3; i++) sum += dataArray[i]; 
+                let avgBass = sum / 3 / 255; 
+                audioReactivity = Math.pow(avgBass, 1.8);
+                
+                // Menangkap detail frekuensi lebih luas (15 bin) dengan sensitivitas lebih tinggi (pangkat 1.2)
+                let bgSum = 0;
+                for(let i=0; i<15; i++) bgSum += dataArray[i]; 
+                let bgAvg = bgSum / 15 / 255;
+                bgAudioReactivity = Math.pow(bgAvg, 1.2);
+            }
+
+            // Draw Background Image or Color First
+            if (state.bg.imgElement) {
+                const imgRatio = state.bg.imgElement.width / state.bg.imgElement.height;
+                const canvasRatio = w / h;
+                let drawW = w;
+                let drawH = h;
+                let drawX = 0;
+                let drawY = 0;
+
+                if (canvasRatio > imgRatio) {
+                    drawH = w / imgRatio;
+                    drawY = (h - drawH) / 2;
+                } else {
+                    drawW = h * imgRatio;
+                    drawX = (w - drawW) / 2;
+                }
+                
+                let timeBG = Date.now() / 1000;
+                let scaleBG = 1;
+                let xOffBG = 0;
+                let yOffBG = 0;
+                let rotBG = 0;
+                let alphaBG = 1;
+                let filterBG = 'none';
+                let flashAlpha = 0;
+
+                // Handle Background Effects
+                if (state.bg.effect === 'denyut') {
+                    scaleBG = 1 + (bgAudioReactivity * state.bg.pulseIntensity * 0.4); // Denyut lebih responsif & mendetail
+                } else if (state.bg.effect === 'zoom') {
+                    scaleBG = 1 + (Math.sin(timeBG * 0.2) * 0.2 * state.bg.pulseIntensity + (0.1 * state.bg.pulseIntensity)) + (bgAudioReactivity * 0.15 * state.bg.pulseIntensity); 
+                } else if (state.bg.effect === 'shake') {
+                    if (bgAudioReactivity > 0.2) { // Threshold diturunkan agar lebih sensitif
+                        let shakeAmt = bgAudioReactivity * 80 * state.bg.pulseIntensity; // Gempa lebih detail
+                        xOffBG = (Math.random() - 0.5) * shakeAmt;
+                        yOffBG = (Math.random() - 0.5) * shakeAmt;
+                    }
+                } else if (state.bg.effect === 'pan') {
+                    scaleBG = 1.2 + (0.1 * state.bg.pulseIntensity); 
+                    xOffBG = Math.sin(timeBG * 0.15) * (w * 0.1 * state.bg.pulseIntensity) + (Math.cos(timeBG * 1.5) * bgAudioReactivity * 30 * state.bg.pulseIntensity);
+                    yOffBG = (Math.sin(timeBG * 1.5) * bgAudioReactivity * 30 * state.bg.pulseIntensity);
+                } else if (state.bg.effect === 'flash') {
+                    scaleBG = 1 + (bgAudioReactivity * 0.1 * state.bg.pulseIntensity); 
+                    if (bgAudioReactivity > 0.35) {
+                        flashAlpha = (bgAudioReactivity - 0.35) * 2.5 * state.bg.pulseIntensity; 
+                    }
+                } else if (state.bg.effect === 'hue') {
+                    scaleBG = 1.05 + (bgAudioReactivity * 0.05 * state.bg.pulseIntensity);
+                    let hueDeg = (timeBG * 50 * state.bg.pulseIntensity) + (bgAudioReactivity * 300 * state.bg.pulseIntensity); 
+                    filterBG = `hue-rotate(${hueDeg}deg)`;
+                } else if (state.bg.effect === 'ayun') {
+                    scaleBG = 1.15 + (0.1 * state.bg.pulseIntensity) + (bgAudioReactivity * 0.1 * state.bg.pulseIntensity);
+                    xOffBG = Math.sin(timeBG * 0.8) * 30 * state.bg.pulseIntensity + (Math.cos(timeBG * 2.5) * bgAudioReactivity * 20 * state.bg.pulseIntensity);
+                    yOffBG = Math.cos(timeBG * 0.6) * 30 * state.bg.pulseIntensity + (Math.sin(timeBG * 2.5) * bgAudioReactivity * 20 * state.bg.pulseIntensity);
+                    rotBG = Math.sin(timeBG * 0.4) * 0.05 * state.bg.pulseIntensity + (Math.cos(timeBG * 2) * bgAudioReactivity * 0.03 * state.bg.pulseIntensity);
+                }
+
+                ctx.save();
+                // Pindah poros ke tengah layar untuk memanipulasi gambar (skala/rotasi)
+                ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG);
+                ctx.rotate(rotBG);
+                ctx.scale(scaleBG, scaleBG);
+                ctx.globalAlpha = alphaBG;
+                ctx.filter = filterBG;
+                
+                // Gambar dengan offset mundur ke -drawW/2 (karena poros (0,0) sudah berada di tengah layar)
+                ctx.drawImage(state.bg.imgElement, -drawW / 2, -drawH / 2, drawW, drawH);
+                ctx.restore();
+                
+                // Lapisan kegelapan di-render seperti biasa setelah gambar agar efeknya tidak mengubah warna overlay ini
+                ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
+                ctx.fillRect(0, 0, w, h);
+                
+                // Render kilatan flash putih (jika ada)
+                if (flashAlpha > 0) {
+                    ctx.fillStyle = `rgba(255,255,255,${Math.min(flashAlpha, 1)})`;
+                    ctx.fillRect(0, 0, w, h);
+                }
+            } else if (state.bg.color !== '#0f1115' && state.bg.color !== 'transparent' && state.bg.color !== '') {
+                ctx.fillStyle = state.bg.color;
+                ctx.fillRect(0,0,w,h);
+                ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
+                ctx.fillRect(0,0,w,h);
+            }
+
+            let weatherSpeedMult = state.bg.weatherSpeed / 50;
+
+            // Snow Effect
+            if (state.bg.weather === 'salju') {
+                let currentMaxSnow = state.bg.snowIntensity * 4;
+                let spawnChance = 0.9 - (state.bg.snowIntensity / 150);
+                
+                if (snowflakes.length < currentMaxSnow && Math.random() > spawnChance) {
+                    let spawnCount = Math.ceil(state.bg.snowIntensity / 20);
+                    for(let k=0; k<spawnCount; k++) {
+                        if (snowflakes.length >= currentMaxSnow) break;
+                        snowflakes.push({
+                            x: Math.random() * w,
+                            y: -10,
+                            r: Math.random() * 2 + 0.5,
+                            s: Math.random() * 1.5 + 0.5,
+                            vx: (Math.random() - 0.5) * 0.5,
+                            o: Math.random() * 0.5 + 0.2
+                        });
+                    }
+                }
+                ctx.fillStyle = '#ffffff';
+                for (let i = snowflakes.length - 1; i >= 0; i--) {
+                    let p = snowflakes[i];
+                    p.y += p.s * weatherSpeedMult;
+                    p.x += p.vx * weatherSpeedMult;
+                    ctx.globalAlpha = p.o;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (p.y > h || p.x < 0 || p.x > w) snowflakes.splice(i, 1);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // Hujan Air
+            if (state.bg.weather === 'hujan_air') {
+                let currentMaxRain = state.bg.snowIntensity * 6;
+                let spawnChance = 0.8 - (state.bg.snowIntensity / 200);
+                
+                if (raindrops.length < currentMaxRain && Math.random() > spawnChance) {
+                    let spawnCount = Math.ceil(state.bg.snowIntensity / 10);
+                    for(let k=0; k<spawnCount; k++) {
+                        if (raindrops.length >= currentMaxRain) break;
+                        raindrops.push({
+                            x: Math.random() * w,
+                            y: -20,
+                            len: Math.random() * 20 + 10,
+                            s: Math.random() * 10 + 15, // Cepat jatuh
+                            o: Math.random() * 0.3 + 0.2
+                        });
+                    }
+                }
+                ctx.strokeStyle = '#a0aec0'; // Warna kebiruan/abu-abu
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+                for (let i = raindrops.length - 1; i >= 0; i--) {
+                    let p = raindrops[i];
+                    p.y += p.s * weatherSpeedMult;
+                    ctx.globalAlpha = p.o;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len); // Sedikit miring
+                    ctx.stroke();
+                    if (p.y > h) raindrops.splice(i, 1);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            // Hujan Emas
+            if (state.bg.weather === 'hujan_emas') {
+                let currentMaxGold = state.bg.snowIntensity * 3;
+                let spawnChance = 0.85 - (state.bg.snowIntensity / 200);
+                
+                if (goldDrops.length < currentMaxGold && Math.random() > spawnChance) {
+                    let spawnCount = Math.ceil(state.bg.snowIntensity / 15);
+                    for(let k=0; k<spawnCount; k++) {
+                        if (goldDrops.length >= currentMaxGold) break;
+                        goldDrops.push({
+                            x: Math.random() * w,
+                            y: -20,
+                            len: Math.random() * 15 + 5,
+                            s: Math.random() * 5 + 8,
+                            o: Math.random() * 0.5 + 0.5,
+                            w: Math.random() * 2 + 1
+                        });
+                    }
+                }
+                ctx.strokeStyle = '#fbbf24'; // Warna emas
+                ctx.lineCap = 'round';
+                for (let i = goldDrops.length - 1; i >= 0; i--) {
+                    let p = goldDrops[i];
+                    p.y += p.s * weatherSpeedMult;
+                    ctx.globalAlpha = p.o;
+                    ctx.lineWidth = p.w;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x, p.y + p.len);
+                    ctx.stroke();
+                    if (p.y > h) goldDrops.splice(i, 1);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            // Helper for overlay
+            const drawOverlayObj = () => {
+                if (!state.overlay.element) return;
+                
+                ctx.save();
+                // Mengaktifkan smoothing kualitas tinggi agar logo tidak buram saat di-scale atau diputar
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
+                ctx.globalAlpha = state.overlay.opacity;
+                
+                if (state.overlay.blend === 'screen') ctx.globalCompositeOperation = 'screen';
+                
+                let ow = state.overlay.type === 'video' ? state.overlay.element.videoWidth : state.overlay.element.width;
+                let oh = state.overlay.type === 'video' ? state.overlay.element.videoHeight : state.overlay.element.height;
+                
+                if(!ow || !oh) {
+                    ctx.restore();
+                    return;
+                }
+
+                let baseScale = Math.min(w / ow, h / oh) * (state.overlay.size * 2); 
+                let animScale = 1;
+                let animX = 0;
+                let animY = 0;
+                let animRot = 0;
+                
+                let currentNow = Date.now();
+                let delta = 0;
+                if (state.overlay.lastDrawTime) {
+                    delta = (currentNow - state.overlay.lastDrawTime) / 1000;
+                    if (delta > 0.1) delta = 0.016; 
+                }
+                state.overlay.lastDrawTime = currentNow;
+
+                let speedMult = state.overlay.speed * 5;
+                
+                if (state.overlay.anim !== 'none') {
+                    state.overlay.animTime = (state.overlay.animTime || 0) + (delta * speedMult);
+                    switch(state.overlay.anim) {
+                        case 'pan': animX = Math.sin(state.overlay.animTime) * 100; break;
+                        case 'denyut': animScale = 1 + (audioReactivity * speedMult * 0.2); break;
+                        case 'blitz': if (Math.random() < (speedMult * 0.1)) ctx.globalAlpha = Math.random() * state.overlay.opacity; else ctx.globalAlpha = 0; break;
+                        case 'flash': ctx.globalAlpha = (Math.sin(state.overlay.animTime * 10) * 0.5 + 0.5) * state.overlay.opacity; break;
+                        case 'float': animX = Math.sin(state.overlay.animTime * 0.5) * 50; animY = Math.cos(state.overlay.animTime * 0.7) * 50; break;
+                        case 'shake': animX = (Math.random() - 0.5) * speedMult * 10; animY = (Math.random() - 0.5) * speedMult * 10; break;
+                        case 'zoom': animScale = 1 + (Math.sin(state.overlay.animTime * 0.5) * 0.5 + 0.5); break;
+                        case 'putar_kanan': animRot = state.overlay.animTime; break;
+                        case 'putar_kiri': animRot = -state.overlay.animTime; break;
+                    }
+                }
+
+                let finalScale = baseScale * animScale;
+                let drawW = ow * finalScale;
+                let drawH = oh * finalScale;
+
+                let finalOverlayX = cx + animX + (state.overlay.offsetX || 0);
+                let finalOverlayY = cy + animY + (state.overlay.offsetY || 0);
+
+                bboxes.overlay = {
+                    x: finalOverlayX - drawW/2,
+                    y: finalOverlayY - drawH/2,
+                    w: drawW,
+                    h: drawH
+                };
+
+                ctx.translate(finalOverlayX, finalOverlayY);
+                ctx.rotate(animRot);
+                ctx.drawImage(state.overlay.element, -drawW/2, -drawH/2, drawW, drawH);
+                ctx.restore();
+            };
+
+            // Belakang Layer
+            if (state.overlay.lapisan === 'belakang') drawOverlayObj();
+
+            // Visualizer Rendering (Solid color, No Glow)
+            if(dataArray && audioElement.src) {
+                let time = Date.now() / 1000;
+                let baseHue = (time * 15) % 360; 
+                
+                let vizY = cy;
+                if(state.viz.align === 'bawah') vizY = h - (h * 0.1);
+                if(state.viz.align === 'full') vizY = h;
+
+                let currentCx = cx + (state.viz.offsetX || 0);
+                let currentVizY = vizY + (state.viz.offsetY || 0);
+
+                const maxH = h * state.viz.size;
+                const solidColor = `hsl(${baseHue}, 100%, 60%)`; // Clean solid color
+                
+                ctx.fillStyle = solidColor;
+                ctx.strokeStyle = solidColor;
+                ctx.lineCap = 'round'; 
+                ctx.lineJoin = 'round';
+                ctx.shadowBlur = 0; // Ensures NO GLOW / GRADATION
+                ctx.shadowColor = 'transparent';
+
+                let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30); // Very sensitive width
+
+                if (state.viz.type.startsWith('bars')) {
+                    const barCount = 64;
+                    const spacing = 4 * widthFactor; 
+                    const totalW = barCount * spacing;
+                    let startX = currentCx - (totalW / 2);
+                    
+                    bboxes.viz = { x: startX, y: currentVizY - maxH, w: totalW, h: maxH };
+
+                    for (let i = 0; i < barCount; i++) {
+                        const dataIndex = Math.floor(i * (dataArray.length / barCount) * 0.6);
+                        let val = dataArray[dataIndex] || 0;
+                        if(i < 10) val = Math.min(255, val * 1.2); 
+
+                        const barH = Math.max(4, (val / 255) * maxH); 
+                        let barThickness = Math.max(2, spacing - (1.5 * widthFactor));
+                        let xPos = startX + (i * spacing);
+                        let yPos = currentVizY - barH;
+
+                        ctx.beginPath();
+                        switch(state.viz.type) {
+                            case 'bars':
+                            default:
+                                if(state.viz.align === 'tengah') yPos = currentVizY - (barH/2);
+                                ctx.roundRect(xPos, yPos, barThickness, barH, barThickness/2);
+                                break;
+                            case 'bars_mirror':
+                                ctx.roundRect(xPos, currentVizY - barH, barThickness, barH, barThickness/2);
+                                ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
+                                break;
+                            case 'bars_top':
+                                ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
+                                break;
+                            case 'bars_split':
+                                if (i < barCount/2) ctx.roundRect(xPos, currentVizY - barH, barThickness, barH, barThickness/2);
+                                else ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
+                                break;
+                            case 'bars_stair':
+                                let stairH = ((i/barCount) * maxH * (val/255));
+                                ctx.roundRect(xPos, currentVizY - stairH, barThickness, Math.max(4, stairH), barThickness/2);
+                                break;
+                            case 'bars_stair_inv':
+                                let stairHInv = ((1-(i/barCount)) * maxH * (val/255));
+                                ctx.roundRect(xPos, currentVizY - stairHInv, barThickness, Math.max(4, stairHInv), barThickness/2);
+                                break;
+                            case 'bars_dots':
+                                ctx.arc(xPos + barThickness/2, currentVizY - barH, barThickness/2, 0, Math.PI*2);
+                                break;
+                            case 'bars_dash':
+                                for(let d=0; d<barH; d+=12) ctx.roundRect(xPos, currentVizY - d, barThickness, 6, 3);
+                                break;
+                            case 'bars_triangle':
+                                ctx.moveTo(xPos, currentVizY);
+                                ctx.lineTo(xPos + barThickness, currentVizY);
+                                ctx.lineTo(xPos + barThickness/2, currentVizY - barH);
+                                ctx.closePath();
+                                break;
+                            case 'bars_diamond':
+                                ctx.moveTo(xPos + barThickness/2, currentVizY);
+                                ctx.lineTo(xPos + barThickness, currentVizY - barH/2);
+                                ctx.lineTo(xPos + barThickness/2, currentVizY - barH);
+                                ctx.lineTo(xPos, currentVizY - barH/2);
+                                ctx.closePath();
+                                break;
+                        }
+                        ctx.fill();
+                    }
+                } 
+                else if (state.viz.type.startsWith('wave')) {
+                    analyser.getByteTimeDomainData(dataArray);
+                    ctx.lineWidth = Math.max(2, 6 - (widthFactor * 0.1)); 
+                    
+                    const totalWaveWidth = w * widthFactor;
+                    const sliceW = totalWaveWidth / dataArray.length;
+                    let startWaveX = currentCx - (totalWaveWidth / 2);
+                    const amp = state.viz.size * 2;
+                    bboxes.viz = { x: startWaveX, y: currentVizY - ((h / 2) * amp), w: totalWaveWidth, h: h * amp };
+
+                    ctx.beginPath();
+                    if(state.viz.type.includes('fill')) ctx.moveTo(startWaveX, currentVizY);
+
+                    let prevX = startWaveX;
+                    let prevY = currentVizY + (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
+                    
+                    if(!state.viz.type.includes('fill')) ctx.moveTo(prevX, prevY);
+
+                    for (let i = 1; i < dataArray.length; i++) {
+                        let v = dataArray[i] / 128.0; 
+                        let x = startWaveX + (i * sliceW);
+                        
+                        if(state.viz.type === 'wave_pulse' && audioReactivity > 0.4) v = 1 + ((v-1)*1.8);
+                        if(state.viz.type === 'wave_glitch' && Math.random() > 0.95) v += (Math.random()-0.5)*0.8;
+                        if(state.viz.type === 'wave_blocky') { x = startWaveX + (Math.floor(i/15)*15 * sliceW); v = dataArray[Math.floor(i/15)*15]/128.0; }
+
+                        let y = currentVizY + ((v - 1) * (h / 2) * amp);
+
+                        if (state.viz.type === 'wave_dots') {
+                            ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+                        } else if (state.viz.type === 'wave_blocky' || state.viz.type === 'wave_glitch') {
+                            ctx.lineTo(x, y);
+                        } else {
+                            let xc = (prevX + x) / 2;
+                            let yc = (prevY + y) / 2;
+                            ctx.quadraticCurveTo(prevX, prevY, xc, yc);
+                        }
+                        
+                        prevX = x; prevY = y;
+                    }
+                    
+                    if (!state.viz.type.includes('dots') && !state.viz.type.includes('blocky') && !state.viz.type.includes('glitch')) {
+                        ctx.lineTo(prevX, prevY); 
+                    }
+
+                    if(state.viz.type.includes('mirror')) {
+                        ctx.moveTo(startWaveX, currentVizY);
+                        let pX = startWaveX;
+                        let pY = currentVizY - (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
+                        for (let i = 1; i < dataArray.length; i++) {
+                            let v = dataArray[i] / 128.0; 
+                            let x = startWaveX + (i * sliceW);
+                            let y = currentVizY - ((v - 1) * (h / 2) * amp);
+                            let xc = (pX + x) / 2; let yc = (pY + y) / 2;
+                            ctx.quadraticCurveTo(pX, pY, xc, yc);
+                            pX = x; pY = y;
+                        }
+                        ctx.lineTo(pX, pY);
+                    }
+
+                    if(state.viz.type === 'wave_double') {
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.strokeStyle = `hsl(${(baseHue + 180) % 360}, 100%, 60%)`; 
+                        let dpX = startWaveX;
+                        let dpY = currentVizY - (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
+                        ctx.moveTo(dpX, dpY);
+                        for (let i = 1; i < dataArray.length; i++) {
+                            let v = dataArray[i] / 128.0; 
+                            let x = startWaveX + (i * sliceW);
+                            let y = currentVizY - ((v - 1) * (h / 2) * amp);
+                            ctx.quadraticCurveTo(dpX, dpY, (dpX+x)/2, (dpY+y)/2);
+                            dpX = x; dpY = y;
+                        }
+                        ctx.lineTo(dpX, dpY);
+                    }
+                    
+                    if(state.viz.type.includes('fill')) {
+                         ctx.lineTo(startWaveX + totalWaveWidth, currentVizY);
+                         ctx.closePath();
+                         ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.4)`; 
+                         ctx.fill();
+                         ctx.stroke();
+                    } else if (!state.viz.type.includes('dots')) {
+                         ctx.stroke();
+                    }
+                    
+                    analyser.getByteFrequencyData(dataArray); 
+                }
+                else if (state.viz.type.startsWith('circle')) {
+                    const dynamicBaseRadius = (Math.min(cx, cy) * 0.25) + (audioReactivity * 40 * state.viz.size);
+                    const radius = dynamicBaseRadius * widthFactor;
+                    const barCount = state.viz.type === 'circle_wave' ? dataArray.length : 90;
+                    const step = (Math.PI * 2) / barCount;
+                    
+                    let maxLen = Math.min(cx,cy) * 0.5 * state.viz.size;
+                    let maxRadius = radius + maxLen;
+                    bboxes.viz = { x: currentCx - maxRadius, y: currentVizY - maxRadius, w: maxRadius * 2, h: maxRadius * 2 };
+
+                    if(!state.viz.type.includes('dots') && !state.viz.type.includes('blocks')) {
+                        ctx.beginPath();
+                        ctx.arc(currentCx, currentVizY, radius, 0, Math.PI*2);
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                    }
+
+                    ctx.lineWidth = Math.max(3, 8 - (widthFactor * 0.2));
+                    
+                    if(state.viz.type === 'circle_wave') analyser.getByteTimeDomainData(dataArray);
+
+                    ctx.beginPath();
+                    for (let i = 0; i < barCount; i++) {
+                        let val, len;
+                        if(state.viz.type === 'circle_wave') {
+                            val = dataArray[i];
+                            len = ((val/128.0) - 1) * maxLen * 2;
+                        } else {
+                            const dataIdx = Math.floor(i * (dataArray.length / barCount) * 0.5);
+                            val = dataArray[dataIdx] || 0;
+                            len = Math.pow(val / 255, 1.5) * maxLen;
+                        }
+
+                        let rotOffset = (state.viz.type.includes('gear') || state.viz.type.includes('dots')) ? time : 0;
+                        const angle = i * step - (Math.PI / 2) + rotOffset;
+                        
+                        let x1 = currentCx + Math.cos(angle)*radius;
+                        let y1 = currentVizY + Math.sin(angle)*radius;
+                        let x2 = currentCx + Math.cos(angle)*(radius+len);
+                        let y2 = currentVizY + Math.sin(angle)*(radius+len);
+                        let xIn = currentCx + Math.cos(angle)*Math.max(10, radius-len);
+                        let yIn = currentVizY + Math.sin(angle)*Math.max(10, radius-len);
+
+                        switch(state.viz.type) {
+                            case 'circle':
+                            default: ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); break;
+                            case 'circle_in': ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(xIn, yIn); ctx.stroke(); break;
+                            case 'circle_both': ctx.beginPath(); ctx.moveTo(xIn, yIn); ctx.lineTo(x2, y2); ctx.stroke(); break;
+                            case 'circle_wave': if(i===0) ctx.moveTo(x2,y2); else ctx.lineTo(x2,y2); break;
+                            case 'circle_dots': ctx.beginPath(); ctx.arc(x2, y2, Math.max(3, len*0.1), 0, Math.PI*2); ctx.fill(); break;
+                            case 'circle_blocks':
+                                ctx.save(); ctx.translate(x1,y1); ctx.rotate(angle); 
+                                ctx.roundRect(0, -ctx.lineWidth/2, len, ctx.lineWidth, ctx.lineWidth/2); 
+                                ctx.fill(); ctx.restore(); break;
+                            case 'circle_dash':
+                                for(let d=0; d<len; d+=15) {
+                                    let dx = currentCx + Math.cos(angle)*(radius+d);
+                                    let dy = currentVizY + Math.sin(angle)*(radius+d);
+                                    ctx.beginPath(); ctx.arc(dx, dy, 3, 0, Math.PI*2); ctx.fill();
+                                } break;
+                            case 'circle_tri':
+                                ctx.save(); ctx.translate(x2,y2); ctx.rotate(angle); 
+                                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-15,-8); ctx.lineTo(-15,8); ctx.fill(); ctx.restore(); break;
+                            case 'circle_flower': ctx.beginPath(); ctx.bezierCurveTo(x1, y1, x2+30, y2+30, x2, y2); ctx.stroke(); break;
+                            case 'circle_gear':
+                                ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); 
+                                ctx.lineTo(x2+Math.cos(angle+0.1)*(radius+len), y2+Math.sin(angle+0.1)*(radius+len)); ctx.stroke(); break;
+                        }
+                    }
+                    if(state.viz.type === 'circle_wave') {
+                        ctx.closePath(); ctx.stroke();
+                        analyser.getByteFrequencyData(dataArray);
+                    }
+                }
+                else if (state.viz.type.startsWith('poly') || state.viz.type.startsWith('sym') || state.viz.type.startsWith('abs')) {
+                    let baseSize = 50 * widthFactor;
+                    let size = baseSize + (Math.pow(audioReactivity, 1.5) * h * state.viz.size * 1.5);
+                    bboxes.viz = { x: currentCx - size, y: currentVizY - size, w: size * 2, h: size * 2 };
+                    
+                    ctx.save();
+                    ctx.translate(currentCx, currentVizY);
+                    
+                    let rotSpeed = time * (0.5 + audioReactivity);
+                    if(state.viz.type.includes('spin') || state.viz.type.includes('kaleido') || state.viz.type.includes('sym')) {
+                        ctx.rotate(rotSpeed);
+                    }
+
+                    ctx.lineWidth = 4;
+                    ctx.lineJoin = 'round';
+                    
+                    if(state.viz.type.startsWith('poly')) {
+                        ctx.beginPath();
+                        if(state.viz.type === 'poly_triangle') drawPoly(ctx, 3, size);
+                        else if(state.viz.type === 'poly_square') drawPoly(ctx, 4, size);
+                        else if(state.viz.type === 'poly_pentagon') drawPoly(ctx, 5, size);
+                        else if(state.viz.type === 'poly_hexagon') drawPoly(ctx, 6, size);
+                        else if(state.viz.type === 'poly_oct') drawPoly(ctx, 8, size);
+                        else if(state.viz.type === 'poly_star_5') drawStar(ctx, 5, size, size/2.5);
+                        else if(state.viz.type === 'poly_star_8') drawStar(ctx, 8, size, size/2.5);
+                        else if(state.viz.type === 'poly_pulse') {
+                            let sides = Math.max(3, Math.min(12, 4 + Math.floor(audioReactivity*10)));
+                            drawPoly(ctx, sides, size);
+                        }
+                        else if(state.viz.type === 'poly_spin') drawPoly(ctx, 4, size);
+                        else if(state.viz.type === 'poly_fractal') {
+                            drawPoly(ctx, 3, size); drawPoly(ctx, 3, size/2, true); drawPoly(ctx, 3, size/4, true);
+                        }
+                        ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.2)`;
+                        ctx.fill(); ctx.stroke();
+                    }
+                    else if(state.viz.type.startsWith('sym')) {
+                        let axes = 4;
+                        if(state.viz.type === 'sym_6') axes = 6;
+                        if(state.viz.type === 'sym_8' || state.viz.type === 'sym_kaleido') axes = 8;
+                        if(state.viz.type === 'sym_12') axes = 12;
+                        
+                        for(let i=0; i<axes; i++) {
+                            ctx.rotate(Math.PI*2/axes);
+                            ctx.beginPath();
+                            if(state.viz.type === 'sym_cross') { ctx.roundRect(-size/2, -5, size, 10, 5); ctx.fill(); }
+                            else if (state.viz.type === 'sym_x') { ctx.moveTo(0,0); ctx.lineTo(size, size); ctx.stroke(); }
+                            else if (state.viz.type === 'sym_web') { 
+                                ctx.moveTo(0,0); ctx.lineTo(size, 0); 
+                                ctx.moveTo(size/2,0); ctx.lineTo(Math.cos(Math.PI*2/axes)*size/2, Math.sin(Math.PI*2/axes)*size/2); 
+                                ctx.stroke();
+                            }
+                            else { 
+                                ctx.moveTo(0,0);
+                                for(let d=0; d<15; d++) {
+                                    let v = (dataArray[d*3]||0)/255;
+                                    ctx.quadraticCurveTo(d*10, v*size, d*15, (v*size)/2);
+                                }
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    else if(state.viz.type.startsWith('abs')) {
+                        ctx.beginPath();
+                        if(state.viz.type === 'abs_blob') {
+                            for(let i=0; i<30; i++) {
+                                let angle = (i/30)*Math.PI*2;
+                                let r = size * (0.6 + Math.pow((dataArray[i*3]||0)/255, 2) * 0.6);
+                                if(i===0) ctx.moveTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                                else ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                            }
+                            ctx.closePath(); ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.5)`; ctx.fill();
+                        }
+                        else if(state.viz.type === 'abs_rings') {
+                            for(let i=0; i<6; i++) {
+                                 let r = size*(0.15*(i+1)) + Math.pow((dataArray[i*5]||0)/255, 2)*60;
+                                 ctx.beginPath(); ctx.arc(0,0, r, 0, Math.PI*2); ctx.stroke();
+                            }
+                        } else { ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke(); }
+                    }
+                    
+                    ctx.restore();
+                }
+                else {
+                    updateParticles();
+                    let emitCount = Math.floor(Math.pow(audioReactivity, 2) * 15);
+                    if(emitCount > 0 && particles.length < maxParticles) {
+                        for(let i=0; i<emitCount; i++) {
+                            let vx = (Math.random()-0.5)*12;
+                            let vy = (Math.random()-0.5)*12;
+                            let c = `hsl(${(baseHue + Math.random()*60 - 30) % 360}, 100%, 60%)`; 
+                            
+                            if(state.viz.type === 'part_fountain') { vy = -Math.abs(vy)*2 - 5; vx = vx*0.5; }
+                            if(state.viz.type === 'part_rain') { vy = Math.abs(vy)*2 + 5; vx = vx*0.2; }
+                            if(state.viz.type === 'part_orbit') { 
+                                let angle = Math.random() * Math.PI * 2;
+                                vx = Math.cos(angle) * (5 + audioReactivity*10); 
+                                vy = Math.sin(angle) * (5 + audioReactivity*10); 
+                            }
+                            particles.push(createParticle(currentCx, currentVizY, vx, vy, Math.random()*4+2, c));
+                        }
+                    }
+
+                    bboxes.viz = { x: currentCx - w/3, y: currentVizY - h/3, w: w/1.5, h: h/1.5 };
+
+                    for(let p of particles) {
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = Math.max(0, p.life / p.maxLife); 
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size * (1 + audioReactivity*0.5), 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1.0;
+                    
+                    if(state.viz.type.startsWith('exp') || state.viz.type.startsWith('3d')) {
+                         ctx.lineWidth = 3;
+                         if(state.viz.type === 'exp_noise') {
+                             for(let i=0; i<150; i++) {
+                                 if(Math.random() < audioReactivity * 1.5) {
+                                     ctx.fillRect(currentCx + (Math.random()-0.5)*w*0.8, currentVizY + (Math.random()-0.5)*h*0.8, 4, 4);
+                                 }
+                             }
+                         }
+                         if(state.viz.type === '3d_cube') {
+                             let s = 120 * widthFactor * (1 + audioReactivity*0.4);
+                             ctx.save(); ctx.translate(currentCx, currentVizY); ctx.rotate(time * 0.5);
+                             
+                             ctx.strokeRect(-s/2, -s/2, s, s); ctx.strokeRect(-s/4, -s/4, s, s);
+                             ctx.beginPath(); ctx.moveTo(-s/2, -s/2); ctx.lineTo(-s/4, -s/4); ctx.stroke();
+                             ctx.beginPath(); ctx.moveTo(s/2, -s/2); ctx.lineTo(3*s/4, -s/4); ctx.stroke();
+                             ctx.beginPath(); ctx.moveTo(-s/2, s/2); ctx.lineTo(-s/4, 3*s/4); ctx.stroke();
+                             ctx.beginPath(); ctx.moveTo(s/2, s/2); ctx.lineTo(3*s/4, 3*s/4); ctx.stroke();
+                             ctx.restore();
+                         }
+                    }
+                }
+            }
+
+            function drawPoly(ctx, sides, radius, flip=false) {
+                let a = (Math.PI * 2) / sides;
+                ctx.moveTo(radius, 0);
+                for (let i = 1; i <= sides; i++) ctx.lineTo(radius * Math.cos(a * i), radius * Math.sin(a * i) * (flip ? -1 : 1));
+                ctx.closePath();
+            }
+            
+            function drawStar(ctx, spikes, outerRadius, innerRadius) {
+                let rot = Math.PI / 2 * 3;
+                let x = 0, y = 0;
+                let step = Math.PI / spikes;
+                ctx.moveTo(x, y - outerRadius);
+                for (let i = 0; i < spikes; i++) {
+                    x = Math.cos(rot) * outerRadius; y = Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step;
+                    x = Math.cos(rot) * innerRadius; y = Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step;
+                }
+                ctx.closePath();
+            }
+
+            if (state.textFx.enabled) {
+                ctx.save();
+                
+                let displayText = state.textFx.customText;
+                // If custom text is empty, try to get the current track name
+                if (!displayText && currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
+                    let trackName = playlist[currentTrackIndex].file.name;
+                    // Remove extension for cleaner look if desired, or keep it. Let's remove common ones.
+                    displayText = trackName.replace(/\.[^/.]+$/, "");
+                }
+                if (!displayText) displayText = "TNC7 Visualizer"; // Fallback
+                
+                let time = Date.now() / 1000;
+
+                // Reset typewriter and trigger smooth fade if track/text changes
+                if (displayText !== lastTrackForText) {
+                    typewriterProgress = 0;
+                    lastTrackForText = displayText;
+                    textTransitionStart = time;
+                }
+
+                let fontSize = state.textFx.size;
+                let speedMult = (state.textFx.animSpeed !== undefined ? state.textFx.animSpeed : 50) / 50;
+                
+                // Default position (Top center)
+                let textX = cx + (state.textFx.offsetX || 0);
+                let textY = (h * 0.15) + (state.textFx.offsetY || 0);
+                
+                let alpha = 1;
+                let scale = 1;
+                let finalDisplayText = displayText;
+
+                // Handle Animations
+                if (state.textFx.anim === 'blink') {
+                    // Modern blink: sine wave between 0.2 and 1
+                    alpha = (Math.sin(time * 5 * speedMult) * 0.4) + 0.6;
+                    // If audio is playing, make it blink faster based on beat
+                    if (audioReactivity > 0.3) alpha = (Math.sin(time * 15 * speedMult) * 0.5) + 0.5;
+                } else if (state.textFx.anim === 'pulse') {
+                    scale = 1 + (audioReactivity * 0.3 * speedMult);
+                } else if (state.textFx.anim === 'wave') {
+                    textY += Math.sin(time * 3 * speedMult) * 15;
+                } else if (state.textFx.anim === 'glitch') {
+                    if (Math.random() > (0.95 - (speedMult * 0.02))) {
+                        textX += (Math.random() - 0.5) * 20 * speedMult;
+                        alpha = Math.random();
+                        ctx.fillStyle = Math.random() > 0.5 ? 'red' : 'cyan';
+                        ctx.fillText(displayText, textX + 5, textY);
+                    }
+                } else if (state.textFx.anim === 'typewriter') {
+                    typewriterProgress += 0.2 * speedMult; // typing speed
+                    let charsToShow = Math.min(Math.floor(typewriterProgress), displayText.length);
+                    finalDisplayText = displayText.substring(0, charsToShow);
+                    // Add blinking cursor at the end
+                    if (charsToShow < displayText.length || Math.floor(time * 2 * speedMult) % 2 === 0) {
+                        finalDisplayText += "|";
+                    }
+                }
+
+                // Smooth fade-in transition saat perpindahan lagu (selama 1 detik)
+                let timeSinceChange = time - textTransitionStart;
+                let transitionFade = Math.min(1, timeSinceChange / 1.0); 
+                alpha *= transitionFade; // Menggabungkan efek transisi halus dengan efek alpha lainnya
+
+                ctx.font = `bold ${fontSize}px ${state.textFx.font}, sans-serif`;
+                ctx.textAlign = state.textFx.align || 'center';
+                ctx.textBaseline = 'middle';
+                ctx.globalAlpha = alpha;
+
+                // Handle Effects
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                let fxLevel = state.textFx.intensity;
+
+                if (state.textFx.effect === 'shadow') {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                    ctx.shadowBlur = fxLevel * 0.2;
+                    ctx.shadowOffsetX = fxLevel * 0.1;
+                    ctx.shadowOffsetY = fxLevel * 0.1;
+                } else if (state.textFx.effect === 'glow') {
+                    ctx.shadowColor = state.textFx.color;
+                    ctx.shadowBlur = fxLevel * 0.5;
+                }
+
+                ctx.translate(textX, textY);
+                ctx.scale(scale, scale);
+
+                if (state.textFx.effect === 'outline') {
+                    ctx.lineWidth = Math.max(1, (fontSize * 0.05) * (fxLevel / 50));
+                    ctx.strokeStyle = 'black';
+                    ctx.strokeText(finalDisplayText, 0, 0);
+                    ctx.fillStyle = state.textFx.color;
+                    ctx.fillText(finalDisplayText, 0, 0);
+                } else {
+                    ctx.fillStyle = state.textFx.color;
+                    ctx.fillText(finalDisplayText, 0, 0);
+                }
+                
+                // Calculate bounding box for dragging
+                let metrics = ctx.measureText(finalDisplayText);
+                let textW = metrics.width * scale;
+                let textH = fontSize * scale; // Approximation
+                
+                let bboxX = textX;
+                if ((state.textFx.align || 'center') === 'center') {
+                    bboxX = textX - (textW / 2);
+                } else if (state.textFx.align === 'right') {
+                    bboxX = textX - textW;
+                }
+
+                bboxes.text = {
+                    x: bboxX,
+                    y: textY - (textH / 2),
+                    w: textW,
+                    h: textH
+                };
+
+                ctx.restore();
+            }
+
+            // Depan / Kunci Layer
+            if (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci') drawOverlayObj();
+        }
+
+        // --- STREAMING_CHUNK:Interaction logic... ---
+        let draggingElement = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let initialOffsetX = 0;
+        let initialOffsetY = 0;
+
+        function getCanvasMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handleDragStart(e) {
+            const pos = getCanvasMousePos(e);
+            let clicked = null;
+            
+            if (state.textFx.enabled && bboxes.text) {
+                // Add a small padding to the hitbox for easier grabbing
+                const padding = 10;
+                if (pos.x >= bboxes.text.x - padding && pos.x <= bboxes.text.x + bboxes.text.w + padding && 
+                    pos.y >= bboxes.text.y - padding && pos.y <= bboxes.text.y + bboxes.text.h + padding) {
+                    clicked = 'text';
+                }
+            }
+            
+            if (!clicked && state.overlay.element && (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci')) {
+                if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) {
+                    clicked = 'overlay';
+                }
+            }
+            
+            if (!clicked && bboxes.viz) {
+                if (pos.x >= bboxes.viz.x && pos.x <= bboxes.viz.x + bboxes.viz.w && pos.y >= bboxes.viz.y && pos.y <= bboxes.viz.y + bboxes.viz.h) {
+                    clicked = 'viz';
+                }
+            }
+            
+            if (!clicked && state.overlay.element && state.overlay.lapisan === 'belakang') {
+                if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) {
+                    clicked = 'overlay';
+                }
+            }
+
+            if (clicked) {
+                draggingElement = clicked;
+                dragStartX = pos.x;
+                dragStartY = pos.y;
+                if (clicked === 'viz') {
+                    initialOffsetX = state.viz.offsetX || 0;
+                    initialOffsetY = state.viz.offsetY || 0;
+                } else if (clicked === 'overlay') {
+                    initialOffsetX = state.overlay.offsetX || 0;
+                    initialOffsetY = state.overlay.offsetY || 0;
+                } else if (clicked === 'text') {
+                    initialOffsetX = state.textFx.offsetX || 0;
+                    initialOffsetY = state.textFx.offsetY || 0;
+                }
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+
+        function handleDragMove(e) {
+            if (!draggingElement) return;
+            if (e.cancelable) e.preventDefault(); 
+            
+            const pos = getCanvasMousePos(e);
+            const dx = pos.x - dragStartX;
+            const dy = pos.y - dragStartY;
+            
+            if (draggingElement === 'viz') {
+                state.viz.offsetX = initialOffsetX + dx;
+                state.viz.offsetY = initialOffsetY + dy;
+            } else if (draggingElement === 'overlay') {
+                state.overlay.offsetX = initialOffsetX + dx;
+                state.overlay.offsetY = initialOffsetY + dy;
+            } else if (draggingElement === 'text') {
+                state.textFx.offsetX = initialOffsetX + dx;
+                state.textFx.offsetY = initialOffsetY + dy;
+            }
+        }
+
+        function handleDragEnd() {
+            if (draggingElement) {
+                draggingElement = null;
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleDragStart);
+        window.addEventListener('mousemove', handleDragMove, { passive: false });
+        window.addEventListener('mouseup', handleDragEnd);
+        
+        canvas.addEventListener('touchstart', handleDragStart, { passive: true });
+        window.addEventListener('touchmove', handleDragMove, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
+
+    </script>
+</body>
+</html>
