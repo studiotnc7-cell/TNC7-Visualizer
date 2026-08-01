@@ -7,9 +7,9 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f59e0b">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b?text=TNC7">
-
+    <!-- Theme Color for Browser/OS integration -->
+    <meta name="theme-color" content="#0f1115">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Poppins:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
@@ -47,28 +47,29 @@
         .panel {
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 6px 8px;
+            border-radius: 6px;
+            padding: 4px 6px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px;
         }
 
         .panel-header {
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             font-weight: 700;
             color: var(--text-secondary);
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            margin-bottom: 2px;
         }
 
         .btn-custom {
             background-color: var(--btn-bg);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
@@ -91,12 +92,12 @@
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
+            height: 10px;
+            width: 10px;
             border-radius: 50%;
             background: var(--accent-yellow);
             cursor: pointer;
-            margin-top: -4px;
+            margin-top: -3px;
             box-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
         }
         input[type=range]::-webkit-slider-runnable-track {
@@ -112,17 +113,18 @@
             background-color: var(--bg-main);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 0.7rem;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-size: 0.65rem;
             width: 100%;
             outline: none;
+            height: 20px;
         }
         select.custom-select { cursor: pointer; }
         input[type=text].custom-input:focus { border-color: var(--text-secondary); }
 
         .top-bar {
-            height: 48px;
+            height: 40px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -139,19 +141,19 @@
             display: flex;
             flex: 1;
             overflow: hidden;
-            height: calc(100vh - 48px);
+            height: calc(100vh - 40px);
         }
 
         .sidebar-left {
-            width: 330px;
+            width: 320px;
             background-color: var(--bg-main);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            padding: 8px;
+            padding: 4px;
             padding-bottom: 24px;
-            gap: 6px;
+            gap: 4px;
             flex-shrink: 0;
         }
 
@@ -182,7 +184,7 @@
         .preview-container {
             width: 100%;
             /* Removed max-height and aspect-ratio, we'll control it via canvas styles and wrapper */
-            height: calc(100vh - 180px);
+            height: calc(100vh - 150px);
             background-color: transparent; 
             border-radius: 8px;
             border: 1px solid var(--border-color);
@@ -205,7 +207,7 @@
 
         .player-wrapper { width: 100%; flex-shrink: 0; margin-top: auto; }
         .player-bar {
-            height: 60px;
+            height: 50px;
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -217,8 +219,8 @@
         }
         
         .play-btn-circle {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background-color: #0d9488;
             display: flex;
@@ -229,10 +231,8 @@
             flex-shrink: 0;
         }
         
-        .control-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .control-label { font-size: 0.75rem; color: var(--text-secondary); width: 40px; }
-
-        /* Notification Modal */
+        .control-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .control-label { font-size: 0.65rem; color: var(--text-secondary); width: 40px; }
         #notification-modal {
             position: fixed;
             top: 20px;
@@ -315,7 +315,13 @@
             
             <!-- Visualizer Panel -->
             <div class="panel">
-                <div class="panel-header">VISUALIZER</div>
+                <div class="panel-header flex justify-between">
+                    <span>VISUALIZER</span>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" id="vizEnable" checked class="rounded border-gray-600 bg-gray-700 text-teal-500 focus:ring-teal-500">
+                        <span class="text-xs text-gray-300">Tampilkan</span>
+                    </label>
+                </div>
                 
                 <div class="control-row" id="vizAlignGroup">
                     <button class="btn-custom btn-active" data-val="tengah">Tengah</button>
@@ -340,126 +346,46 @@
                 <div class="relative">
                     <!-- Added relative positioning wrapper to handle scroll events locally -->
                     <select class="custom-select" id="vizTypeSelect">
-                        <!-- Expanded 100+ Options -->
-                        <optgroup label="Bars (Classic)">
+                        <optgroup label="Terbaru (Modern) ⭐">
+                            <option value="modern_plexus">Modern - Plexus Network</option>
+                            <option value="modern_neon_ring">Modern - Neon Ring</option>
+                            <option value="modern_gradient_wave">Modern - Gradient Wave</option>
+                            <option value="modern_cyber_bars">Modern - Cyberpunk Bars</option>
+                            <option value="modern_hologram">Modern - Hologram 3D</option>
+                            <option value="modern_scifi_radar">Modern - Sci-Fi Radar</option>
+                            <option value="modern_infinity_tunnel">Modern - Infinity Tunnel</option>
+                            <option value="modern_liquid_orb">Modern - Liquid Orb</option>
+                            <option value="modern_supernova">Modern - Supernova Burst</option>
+                            <option value="modern_quantum">Modern - Quantum Particles</option>
+                        </optgroup>
+                        <optgroup label="Klasik & Bar">
                             <option value="bars">Bars - Normal</option>
                             <option value="bars_mirror">Bars - Mirrored</option>
-                            <option value="bars_top">Bars - Top Down</option>
-                            <option value="bars_split">Bars - Split Center</option>
                             <option value="bars_stair">Bars - Staircase</option>
-                            <option value="bars_stair_inv">Bars - Inverted Stair</option>
-                            <option value="bars_dots">Bars - Dotted Line</option>
-                            <option value="bars_dash">Bars - Dashed</option>
-                            <option value="bars_triangle">Bars - Triangles</option>
-                            <option value="bars_diamond">Bars - Diamonds</option>
+                            <option value="bars_split">Bars - Split Center</option>
                         </optgroup>
-                        <optgroup label="Waveforms">
+                        <optgroup label="Gelombang (Wave)">
                             <option value="wave">Wave - Line</option>
                             <option value="wave_fill">Wave - Filled</option>
-                            <option value="wave_mirror">Wave - Mirrored Line</option>
-                            <option value="wave_mirror_fill">Wave - Mirrored Filled</option>
-                            <option value="wave_smooth">Wave - Bezier Smooth</option>
-                            <option value="wave_blocky">Wave - Blocky Steps</option>
-                            <option value="wave_dots">Wave - Dots</option>
                             <option value="wave_double">Wave - Double Helix</option>
-                            <option value="wave_pulse">Wave - Pulsing Line</option>
                             <option value="wave_glitch">Wave - Glitch</option>
                         </optgroup>
-                        <optgroup label="Circular (Ring)">
+                        <optgroup label="Lingkaran (Circle)">
                             <option value="circle">Circle - Lines Out</option>
-                            <option value="circle_in">Circle - Lines In</option>
-                            <option value="circle_both">Circle - Lines In/Out</option>
                             <option value="circle_wave">Circle - Continuous Wave</option>
                             <option value="circle_dots">Circle - Orbiting Dots</option>
                             <option value="circle_blocks">Circle - Block Ring</option>
-                            <option value="circle_dash">Circle - Dashed Ring</option>
-                            <option value="circle_tri">Circle - Triangles Out</option>
-                            <option value="circle_flower">Circle - Flower Petals</option>
-                            <option value="circle_gear">Circle - Gear Teeth</option>
                         </optgroup>
-                        <optgroup label="Geometric/Polygon">
-                            <option value="poly_triangle">Polygon - Triangle</option>
-                            <option value="poly_square">Polygon - Square</option>
-                            <option value="poly_pentagon">Polygon - Pentagon</option>
-                            <option value="poly_hexagon">Polygon - Hexagon</option>
-                            <option value="poly_oct">Polygon - Octagon</option>
-                            <option value="poly_star_5">Star - 5 Point</option>
-                            <option value="poly_star_8">Star - 8 Point</option>
-                            <option value="poly_pulse">Polygon - Pulse Morph</option>
+                        <optgroup label="Geometri & Partikel">
                             <option value="poly_spin">Polygon - Spin Morph</option>
                             <option value="poly_fractal">Polygon - Simple Fractal</option>
-                        </optgroup>
-                        <optgroup label="Particles & Scatter">
-                            <option value="part_fountain">Particles - Fountain</option>
-                            <option value="part_rain">Particles - Rain</option>
-                            <option value="part_snow">Particles - Snow</option>
                             <option value="part_orbit">Particles - Orbiting</option>
-                            <option value="part_explode">Particles - Explosion</option>
-                            <option value="part_matrix">Particles - Matrix Fall</option>
-                            <option value="part_fireflies">Particles - Fireflies</option>
-                            <option value="part_dust">Particles - Floating Dust</option>
-                            <option value="part_vortex">Particles - Vortex</option>
-                            <option value="part_grid">Particles - Grid Pop</option>
+                            <option value="part_fountain">Particles - Fountain</option>
                         </optgroup>
-                        <optgroup label="Symmetrical / Mandala">
-                            <option value="sym_4">Symmetry - 4 Axis</option>
-                            <option value="sym_6">Symmetry - 6 Axis</option>
-                            <option value="sym_8">Symmetry - 8 Axis</option>
-                            <option value="sym_12">Symmetry - 12 Axis</option>
-                            <option value="sym_kaleido">Symmetry - Kaleidoscope</option>
-                            <option value="sym_mandala_1">Mandala - Style 1</option>
-                            <option value="sym_mandala_2">Mandala - Style 2</option>
-                            <option value="sym_cross">Symmetry - Cross</option>
-                            <option value="sym_x">Symmetry - X Shape</option>
-                            <option value="sym_web">Symmetry - Spider Web</option>
-                        </optgroup>
-                        <optgroup label="Line Art & Strings">
-                            <option value="line_horiz">Lines - Horizontal Stack</option>
-                            <option value="line_vert">Lines - Vertical Stack</option>
-                            <option value="line_mesh">Lines - Wireframe Mesh</option>
-                            <option value="line_curve">Lines - Flowing Curves</option>
-                            <option value="line_zigzag">Lines - Zig Zag</option>
-                            <option value="line_laser">Lines - Laser Beams</option>
-                            <option value="line_grid">Lines - 3D Grid</option>
-                            <option value="line_tunnel">Lines - Tunnel</option>
-                            <option value="line_dna">Lines - DNA Strand</option>
-                            <option value="line_pulse">Lines - Pulse String</option>
-                        </optgroup>
-                        <optgroup label="Abstract & Minimal">
+                        <optgroup label="3D & Abstrak">
+                            <option value="3d_cube">3D - Spinning Cube</option>
                             <option value="abs_blob">Abstract - Liquid Blob</option>
                             <option value="abs_rings">Abstract - Concentric Rings</option>
-                            <option value="abs_blocks">Abstract - Tetris Blocks</option>
-                            <option value="abs_orbs">Abstract - Floating Orbs</option>
-                            <option value="abs_splatter">Abstract - Paint Splatter</option>
-                            <option value="abs_geo_scatter">Abstract - Geo Scatter</option>
-                            <option value="abs_sonar">Abstract - Sonar Ping</option>
-                            <option value="abs_heartbeat">Abstract - EKG Heartbeat</option>
-                            <option value="abs_barcode">Abstract - Barcode</option>
-                            <option value="abs_crescent">Abstract - Crescent Moon</option>
-                        </optgroup>
-                         <optgroup label="3D Illusions (Fake 3D)">
-                            <option value="3d_cube">3D - Spinning Cube</option>
-                            <option value="3d_sphere">3D - Wire Sphere</option>
-                            <option value="3d_pyramid">3D - Pyramid</option>
-                            <option value="3d_cylinder">3D - Cylinder</option>
-                            <option value="3d_torus">3D - Torus Ring</option>
-                            <option value="3d_bars">3D - Extruded Bars</option>
-                            <option value="3d_plane">3D - Floor Plane</option>
-                            <option value="3d_ceiling">3D - Ceiling Plane</option>
-                            <option value="3d_hallway">3D - Hallway</option>
-                            <option value="3d_landscape">3D - Wire Landscape</option>
-                        </optgroup>
-                        <optgroup label="Experimental & Chaos">
-                            <option value="exp_noise">Chaos - Static Noise</option>
-                            <option value="exp_glitch">Chaos - Digital Glitch</option>
-                            <option value="exp_lines">Chaos - Random Lines</option>
-                            <option value="exp_tri">Chaos - Shattered Glass</option>
-                            <option value="exp_squiggles">Chaos - Squiggles</option>
-                            <option value="exp_ink">Chaos - Ink Bleed</option>
-                            <option value="exp_magnet">Chaos - Magnetic Field</option>
-                            <option value="exp_swirl">Chaos - Swirl</option>
-                            <option value="exp_radar">Chaos - Radar Sweep</option>
-                            <option value="exp_flash">Chaos - Strobe Flash</option>
                         </optgroup>
                     </select>
                 </div>
@@ -471,9 +397,12 @@
                 <div class="flex items-center gap-2">
                     <div class="flex flex-wrap gap-1 flex-1" id="bgWeatherGroup">
                         <button class="btn-custom btn-active" data-val="normal">Cerah</button>
-                        <button class="btn-custom" data-val="salju">Hujan Salju</button>
-                        <button class="btn-custom" data-val="hujan_emas">Hujan Emas</button>
-                        <button class="btn-custom" data-val="hujan_air">Hujan Air</button>
+                        <button class="btn-custom" data-val="salju">Salju</button>
+                        <button class="btn-custom" data-val="hujan_emas">H.Emas</button>
+                        <button class="btn-custom" data-val="hujan_air">H.Air</button>
+                        <button class="btn-custom" data-val="petir">Petir</button>
+                        <button class="btn-custom" data-val="asap">Asap</button>
+                        <button class="btn-custom" data-val="asap_warna">Asap RGB</button>
                     </div>
                 </div>
                 <div class="control-row">
@@ -621,10 +550,22 @@
 
                 <div class="flex items-start gap-2 mt-1">
                     <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">POSISI</span>
-                    <div class="flex flex-wrap gap-1 flex-1" id="textPosGroup">
-                        <button class="btn-custom" data-pos="top-left">↖ Kiri Atas</button>
-                        <button class="btn-custom btn-active" data-pos="top-center">⬆ Tengah</button>
-                        <button class="btn-custom" data-pos="top-right">↗ Kanan Atas</button>
+                    <div class="flex flex-col gap-1 flex-1" id="textPosGroup">
+                        <div class="grid grid-cols-3 gap-1">
+                            <button class="btn-custom !px-1 text-[10px]" data-pos="top-left">↖ Kiri</button>
+                            <button class="btn-custom btn-active !px-1 text-[10px]" data-pos="top-center">⬆ Tengah</button>
+                            <button class="btn-custom !px-1 text-[10px]" data-pos="top-right">↗ Kanan</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1">
+                            <div></div>
+                            <button class="btn-custom !px-1 text-[10px]" data-pos="middle-center">⏺ Presisi</button>
+                            <div></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1">
+                            <button class="btn-custom !px-1 text-[10px]" data-pos="bottom-left">↙ Kiri</button>
+                            <button class="btn-custom !px-1 text-[10px]" data-pos="bottom-center">⬇ Tengah</button>
+                            <button class="btn-custom !px-1 text-[10px]" data-pos="bottom-right">↘ Kanan</button>
+                        </div>
                     </div>
                 </div>
 
@@ -710,20 +651,9 @@
     </div>
 
     <script>
-        // --- STREAMING_CHUNK:PWA Service Worker Registration ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, err => {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
-
         const state = {
-            viz: { align: 'tengah', size: 0.5, width: 0.5, type: 'bars', offsetX: 0, offsetY: 0 },
-            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: 'normal', darkness: 0.3, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
+            viz: { enabled: true, align: 'tengah', size: 0.5, width: 0.5, type: 'bars', offsetX: 0, offsetY: 0 },
+            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0.3, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'center', animSpeed: 50 }
         };
@@ -757,7 +687,47 @@
 
         bindButtonGroup('vizAlignGroup', 'viz', 'align');
         bindButtonGroup('bgEffectGroup', 'bg', 'effect');
-        bindButtonGroup('bgWeatherGroup', 'bg', 'weather');
+        
+        // --- STREAMING_CHUNK:Custom binding for combinable weather effects... ---
+        const weatherGroup = document.getElementById('bgWeatherGroup');
+        if (weatherGroup) {
+            const buttons = weatherGroup.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const val = btn.getAttribute('data-val');
+                    
+                    if (val === 'normal') {
+                        // Reset ke normal
+                        buttons.forEach(b => b.classList.remove('btn-active'));
+                        btn.classList.add('btn-active');
+                        state.bg.weather = ['normal'];
+                    } else {
+                        // Toggle efek lain
+                        btn.classList.toggle('btn-active');
+                        
+                        // Hapus 'normal' jika ada efek lain yang aktif
+                        const normalBtn = weatherGroup.querySelector('button[data-val="normal"]');
+                        if (normalBtn && normalBtn.classList.contains('btn-active')) {
+                            normalBtn.classList.remove('btn-active');
+                            state.bg.weather = state.bg.weather.filter(w => w !== 'normal');
+                        }
+                        
+                        // Update state array
+                        if (btn.classList.contains('btn-active')) {
+                            if (!state.bg.weather.includes(val)) state.bg.weather.push(val);
+                        } else {
+                            state.bg.weather = state.bg.weather.filter(w => w !== val);
+                        }
+                        
+                        // Jika tidak ada yang aktif, kembali ke normal
+                        if (state.bg.weather.length === 0) {
+                            if (normalBtn) normalBtn.classList.add('btn-active');
+                            state.bg.weather = ['normal'];
+                        }
+                    }
+                });
+            });
+        }
         
         bindButtonGroup('overlayBlendGroup', 'overlay', 'blend');
         bindButtonGroup('overlayAnimGroup', 'overlay', 'anim');
@@ -779,22 +749,40 @@
                 const cx = w / 2;
                 
                 // Base coordinate in drawCanvas is: cx + offsetX, (h * 0.15) + offsetY
+                // Menggunakan persentase (h * 0.05 untuk atas, h * 0.95 untuk bawah) agar sejajar matematis dan lebih dekat ke tepi
                 if (pos === 'top-left') {
-                    state.textFx.offsetX = -cx + 40;
-                    state.textFx.offsetY = -(h * 0.15) + 40;
+                    state.textFx.offsetX = -cx + (w * 0.05);
+                    state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
                     document.querySelector('#textAlignGroup button[data-val="left"]').click();
                 } else if (pos === 'top-right') {
-                    state.textFx.offsetX = cx - 40;
-                    state.textFx.offsetY = -(h * 0.15) + 40;
+                    state.textFx.offsetX = cx - (w * 0.05);
+                    state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
                     document.querySelector('#textAlignGroup button[data-val="right"]').click();
                 } else if (pos === 'top-center') {
                     state.textFx.offsetX = 0;
-                    state.textFx.offsetY = 0;
+                    state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
                     document.querySelector('#textAlignGroup button[data-val="center"]').click();
+                } else if (pos === 'middle-center') {
+                    state.textFx.offsetX = 0;
+                    state.textFx.offsetY = (h / 2) - (h * 0.15);
+                    document.querySelector('#textAlignGroup button[data-val="center"]').click();
+                } else if (pos === 'bottom-left') {
+                    state.textFx.offsetX = -cx + (w * 0.05);
+                    state.textFx.offsetY = h - (h * 0.15) - (h * 0.05);
+                    document.querySelector('#textAlignGroup button[data-val="left"]').click();
+                } else if (pos === 'bottom-center') {
+                    state.textFx.offsetX = 0;
+                    state.textFx.offsetY = h - (h * 0.15) - (h * 0.05);
+                    document.querySelector('#textAlignGroup button[data-val="center"]').click();
+                } else if (pos === 'bottom-right') {
+                    state.textFx.offsetX = cx - (w * 0.05);
+                    state.textFx.offsetY = h - (h * 0.15) - (h * 0.05);
+                    document.querySelector('#textAlignGroup button[data-val="right"]').click();
                 }
             });
         });
 
+        document.getElementById('vizEnable').addEventListener('change', (e) => { state.viz.enabled = e.target.checked; });
         document.getElementById('textEnable').addEventListener('change', (e) => { state.textFx.enabled = e.target.checked; });
         document.getElementById('textCustomInput').addEventListener('input', (e) => { state.textFx.customText = e.target.value; });
         
@@ -910,6 +898,8 @@
         let snowflakes = [];
         let raindrops = [];
         let goldDrops = [];
+        let lightnings = [];
+        let smokes = [];
         
         const maxSnowflakes = 150;
         let particles = [];
@@ -922,6 +912,29 @@
         let typewriterProgress = 0;
         let lastTrackForText = "";
         let textTransitionStart = 0;
+
+        function generateLightning(startX, startY, h) {
+            let segments = [{x: startX, y: startY}];
+            let curX = startX;
+            let curY = startY;
+            while (curY < h) {
+                curX += (Math.random() - 0.5) * 80; 
+                curY += Math.random() * 50 + 20; 
+                let branch = null;
+                if (Math.random() > 0.75) {
+                    branch = [];
+                    let bx = curX;
+                    let by = curY;
+                    for (let b = 0; b < 3; b++) {
+                        bx += (Math.random() - 0.5) * 60;
+                        by += Math.random() * 40 + 10;
+                        branch.push({x: bx, y: by});
+                    }
+                }
+                segments.push({x: curX, y: curY, branch: branch});
+            }
+            return segments;
+        }
 
         function createParticle(x, y, vX, vY, size, color) {
             return { x, y, vX, vY, size, color, life: 1, maxLife: Math.random() * 50 + 20 };
@@ -1193,14 +1206,18 @@
                 ...window.audioDest.stream.getAudioTracks()
             ]);
             
+            // Mengoptimalkan bitrate ke 3.5 Mbps: Kualitas jernih, file tetap kecil dan anti patah-patah
             let options = { videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000 };
             
-            if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4d002a, mp4a.40.2"')) {
+            // Memilih Codec yang paling ringan (Hardware Accelerated H.264 Baseline diutamakan agar tidak patah-patah)
+            if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
+                options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
+            } else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4d002a, mp4a.40.2"')) {
                 options.mimeType = 'video/mp4; codecs="avc1.4d002a, mp4a.40.2"';
             } else if (MediaRecorder.isTypeSupported('video/mp4')) {
                 options.mimeType = 'video/mp4';
             } else {
-                options.mimeType = 'video/webm; codecs=vp9,opus'; // Fallback
+                options.mimeType = 'video/webm; codecs=vp8,opus'; // Fallback ke VP8 (lebih ringan dari VP9)
             }
 
             mediaRecorder = new MediaRecorder(combinedStream, options);
@@ -1219,7 +1236,9 @@
                 if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('stop');
                 requestAnimationFrame(() => renderLoop(false));
 
-                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                // Ekstrak tipe mime untuk memastikan file tidak korup
+                let actualMimeType = mediaRecorder.mimeType || 'video/mp4';
+                const blob = new Blob(recordedChunks, { type: actualMimeType });
                 
                 // NAMA FILE OTOMATIS: samakan dengan nama file audio
                 let downloadName = 'viz_export';
@@ -1228,7 +1247,10 @@
                     // Hapus ekstensi audio (.mp3, .wav) agar nama video bersih (namalagu.mp4)
                     downloadName = audioName.substring(0, audioName.lastIndexOf('.')) || audioName;
                 }
-                downloadName += '.mp4';
+                
+                // Tentukan ekstensi berdasarkan mimeType fallback
+                let ext = actualMimeType.includes('webm') ? '.webm' : '.mp4';
+                downloadName += ext;
                 
                 // --- STREAMING_CHUNK:Simpan file ke folder otomatis tanpa popup block browser... ---
                 let saveSuccess = false;
@@ -1300,7 +1322,9 @@
                 }
             };
             
-            mediaRecorder.start();
+            // Timeslice 1000ms: Memecah data video per 1 detik saat merekam. 
+            // Ini SANGAT MENGURANGI beban RAM dan mencegah patah-patah/lag parah selama rekaman.
+            mediaRecorder.start(1000);
             isRecording = true;
             
             const btn = document.getElementById('btnRekam');
@@ -1518,7 +1542,7 @@
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
 
             // Snow Effect
-            if (state.bg.weather === 'salju') {
+            if (state.bg.weather.includes('salju')) {
                 let currentMaxSnow = state.bg.snowIntensity * 4;
                 let spawnChance = 0.9 - (state.bg.snowIntensity / 150);
                 
@@ -1551,7 +1575,7 @@
             }
             
             // Hujan Air
-            if (state.bg.weather === 'hujan_air') {
+            if (state.bg.weather.includes('hujan_air')) {
                 let currentMaxRain = state.bg.snowIntensity * 6;
                 let spawnChance = 0.8 - (state.bg.snowIntensity / 200);
                 
@@ -1585,7 +1609,7 @@
             }
 
             // Hujan Emas
-            if (state.bg.weather === 'hujan_emas') {
+            if (state.bg.weather.includes('hujan_emas')) {
                 let currentMaxGold = state.bg.snowIntensity * 3;
                 let spawnChance = 0.85 - (state.bg.snowIntensity / 200);
                 
@@ -1617,6 +1641,116 @@
                     if (p.y > h) goldDrops.splice(i, 1);
                 }
                 ctx.globalAlpha = 1.0;
+            }
+
+            // Efek Petir
+            if (state.bg.weather.includes('petir')) {
+                let strikeChance = 0.99 - (state.bg.snowIntensity / 1000) - (audioReactivity * 0.05); 
+                if (Math.random() > strikeChance) {
+                    let x = Math.random() * w;
+                    lightnings.push({
+                        x: x, y: 0,
+                        segments: generateLightning(x, 0, h),
+                        life: 1.0,
+                        flash: Math.random() > 0.4
+                    });
+                }
+
+                for (let i = lightnings.length - 1; i >= 0; i--) {
+                    let l = lightnings[i];
+                    l.life -= 0.06 * weatherSpeedMult;
+                    
+                    if (l.flash && l.life > 0.7) {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${l.life * 0.2})`;
+                        ctx.fillRect(0, 0, w, h);
+                    }
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = `rgba(220, 230, 255, ${l.life})`;
+                    ctx.lineWidth = 2 + (l.life * 2);
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "rgba(150, 180, 255, 0.8)";
+                    
+                    if (l.segments.length > 0) {
+                        ctx.moveTo(l.segments[0].x, l.segments[0].y);
+                        for (let j = 1; j < l.segments.length; j++) {
+                            ctx.lineTo(l.segments[j].x, l.segments[j].y);
+                        }
+                    }
+                    ctx.stroke();
+
+                    ctx.lineWidth = 1 + (l.life * 1);
+                    for (let j = 0; j < l.segments.length; j++) {
+                        let seg = l.segments[j];
+                        if (seg.branch) {
+                            ctx.beginPath();
+                            ctx.moveTo(seg.x, seg.y);
+                            for (let k = 0; k < seg.branch.length; k++) {
+                                ctx.lineTo(seg.branch[k].x, seg.branch[k].y);
+                            }
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.shadowBlur = 0;
+
+                    if (l.life <= 0) lightnings.splice(i, 1);
+                }
+            }
+            
+            // Efek Asap & Asap Warna
+            if (state.bg.weather.includes('asap') || state.bg.weather.includes('asap_warna')) {
+                let maxSmokes = state.bg.snowIntensity * 1.5;
+                let spawnChance = 0.85 - (state.bg.snowIntensity / 300);
+                
+                if (smokes.length < maxSmokes && Math.random() > spawnChance) {
+                    let spawnCount = Math.ceil(state.bg.snowIntensity / 20);
+                    for(let k=0; k<spawnCount; k++) {
+                        if (smokes.length >= maxSmokes) break;
+                        
+                        let hue = 0;
+                        if (state.bg.weather.includes('asap_warna')) {
+                            hue = (Date.now() / 20 + Math.random() * 50) % 360; 
+                        }
+
+                        smokes.push({
+                            x: Math.random() * w,
+                            y: h + 50,
+                            r: Math.random() * 30 + 20,
+                            vx: (Math.random() - 0.5) * 1.5,
+                            vy: -(Math.random() * 2 + 1),
+                            life: 1.0,
+                            decay: Math.random() * 0.006 + 0.003,
+                            hue: hue
+                        });
+                    }
+                }
+                
+                for (let i = smokes.length - 1; i >= 0; i--) {
+                    let s = smokes[i];
+                    
+                    s.x += s.vx * weatherSpeedMult * (1 + audioReactivity * 0.5);
+                    s.y += s.vy * weatherSpeedMult * (1 + audioReactivity * 0.5);
+                    s.r += 0.4 * weatherSpeedMult;
+                    s.life -= s.decay * weatherSpeedMult;
+                    
+                    if (s.life > 0) {
+                        let grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+                        if (state.bg.weather.includes('asap_warna')) {
+                            grad.addColorStop(0, `hsla(${s.hue}, 80%, 60%, ${s.life * 0.2})`);
+                            grad.addColorStop(1, `hsla(${s.hue}, 80%, 60%, 0)`);
+                        } else {
+                            grad.addColorStop(0, `rgba(180, 190, 200, ${s.life * 0.15})`);
+                            grad.addColorStop(1, `rgba(180, 190, 200, 0)`);
+                        }
+                        
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    if (s.life <= 0 || s.y < -s.r) smokes.splice(i, 1);
+                }
             }
 
             // Helper for overlay
@@ -1695,7 +1829,7 @@
             if (state.overlay.lapisan === 'belakang') drawOverlayObj();
 
             // Visualizer Rendering (Solid color, No Glow)
-            if(dataArray && audioElement.src) {
+            if(state.viz.enabled && dataArray && audioElement.src) {
                 let time = Date.now() / 1000;
                 let baseHue = (time * 15) % 360; 
                 
@@ -1948,6 +2082,450 @@
                         analyser.getByteFrequencyData(dataArray);
                     }
                 }
+                else if (state.viz.type.startsWith('modern')) {
+                    if (state.viz.type === 'modern_plexus') {
+                        if (!window.plexusNodes || window.plexusNodes.length !== 40) {
+                            window.plexusNodes = Array.from({length: 40}, () => ({
+                                x: (Math.random()-0.5)*w*0.5, y: (Math.random()-0.5)*h*0.5,
+                                vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2
+                            }));
+                        }
+                        let radiusScale = state.viz.size * h * 0.4;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        ctx.lineWidth = 1;
+                        for(let i=0; i<window.plexusNodes.length; i++) {
+                            let n = window.plexusNodes[i];
+                            let val = (dataArray[i * 2] || 0) / 255;
+                            n.x += n.vx * (1 + audioReactivity*2);
+                            n.y += n.vy * (1 + audioReactivity*2);
+                            
+                            let limit = radiusScale * 1.5;
+                            if(n.x > limit || n.x < -limit) n.vx *= -1;
+                            if(n.y > limit || n.y < -limit) n.vy *= -1;
+
+                            ctx.fillStyle = `hsl(${baseHue}, 100%, 60%)`;
+                            ctx.beginPath();
+                            ctx.arc(n.x, n.y, 2 + (val * 5), 0, Math.PI*2);
+                            ctx.fill();
+
+                            for(let j=i+1; j<window.plexusNodes.length; j++) {
+                                let n2 = window.plexusNodes[j];
+                                let dist = Math.hypot(n.x-n2.x, n.y-n2.y);
+                                let connectDist = radiusScale * 0.8;
+                                if(dist < connectDist) {
+                                    ctx.globalAlpha = 1 - (dist / connectDist);
+                                    ctx.strokeStyle = `hsl(${(baseHue + 30)%360}, 100%, 60%)`;
+                                    ctx.beginPath();
+                                    ctx.moveTo(n.x, n.y);
+                                    ctx.lineTo(n2.x, n2.y);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - radiusScale*1.5, y: currentVizY - radiusScale*1.5, w: radiusScale*3, h: radiusScale*3 };
+                    } 
+                    else if (state.viz.type === 'modern_neon_ring') {
+                        let radius = h * state.viz.size * 0.4;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        ctx.shadowBlur = 15;
+                        
+                        for (let i = 0; i < 3; i++) {
+                            let val = (dataArray[i * 10] || 0) / 255;
+                            let r = radius * (1 + i * 0.2) + (val * 40 * widthFactor);
+                            let rot = time * (i % 2 === 0 ? 1 : -1) * 0.5;
+                            
+                            ctx.shadowColor = `hsl(${(baseHue + i*40)%360}, 100%, 60%)`;
+                            ctx.strokeStyle = `hsl(${(baseHue + i*40)%360}, 100%, 60%)`;
+                            ctx.lineWidth = 4 + val * 6;
+                            
+                            ctx.beginPath();
+                            if (i === 1) ctx.setLineDash([15, 15]);
+                            else if (i === 2) ctx.setLineDash([5, 20]);
+                            
+                            ctx.arc(0, 0, r, rot, rot + Math.PI * 1.5);
+                            ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - radius*2, y: currentVizY - radius*2, w: radius*4, h: radius*4 };
+                    }
+                    else if (state.viz.type === 'modern_gradient_wave') {
+                        analyser.getByteTimeDomainData(dataArray);
+                        const totalWaveWidth = w * widthFactor * 1.5;
+                        const sliceW = totalWaveWidth / dataArray.length;
+                        let startWaveX = currentCx - (totalWaveWidth / 2);
+                        const amp = state.viz.size * 2.5;
+                        
+                        let grad = ctx.createLinearGradient(startWaveX, 0, startWaveX + totalWaveWidth, 0);
+                        grad.addColorStop(0, `hsl(${baseHue}, 100%, 50%)`);
+                        grad.addColorStop(0.5, `hsl(${(baseHue + 60)%360}, 100%, 50%)`);
+                        grad.addColorStop(1, `hsl(${(baseHue + 120)%360}, 100%, 50%)`);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(startWaveX, currentVizY + (h/2*amp));
+                        let prevX = startWaveX;
+                        let prevY = currentVizY + (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
+                        ctx.lineTo(prevX, prevY);
+                        
+                        for (let i = 1; i < dataArray.length; i++) {
+                            let v = dataArray[i] / 128.0; 
+                            let x = startWaveX + (i * sliceW);
+                            let y = currentVizY + ((v - 1) * (h / 2) * amp);
+                            let xc = (prevX + x) / 2;
+                            let yc = (prevY + y) / 2;
+                            ctx.quadraticCurveTo(prevX, prevY, xc, yc);
+                            prevX = x; prevY = y;
+                        }
+                        ctx.lineTo(prevX, prevY);
+                        ctx.lineTo(startWaveX + totalWaveWidth, currentVizY + (h/2*amp));
+                        ctx.closePath();
+                        
+                        ctx.fillStyle = grad;
+                        ctx.globalAlpha = 0.8;
+                        ctx.fill();
+                        
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = `hsl(${(baseHue + 60)%360}, 100%, 70%)`;
+                        ctx.globalAlpha = 1.0;
+                        
+                        ctx.beginPath();
+                        prevX = startWaveX;
+                        prevY = currentVizY + (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
+                        ctx.moveTo(prevX, prevY);
+                        for (let i = 1; i < dataArray.length; i++) {
+                            let v = dataArray[i] / 128.0; 
+                            let x = startWaveX + (i * sliceW);
+                            let y = currentVizY + ((v - 1) * (h / 2) * amp);
+                            let xc = (prevX + x) / 2;
+                            let yc = (prevY + y) / 2;
+                            ctx.quadraticCurveTo(prevX, prevY, xc, yc);
+                            prevX = x; prevY = y;
+                        }
+                        ctx.lineTo(prevX, prevY);
+                        ctx.stroke();
+                        
+                        analyser.getByteFrequencyData(dataArray); 
+                        bboxes.viz = { x: startWaveX, y: currentVizY - (h/2*amp), w: totalWaveWidth, h: h*amp*2 };
+                    }
+                    else if (state.viz.type === 'modern_cyber_bars') {
+                        const barCount = 48;
+                        const spacing = 8 * widthFactor; 
+                        const totalW = barCount * spacing;
+                        let startX = currentCx - (totalW / 2);
+                        const maxH = h * state.viz.size;
+                        
+                        if (!window.cyberCaps || window.cyberCaps.length !== barCount) {
+                            window.cyberCaps = new Array(barCount).fill(0);
+                        }
+                        
+                        ctx.shadowBlur = 10;
+                        for (let i = 0; i < barCount; i++) {
+                            const dataIndex = Math.floor(i * (dataArray.length / barCount) * 0.7);
+                            let val = dataArray[dataIndex] || 0;
+                            let barH = Math.max(2, (val / 255) * maxH); 
+                            let barThickness = Math.max(3, spacing - (3 * widthFactor));
+                            let xPos = startX + (i * spacing);
+                            
+                            let barColor = `hsl(${(baseHue + i*(90/barCount))%360}, 100%, 50%)`;
+                            ctx.shadowColor = barColor;
+                            ctx.fillStyle = barColor;
+                            
+                            if (state.viz.align === 'tengah') {
+                                ctx.fillRect(xPos, currentVizY - (barH/2), barThickness, barH);
+                                
+                                if (barH/2 > window.cyberCaps[i]) window.cyberCaps[i] = barH/2; 
+                                else window.cyberCaps[i] -= 2;
+                                
+                                let capOffset = Math.max(barH/2, window.cyberCaps[i]) + 5;
+                                ctx.fillStyle = '#ffffff';
+                                ctx.shadowColor = '#ffffff';
+                                ctx.fillRect(xPos, currentVizY - capOffset - 3, barThickness, 3);
+                                ctx.fillRect(xPos, currentVizY + capOffset, barThickness, 3);
+                            } else {
+                                ctx.fillRect(xPos, currentVizY - barH, barThickness, barH);
+                                
+                                if (barH > window.cyberCaps[i]) window.cyberCaps[i] = barH; 
+                                else window.cyberCaps[i] -= 2;
+                                
+                                let capY = currentVizY - Math.max(barH, window.cyberCaps[i]) - 5;
+                                ctx.fillStyle = '#ffffff';
+                                ctx.shadowColor = '#ffffff';
+                                ctx.fillRect(xPos, capY - 3, barThickness, 3);
+                            }
+                        }
+                        ctx.shadowBlur = 0;
+                        bboxes.viz = { x: startX, y: currentVizY - maxH - 20, w: totalW, h: maxH * 2 + 40 };
+                    }
+                    else if (state.viz.type === 'modern_hologram') {
+                        let radius = h * state.viz.size * 0.6;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        ctx.scale(1, 0.35); // Efek 3D ditarik
+                        ctx.rotate(time * 0.2);
+                        
+                        ctx.lineWidth = 2;
+                        for (let ring = 1; ring <= 5; ring++) {
+                            let r = radius * (ring / 5);
+                            ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, ${0.2 + (ring*0.1)})`;
+                            ctx.beginPath();
+                            ctx.arc(0, 0, r, 0, Math.PI * 2);
+                            ctx.stroke();
+                            
+                            let segments = ring * 12;
+                            for (let i = 0; i < segments; i++) {
+                                let val = (dataArray[(i * ring * 2) % dataArray.length] || 0) / 255;
+                                if (val > 0.4) {
+                                    let startAngle = (i / segments) * Math.PI * 2;
+                                    let endAngle = startAngle + (Math.PI * 2 / segments) * 0.7;
+                                    
+                                    ctx.beginPath();
+                                    ctx.strokeStyle = `hsla(${(baseHue + 180)%360}, 100%, 60%, ${val})`;
+                                    ctx.lineWidth = 4 * widthFactor + (val * 12);
+                                    ctx.arc(0, 0, r, startAngle, endAngle);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                        
+                        ctx.restore();
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        
+                        let pillarVal = (dataArray[0] || 0) / 255;
+                        let pillarH = pillarVal * radius * 1.8;
+                        
+                        let grad = ctx.createLinearGradient(0, 0, 0, -pillarH);
+                        grad.addColorStop(0, `hsla(${baseHue}, 100%, 60%, 0.9)`);
+                        grad.addColorStop(1, `hsla(${baseHue}, 100%, 60%, 0)`);
+                        
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.moveTo(-15*widthFactor, 0);
+                        ctx.lineTo(15*widthFactor, 0);
+                        ctx.lineTo(0, -pillarH);
+                        ctx.fill();
+                        
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - radius, y: currentVizY - radius, w: radius*2, h: radius*2 };
+                    }
+                    else if (state.viz.type === 'modern_scifi_radar') {
+                        let radius = h * state.viz.size * 0.5;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        
+                        // Cincin luar statis
+                        ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, 0.3)`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
+                        
+                        // Cincin data yang merespon audio dan berputar
+                        for (let i = 0; i < 3; i++) {
+                            let val = (dataArray[i * 15] || 0) / 255;
+                            ctx.beginPath();
+                            ctx.strokeStyle = `hsla(${(baseHue + 40*i)%360}, 100%, 60%, 0.8)`;
+                            ctx.lineWidth = 4 + (val * 12 * widthFactor);
+                            let rotSpeed = time * (i + 1) * 0.5;
+                            ctx.arc(0, 0, radius * (0.4 + i*0.2) + (val*10), rotSpeed, rotSpeed + Math.PI*(0.5 + val));
+                            ctx.stroke();
+                        }
+                        
+                        // Radar Sweep (Pancaran radar)
+                        let sweepGrad = ctx.createConicGradient(time * 3, 0, 0);
+                        sweepGrad.addColorStop(0, `hsla(${baseHue}, 100%, 60%, 0)`);
+                        sweepGrad.addColorStop(0.8, `hsla(${baseHue}, 100%, 60%, 0.1)`);
+                        sweepGrad.addColorStop(1, `hsla(${baseHue}, 100%, 60%, 0.6)`);
+                        ctx.fillStyle = sweepGrad;
+                        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+
+                        // Inti radar berdenyut
+                        ctx.fillStyle = `hsla(${(baseHue+180)%360}, 100%, 70%, 0.8)`;
+                        ctx.beginPath(); ctx.arc(0, 0, radius * 0.1 * (1 + audioReactivity * 2.5), 0, Math.PI * 2); ctx.fill();
+
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - radius, y: currentVizY - radius, w: radius*2, h: radius*2 };
+                    }
+                    else if (state.viz.type === 'modern_infinity_tunnel') {
+                        let maxRadius = h * state.viz.size;
+                        let tunnelDepth = 15;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        
+                        for (let i = tunnelDepth; i > 0; i--) {
+                            // Hitung progres kedalaman berdasarkan waktu untuk ilusi maju ke dalam
+                            let progress = ((time * 0.5) + (i / tunnelDepth)) % 1.0;
+                            let currentRadius = maxRadius * Math.pow(progress, 1.5); 
+                            
+                            if (currentRadius < 2) continue;
+
+                            let val = (dataArray[Math.floor((1-progress) * dataArray.length * 0.4)] || 0) / 255;
+                            let alpha = Math.sin(progress * Math.PI); // Pudar di tengah dan pudar di luar
+
+                            ctx.strokeStyle = `hsla(${(baseHue + progress*360)%360}, 100%, 60%, ${alpha})`;
+                            ctx.lineWidth = 1 + (progress * 5 * widthFactor) + (val * 8);
+                            ctx.shadowBlur = 15 * progress;
+                            ctx.shadowColor = ctx.strokeStyle;
+
+                            // Gambar Segienam yang berotasi
+                            ctx.beginPath();
+                            let sides = 6;
+                            let rot = progress * Math.PI + (time * 0.3);
+                            for (let s = 0; s <= sides; s++) {
+                                let angle = rot + (s * Math.PI * 2 / sides);
+                                let x = Math.cos(angle) * currentRadius * (1 + val*0.1);
+                                let y = Math.sin(angle) * currentRadius * (1 + val*0.1);
+                                if (s === 0) ctx.moveTo(x, y);
+                                else ctx.lineTo(x, y);
+                            }
+                            ctx.stroke();
+                        }
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - maxRadius, y: currentVizY - maxRadius, w: maxRadius*2, h: maxRadius*2 };
+                    }
+                    else if (state.viz.type === 'modern_liquid_orb') {
+                        let baseRadius = h * state.viz.size * 0.4;
+                        let points = 90;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        ctx.beginPath();
+                        
+                        let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, baseRadius * 2);
+                        grad.addColorStop(0, `hsla(${baseHue}, 100%, 70%, 0.8)`);
+                        grad.addColorStop(0.5, `hsla(${(baseHue+60)%360}, 100%, 50%, 0.6)`);
+                        grad.addColorStop(1, `hsla(${(baseHue+120)%360}, 100%, 30%, 0)`);
+                        
+                        for (let i = 0; i <= points; i++) {
+                            let angle = (i / points) * Math.PI * 2;
+                            // Petakan data audio ke sudut lingkaran dengan halus
+                            let dataIdx = Math.floor(Math.abs(Math.sin(angle)) * dataArray.length * 0.2);
+                            let val = (dataArray[dataIdx] || 0) / 255;
+                            
+                            // Efek Perlin noise tiruan menggunakan sinus
+                            let wobble = Math.sin(angle * 4 + time * 3) * 15 * widthFactor;
+                            let wobble2 = Math.cos(angle * 7 - time * 2) * 8 * widthFactor;
+                            
+                            let r = baseRadius + wobble + wobble2 + (val * baseRadius * audioReactivity * 2.5);
+                            let x = Math.cos(angle) * r;
+                            let y = Math.sin(angle) * r;
+                            
+                            if (i === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        
+                        ctx.fillStyle = grad;
+                        ctx.shadowBlur = 20 + (audioReactivity * 40);
+                        ctx.shadowColor = `hsl(${baseHue}, 100%, 50%)`;
+                        ctx.fill();
+                        
+                        // Cahaya core dalam
+                        ctx.beginPath(); ctx.arc(0, 0, baseRadius * 0.3 * (1 + audioReactivity), 0, Math.PI*2);
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fill();
+                        
+                        ctx.restore();
+                        let maxR = baseRadius * 3;
+                        bboxes.viz = { x: currentCx - maxR, y: currentVizY - maxR, w: maxR*2, h: maxR*2 };
+                    }
+                    else if (state.viz.type === 'modern_supernova') {
+                        let maxRadius = h * state.viz.size;
+                        let numRays = 120;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        ctx.rotate(time * 0.05);
+                        
+                        for (let i = 0; i < numRays; i++) {
+                            let dataIdx = Math.floor(i * (dataArray.length / numRays));
+                            let val = (dataArray[dataIdx] || 0) / 255;
+                            
+                            if (val < 0.1) continue; 
+                            
+                            let angle = (i / numRays) * Math.PI * 2;
+                            let innerR = maxRadius * 0.15 * (1 + audioReactivity);
+                            let outerR = innerR + Math.pow(val, 1.5) * maxRadius;
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(Math.cos(angle) * innerR, Math.sin(angle) * innerR);
+                            ctx.lineTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
+                            ctx.strokeStyle = `hsla(${(baseHue + val*120)%360}, 100%, 60%, ${0.2 + val*0.8})`;
+                            ctx.lineWidth = 1 + (val * 6 * widthFactor);
+                            ctx.lineCap = 'round';
+                            ctx.stroke();
+                            
+                            // Partikel di ujung sinar yang kuat
+                            if (val > 0.6) {
+                                ctx.beginPath();
+                                ctx.arc(Math.cos(angle) * (outerR + 10), Math.sin(angle) * (outerR + 10), val * 5 * widthFactor, 0, Math.PI*2);
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fill();
+                            }
+                        }
+                        
+                        // Glow pusat bintang
+                        let coreGrad = ctx.createRadialGradient(0,0,0, 0,0, maxRadius*0.2*(1+audioReactivity));
+                        coreGrad.addColorStop(0, '#ffffff');
+                        coreGrad.addColorStop(0.2, `hsla(${baseHue}, 100%, 70%, 1)`);
+                        coreGrad.addColorStop(1, `hsla(${baseHue}, 100%, 50%, 0)`);
+                        ctx.beginPath(); ctx.arc(0,0, maxRadius*0.2*(1+audioReactivity), 0, Math.PI*2);
+                        ctx.fillStyle = coreGrad; ctx.fill();
+
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - maxRadius, y: currentVizY - maxRadius, w: maxRadius*2, h: maxRadius*2 };
+                    }
+                    else if (state.viz.type === 'modern_quantum') {
+                        let fieldRadius = h * state.viz.size;
+                        let numNodes = 100;
+                        
+                        if (!window.quantumNodes || window.quantumNodes.length !== numNodes) {
+                            window.quantumNodes = Array.from({length: numNodes}, () => ({
+                                angle: Math.random() * Math.PI * 2, dist: Math.random(),
+                                speed: (Math.random() - 0.5) * 0.03, z: Math.random()
+                            }));
+                        }
+
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        
+                        window.quantumNodes.forEach((node, i) => {
+                            let val = (dataArray[i % 64] || 0) / 255;
+                            
+                            node.angle += node.speed * (1 + audioReactivity * 3);
+                            node.z -= 0.005 + (audioReactivity * 0.02);
+                            if (node.z < 0) {
+                                node.z = 1; node.dist = Math.random(); node.angle = Math.random() * Math.PI * 2;
+                            }
+
+                            // Ilusi perspektif 3D
+                            let perspective = 1 / (node.z + 0.1);
+                            let currentDist = node.dist * fieldRadius * perspective * (1 + val*0.1);
+                            
+                            let x = Math.cos(node.angle) * currentDist;
+                            let y = Math.sin(node.angle) * currentDist;
+                            
+                            // Garis laser kuantum jika ketukan bass kuat
+                            if (val > 0.6) {
+                                ctx.beginPath();
+                                ctx.moveTo(0, 0); ctx.lineTo(x, y);
+                                ctx.strokeStyle = `hsla(${(baseHue + node.z*180)%360}, 100%, 60%, ${val * 0.4})`;
+                                ctx.lineWidth = 1 * widthFactor; ctx.stroke();
+                            }
+
+                            // Node bintang
+                            let pSize = perspective * 2 * (1 + val * 3) * widthFactor;
+                            ctx.beginPath(); ctx.arc(x, y, pSize, 0, Math.PI * 2);
+                            ctx.fillStyle = `hsla(${(baseHue + node.angle*180/Math.PI)%360}, 100%, 70%, ${1 - node.z})`;
+                            ctx.fill();
+                        });
+                        
+                        // Lubang hitam (pusat)
+                        ctx.beginPath(); ctx.arc(0, 0, fieldRadius * 0.05 * (1 + audioReactivity), 0, Math.PI*2);
+                        ctx.fillStyle = '#0f1115'; ctx.fill();
+                        ctx.strokeStyle = `hsl(${baseHue}, 100%, 60%)`; ctx.lineWidth = 2; ctx.stroke();
+                        
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - fieldRadius*1.5, y: currentVizY - fieldRadius*1.5, w: fieldRadius*3, h: fieldRadius*3 };
+                    }
+                }
                 else if (state.viz.type.startsWith('poly') || state.viz.type.startsWith('sym') || state.viz.type.startsWith('abs')) {
                     let baseSize = 50 * widthFactor;
                     let size = baseSize + (Math.pow(audioReactivity, 1.5) * h * state.viz.size * 1.5);
@@ -2155,11 +2733,48 @@
                         ctx.fillText(displayText, textX + 5, textY);
                     }
                 } else if (state.textFx.anim === 'typewriter') {
-                    typewriterProgress += 0.2 * speedMult; // typing speed
-                    let charsToShow = Math.min(Math.floor(typewriterProgress), displayText.length);
+                    let len = displayText.length;
+                    let pauseFrames = 60; // Durasi diam saat teks sudah utuh
+                    let fadeFrames = 30; // Durasi efek memudar (fade out)
+                    let emptyFrames = 20; // Jeda sejenak sebelum mulai ngetik lagi
+                    let totalCycle = len + pauseFrames + fadeFrames + emptyFrames;
+                    
+                    typewriterProgress += 0.25 * speedMult; // Kecepatan ngetik
+                    
+                    // Reset siklus jika sudah mencapai ujung
+                    if (typewriterProgress >= totalCycle) {
+                        typewriterProgress = 0;
+                    }
+                    
+                    let charsToShow = 0;
+                    let showCursor = false;
+                    
+                    if (typewriterProgress < len) {
+                        // Fase 1: Mengetik maju
+                        charsToShow = Math.floor(typewriterProgress);
+                        showCursor = true;
+                    } else if (typewriterProgress < len + pauseFrames) {
+                        // Fase 2: Teks utuh & diam sejenak untuk dibaca
+                        charsToShow = len;
+                        // Kursor berkedip santai
+                        showCursor = Math.floor(time * 3 * speedMult) % 2 === 0;
+                    } else if (typewriterProgress < len + pauseFrames + fadeFrames) {
+                        // Fase 3: Memudar (Fade out)
+                        charsToShow = len;
+                        let fadeProgress = typewriterProgress - (len + pauseFrames);
+                        // Mengurangi opacity (alpha) perlahan hingga 0
+                        alpha *= Math.max(0, 1 - (fadeProgress / fadeFrames)); 
+                        showCursor = false;
+                    } else {
+                        // Fase 4: Kosong & diam sejenak
+                        charsToShow = 0;
+                        alpha = 0; // Transparan penuh
+                        showCursor = false;
+                    }
+                    
                     finalDisplayText = displayText.substring(0, charsToShow);
-                    // Add blinking cursor at the end
-                    if (charsToShow < displayText.length || Math.floor(time * 2 * speedMult) % 2 === 0) {
+                    
+                    if (showCursor) {
                         finalDisplayText += "|";
                     }
                 }
@@ -2334,6 +2949,18 @@
         canvas.addEventListener('touchstart', handleDragStart, { passive: true });
         window.addEventListener('touchmove', handleDragMove, { passive: false });
         window.addEventListener('touchend', handleDragEnd);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
 
     </script>
 </body>
