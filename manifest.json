@@ -1,11 +1,11 @@
 {
 "name": "TNC7 Visualizer",
 "short_name": "TNC7 Viz",
-"description": "Music Visualizer & Video Recorder",
+"description": "Audio visualizer and background effect creator.",
 "start_url": "./index.html",
 "display": "standalone",
 "background_color": "#0f1115",
-"theme_color": "#f59e0b",
+"theme_color": "#0f1115",
 "orientation": "portrait-primary",
 "icons": [
 {
@@ -17,6 +17,12 @@
 "src": "https://placehold.co/512x512/0f1115/f59e0b?text=TNC7",
 "sizes": "512x512",
 "type": "image/png"
+},
+{
+"src": "https://placehold.co/512x512/0f1115/f59e0b?text=TNC7",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "maskable"
 }
 ]
 }
