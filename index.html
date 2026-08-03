@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f1115">
     <title>TNC7 Visualizer</title>
-    <!-- Tambahan untuk PWA - Tema Kuning -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffb800">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/ffb800/ffffff.png?text=TNC7">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Poppins:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
@@ -81,45 +78,6 @@
         .btn-active { background-color: #10b981; border-color: #10b981; color: #ffffff; }
         .btn-danger { border-color: rgba(239, 68, 68, 0.5); color: var(--accent-red); }
         .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
-
-        /* Window Header Style (Full Kuning) */
-        .window-header {
-            background-color: #ffb800;
-            color: #111827;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            flex-shrink: 0;
-            -webkit-app-region: drag;
-        }
-        
-        .window-header-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .window-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            -webkit-app-region: no-drag;
-        }
-        
-        .window-controls i {
-            cursor: pointer;
-            font-size: 0.9rem;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-        }
-        
-        .window-controls i:hover {
-            opacity: 1;
-        }
 
         input[type=range] {
             -webkit-appearance: none;
@@ -221,6 +179,7 @@
 
         .preview-container {
             width: 100%;
+            /* Removed max-height and aspect-ratio, we'll control it via canvas styles and wrapper */
             height: calc(100vh - 150px);
             background-color: transparent; 
             border-radius: 8px;
@@ -235,6 +194,7 @@
         }
         
         canvas#previewCanvas { 
+            /* Scale canvas visually to fit container while maintaining 16:9 aspect ratio */
             max-width: 100%; 
             max-height: 100%; 
             object-fit: contain;
@@ -287,6 +247,7 @@
             z-index: 1000;
         }
 
+        /* Playlist Styles */
         .playlist-panel {
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
@@ -316,21 +277,6 @@
     </style>
 </head>
 <body>
-    <!-- Window Header -->
-    <div class="window-header">
-        <div class="window-header-title">
-            <span class="bg-red-600 text-white text-[10px] font-bold px-1 rounded-sm">TNC7</span>
-            <span>TNC7 VISUALIZER - Nikmati Prosesnya</span>
-        </div>
-        <div class="window-controls">
-            <i class="fa-regular fa-clone"></i>
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-            <i class="fa-solid fa-minus"></i>
-            <i class="fa-regular fa-square"></i>
-            <i class="fa-solid fa-xmark"></i>
-        </div>
-    </div>
-
     <div id="notification-modal">Pesan Notifikasi</div>
 
     <div class="top-bar">
@@ -394,6 +340,7 @@
                 </div>
                 
                 <div class="relative">
+                    <!-- Added relative positioning wrapper to handle scroll events locally -->
                     <select class="custom-select" id="vizTypeSelect">
                         <optgroup label="Terbaru (Modern) ⭐">
                             <option value="modern_plexus">Modern - Plexus Network</option>
@@ -737,6 +684,7 @@
         bindButtonGroup('vizAlignGroup', 'viz', 'align');
         bindButtonGroup('bgEffectGroup', 'bg', 'effect');
         
+        // --- STREAMING_CHUNK:Custom binding for combinable weather effects... ---
         const weatherGroup = document.getElementById('bgWeatherGroup');
         if (weatherGroup) {
             const buttons = weatherGroup.querySelectorAll('button');
@@ -745,24 +693,29 @@
                     const val = btn.getAttribute('data-val');
                     
                     if (val === 'normal') {
+                        // Reset ke normal
                         buttons.forEach(b => b.classList.remove('btn-active'));
                         btn.classList.add('btn-active');
                         state.bg.weather = ['normal'];
                     } else {
+                        // Toggle efek lain
                         btn.classList.toggle('btn-active');
                         
+                        // Hapus 'normal' jika ada efek lain yang aktif
                         const normalBtn = weatherGroup.querySelector('button[data-val="normal"]');
                         if (normalBtn && normalBtn.classList.contains('btn-active')) {
                             normalBtn.classList.remove('btn-active');
                             state.bg.weather = state.bg.weather.filter(w => w !== 'normal');
                         }
                         
+                        // Update state array
                         if (btn.classList.contains('btn-active')) {
                             if (!state.bg.weather.includes(val)) state.bg.weather.push(val);
                         } else {
                             state.bg.weather = state.bg.weather.filter(w => w !== val);
                         }
                         
+                        // Jika tidak ada yang aktif, kembali ke normal
                         if (state.bg.weather.length === 0) {
                             if (normalBtn) normalBtn.classList.add('btn-active');
                             state.bg.weather = ['normal'];
@@ -779,6 +732,7 @@
         bindButtonGroup('textAnimGroup', 'textFx', 'anim');
         bindButtonGroup('textAlignGroup', 'textFx', 'align');
 
+        // --- STREAMING_CHUNK:Quick position snap for text overlay... ---
         const textPosBtns = document.querySelectorAll('#textPosGroup button');
         textPosBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -790,6 +744,8 @@
                 const h = canvas.height || 720;
                 const cx = w / 2;
                 
+                // Base coordinate in drawCanvas is: cx + offsetX, (h * 0.15) + offsetY
+                // Menggunakan persentase (h * 0.05 untuk atas, h * 0.95 untuk bawah) agar sejajar matematis dan lebih dekat ke tepi
                 if (pos === 'top-left') {
                     state.textFx.offsetX = -cx + (w * 0.05);
                     state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
@@ -830,19 +786,24 @@
         textFontSelect.addEventListener('change', (e) => { state.textFx.font = e.target.value; });
         
         textFontSelect.addEventListener('wheel', (e) => {
-            e.preventDefault(); 
+            e.preventDefault(); // Mencegah scroll halaman saat berada di atas elemen select
+            
             const options = Array.from(textFontSelect.options);
             const currentIndex = textFontSelect.selectedIndex;
             
             let nextIndex = currentIndex;
             if (e.deltaY > 0) {
+                // Scroll bawah -> indeks bertambah
                 nextIndex = Math.min(currentIndex + 1, options.length - 1);
             } else if (e.deltaY < 0) {
+                // Scroll atas -> indeks berkurang
                 nextIndex = Math.max(currentIndex - 1, 0);
             }
             
+            // Jika ada perubahan indeks
             if (nextIndex !== currentIndex) {
                 textFontSelect.selectedIndex = nextIndex;
+                // Trigger event 'change' secara manual agar state font ikut terupdate
                 textFontSelect.dispatchEvent(new Event('change'));
             }
         });
@@ -851,6 +812,7 @@
         document.getElementById('textColorPicker').addEventListener('input', (e) => { state.textFx.color = e.target.value; });
         document.getElementById('textIntensitySlider').addEventListener('input', (e) => { state.textFx.intensity = parseInt(e.target.value); });
         document.getElementById('textAnimSpeedSlider').addEventListener('input', (e) => { state.textFx.animSpeed = parseInt(e.target.value); });
+
 
         document.getElementById('snowIntensitySlider').addEventListener('input', (e) => { state.bg.snowIntensity = parseInt(e.target.value); });
         document.getElementById('weatherSpeedSlider').addEventListener('input', (e) => { state.bg.weatherSpeed = parseInt(e.target.value); });
@@ -892,20 +854,28 @@
         const vizTypeSelect = document.getElementById('vizTypeSelect');
         vizTypeSelect.addEventListener('change', (e) => { state.viz.type = e.target.value; });
         
+        // --- STREAMING_CHUNK:Adding mouse scroll support for select dropdown... ---
         vizTypeSelect.addEventListener('wheel', (e) => {
-            e.preventDefault(); 
+            e.preventDefault(); // Mencegah scroll halaman saat berada di atas elemen select
+            
+            // Ambil semua opsi yang bukan <optgroup> (hanya <option>)
             const options = Array.from(vizTypeSelect.options);
             const currentIndex = vizTypeSelect.selectedIndex;
             
+            // Tentukan arah scroll (atas/bawah)
             let nextIndex = currentIndex;
             if (e.deltaY > 0) {
+                // Scroll bawah -> indeks bertambah
                 nextIndex = Math.min(currentIndex + 1, options.length - 1);
             } else if (e.deltaY < 0) {
+                // Scroll atas -> indeks berkurang
                 nextIndex = Math.max(currentIndex - 1, 0);
             }
             
+            // Jika ada perubahan indeks
             if (nextIndex !== currentIndex) {
                 vizTypeSelect.selectedIndex = nextIndex;
+                // Trigger event 'change' secara manual agar state visualizer ikut terupdate
                 vizTypeSelect.dispatchEvent(new Event('change'));
             }
         });
@@ -914,6 +884,7 @@
         document.getElementById('bgDarknessSlider').addEventListener('input', (e) => { state.bg.darkness = e.target.value / 100; });
         document.getElementById('bgPulseIntensitySlider').addEventListener('input', (e) => { state.bg.pulseIntensity = e.target.value / 100; });
 
+        // --- STREAMING_CHUNK:Audio setup and controls... ---
         let audioContext;
         let audioSource;
         let analyser;
@@ -933,6 +904,7 @@
         let playlist = [];
         let currentTrackIndex = -1;
         
+        // State for typewriter effect
         let typewriterProgress = 0;
         let lastTrackForText = "";
         let textTransitionStart = 0;
@@ -975,11 +947,13 @@
         }
         
         function resizeCanvas() {
+            // Set internal resolution to 1280x720 (HD) for consistent, high-quality recording
             canvas.width = 1280;
             canvas.height = 720;
+            // Visual scaling is handled by CSS object-fit
         }
         window.addEventListener('resize', resizeCanvas);
-        setTimeout(resizeCanvas, 100);
+        setTimeout(resizeCanvas, 100); // Call once on load
 
         function setupAudio() {
             if (audioContext) return;
@@ -988,12 +962,12 @@
             audioSource = audioContext.createMediaElementSource(audioElement);
             
             window.audioDest = audioContext.createMediaStreamDestination();
-            window.playbackGain = audioContext.createGain(); 
+            window.playbackGain = audioContext.createGain(); // Node khusus untuk mengatur volume ke speaker
             
             audioSource.connect(analyser); 
-            audioSource.connect(window.playbackGain); 
-            window.playbackGain.connect(audioContext.destination); 
-            audioSource.connect(window.audioDest); 
+            audioSource.connect(window.playbackGain); // Koneksikan audio ke GainNode
+            window.playbackGain.connect(audioContext.destination); // Koneksikan GainNode ke speaker
+            audioSource.connect(window.audioDest); // Rekaman tetap dapat audio langsung tanpa melewati GainNode
             
             analyser.fftSize = 256;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -1025,6 +999,7 @@
             const sidebarRight = document.getElementById('sidebarRight');
             document.getElementById('playlistCount').textContent = `${playlist.length} lagu`;
             
+            // Memastikan sidebar kanan tetap selalu tampil
             sidebarRight.style.display = 'flex';
 
             container.innerHTML = '';
@@ -1037,15 +1012,16 @@
                 nameSpan.textContent = item.file.name;
                 nameSpan.onclick = () => {
                     loadTrack(index);
-                    playAudio(true); 
+                    playAudio(true); // force play when clicking a track
                 };
                 
+                // Diubah menggunakan <button> agar area klik (hitbox) lebih besar dan responsif
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-track-btn';
                 removeBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
                 removeBtn.title = 'Hapus lagu ini';
                 removeBtn.onclick = (e) => {
-                    e.stopPropagation(); 
+                    e.stopPropagation(); // Mencegah klik terhitung sebagai memutar lagu
                     removeTrack(index);
                 };
 
@@ -1059,15 +1035,18 @@
             if (index < 0 || index >= playlist.length) return;
             playlist.splice(index, 1);
             
+            // Memberikan respon visual ketika lagu dihapus
             showNotification("Lagu berhasil dihapus");
             
             if (playlist.length === 0) {
                 clearAllAudio();
             } else {
                 if (currentTrackIndex === index) {
+                    // if removing currently playing track, load the next one (or previous if it was the last)
                     let nextIndex = index >= playlist.length ? playlist.length - 1 : index;
                     loadTrack(nextIndex);
                 } else if (currentTrackIndex > index) {
+                    // adjust index if a track before the current one was removed
                     currentTrackIndex--;
                 }
                 renderPlaylist();
@@ -1101,6 +1080,7 @@
             } else {
                 renderPlaylist();
             }
+            // Reset input so the same files can be selected again if needed
             e.target.value = '';
         });
 
@@ -1140,14 +1120,17 @@
             const current = audioElement.currentTime;
             const duration = audioElement.duration;
             
+            // Update teks waktu (contoh: 1:05 / 3:40)
             timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
             
+            // Update panjang garis biru dan posisi titik putih
             const percent = (current / duration) * 100;
             progressBar.style.width = `${percent}%`;
             progressHandle.style.left = `${percent}%`;
         });
 
         audioElement.addEventListener('loadedmetadata', () => {
+            // Tampilkan total waktu seketika saat lagu dimuat
             timeDisplay.textContent = `0:00 / ${formatTime(audioElement.duration)}`;
             progressBar.style.width = `0%`;
             progressHandle.style.left = `0%`;
@@ -1177,12 +1160,13 @@
             if (isRecording) {
                 if (currentTrackIndex < playlist.length - 1) {
                     autoNextTrackIndex = currentTrackIndex + 1;
-                    stopRecording(false); 
+                    stopRecording(false); // Stop rekam untuk unduh, lalu lanjut otomatis
                 } else {
-                    stopRecording(false); 
+                    stopRecording(false); // Playlist selesai, stop rekam
                 }
             } else {
                 if (currentTrackIndex < playlist.length - 1) {
+                    // Play next track
                     loadTrack(currentTrackIndex + 1);
                     playAudio(true);
                 } else {
@@ -1198,15 +1182,17 @@
             audioElement.currentTime = ((e.clientX - rect.left) / rect.width) * audioElement.duration;
         });
 
+        // --- STREAMING_CHUNK:Media recording logic... ---
         let mediaRecorder;
         let recordedChunks = [];
         let isRecording = false;
         let autoNextTrackIndex = -1;
-        let exportDirectoryHandle = null; 
+        let exportDirectoryHandle = null; // Menyimpan izin akses folder untuk batch download
 
         function startRecording() {
             setupAudio();
             
+            // Matikan suara (mute) yang keluar dari speaker saat merekam
             if (window.playbackGain) window.playbackGain.gain.value = 0;
 
             const canvasStream = canvas.captureStream(30);
@@ -1216,8 +1202,10 @@
                 ...window.audioDest.stream.getAudioTracks()
             ]);
             
+            // Mengoptimalkan bitrate ke 3.5 Mbps: Kualitas jernih, file tetap kecil dan anti patah-patah
             let options = { videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000 };
             
+            // Memilih Codec yang paling ringan (Hardware Accelerated H.264 Baseline diutamakan agar tidak patah-patah)
             if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
                 options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
             } else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4d002a, mp4a.40.2"')) {
@@ -1225,11 +1213,12 @@
             } else if (MediaRecorder.isTypeSupported('video/mp4')) {
                 options.mimeType = 'video/mp4';
             } else {
-                options.mimeType = 'video/webm; codecs=vp8,opus'; 
+                options.mimeType = 'video/webm; codecs=vp8,opus'; // Fallback ke VP8 (lebih ringan dari VP9)
             }
 
             mediaRecorder = new MediaRecorder(combinedStream, options);
             
+            // Aktifkan background rendering agar animasi tidak berhenti saat tab di-minimize
             isBackgroundRender = true;
             if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('start');
             
@@ -1238,22 +1227,28 @@
             };
             
             mediaRecorder.onstop = async () => {
+                // Matikan background rendering
                 isBackgroundRender = false;
                 if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('stop');
                 requestAnimationFrame(() => renderLoop(false));
 
+                // Ekstrak tipe mime untuk memastikan file tidak korup
                 let actualMimeType = mediaRecorder.mimeType || 'video/mp4';
                 const blob = new Blob(recordedChunks, { type: actualMimeType });
                 
+                // NAMA FILE OTOMATIS: samakan dengan nama file audio
                 let downloadName = 'viz_export';
                 if (currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
                     let audioName = playlist[currentTrackIndex].file.name;
+                    // Hapus ekstensi audio (.mp3, .wav) agar nama video bersih (namalagu.mp4)
                     downloadName = audioName.substring(0, audioName.lastIndexOf('.')) || audioName;
                 }
                 
+                // Tentukan ekstensi berdasarkan mimeType fallback
                 let ext = actualMimeType.includes('webm') ? '.webm' : '.mp4';
                 downloadName += ext;
                 
+                // --- STREAMING_CHUNK:Simpan file ke folder otomatis tanpa popup block browser... ---
                 let saveSuccess = false;
                 
                 if (exportDirectoryHandle) {
@@ -1266,9 +1261,11 @@
                         showNotification("Video " + downloadName + " berhasil disimpan ke folder!");
                     } catch (err) {
                         console.error("Gagal menyimpan ke folder, mengalihkan ke unduhan normal:", err);
+                        // Jika akses gagal/hilang, kode di bawah akan dieksekusi sebagai cadangan
                     }
                 }
                 
+                // Fallback (cara lama) jika pengguna belum memilih folder atau API tidak didukung
                 if (!saveSuccess) {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1279,6 +1276,7 @@
                     document.body.appendChild(a);
                     a.click();
                     
+                    // Cleanup
                     setTimeout(() => {
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
@@ -1288,23 +1286,28 @@
                 
                 recordedChunks = [];
 
+                // Logic Batch / Auto Next Record (Rekam lagu berikutnya secara otomatis)
                 if (autoNextTrackIndex !== -1 && autoNextTrackIndex < playlist.length) {
                     let nextIdx = autoNextTrackIndex;
-                    autoNextTrackIndex = -1; 
+                    autoNextTrackIndex = -1; // Reset trigger
                     
+                    // Jeda lebih lama untuk memastikan file sebelumnya tersimpan dengan baik di browser
                     setTimeout(() => {
+                        // Matikan state sebentar agar loadTrack tidak langsung memulai play secara prematur
                         isPlaying = false;
-                        isRecording = false; 
+                        isRecording = false; // Setel ke false agar loadTrack tidak otomatis memutar lagu
                         
                         loadTrack(nextIdx);
                         
+                        // Berikan waktu sejenak agar audio termuat ke buffer sebelum mulai merekam
                         setTimeout(() => {
                            startRecording();
                         }, 500);
                         
-                    }, 1500); 
+                    }, 1500); // Jeda 1.5 detik antar lagu
                 } else {
                     isRecording = false;
+                    // Nyalakan kembali suara (unmute) saat rekaman telah selesai/berhenti
                     if (window.playbackGain) window.playbackGain.gain.value = 1; 
 
                     const btn = document.getElementById('btnRekam');
@@ -1315,6 +1318,8 @@
                 }
             };
             
+            // Timeslice 1000ms: Memecah data video per 1 detik saat merekam. 
+            // Ini SANGAT MENGURANGI beban RAM dan mencegah patah-patah/lag parah selama rekaman.
             mediaRecorder.start(1000);
             isRecording = true;
             
@@ -1328,7 +1333,7 @@
         }
 
         function stopRecording(manual = false) {
-            if (manual) autoNextTrackIndex = -1; 
+            if (manual) autoNextTrackIndex = -1; // Batalkan antrean rekam otomatis jika user men-stop paksa
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
@@ -1336,26 +1341,32 @@
         
         document.getElementById('btnRekam').addEventListener('click', async function() {
             if(!isRecording) {
-                autoNextTrackIndex = -1; 
+                autoNextTrackIndex = -1; // Reset jika mulai manual
                 
+                // --- STREAMING_CHUNK:Minta akses folder untuk menyimpan otomatis... ---
                 if (playlist.length > 0 && window.showDirectoryPicker) {
                     try {
+                        // Selalu meminta user memilih folder tujuan setiap kali mulai rekam baru
                         exportDirectoryHandle = await window.showDirectoryPicker({
                             mode: 'readwrite',
                             id: 'tnc7_export_folder'
                         });
                     } catch (err) {
                         console.warn("Pemilihan folder dibatalkan, menggunakan mode unduh standar.", err);
+                        // Tetap lanjut meskipun dibatalkan (akan fallback ke cara lama)
                     }
                 }
 
                 if (playlist.length > 0) {
+                    // Setel isPlaying dan isRecording ke false sementara agar tidak terjadi putar ganda
                     isPlaying = false;
                     isRecording = false;
                     
+                    // Auto kembali ke audio pertama dan mulai dari awal (detik 0)
                     loadTrack(0);
                     if (audioElement) audioElement.currentTime = 0;
                     
+                    // Beri sedikit jeda agar audio buffer siap sebelum merekam
                     setTimeout(() => {
                         startRecording();
                     }, 500);
@@ -1363,10 +1374,13 @@
                     startRecording();
                 }
             } else {
-                stopRecording(true); 
+                stopRecording(true); // Berhenti merekam secara manual
             }
         });
 
+        // --- STREAMING_CHUNK:Main rendering and visualizer loop... ---
+        
+        // Web Worker untuk menjaga frame rate tetap berjalan saat tab di-minimize (background)
         const workerCode = `
             let timer = null;
             self.onmessage = function(e) {
@@ -1392,6 +1406,7 @@
         requestAnimationFrame(() => renderLoop(false));
 
         function renderLoop(fromWorker = false) {
+            // Hanya gunakan requestAnimationFrame standar jika TIDAK sedang dikendalikan oleh Web Worker
             if (!isBackgroundRender && !fromWorker) {
                 requestAnimationFrame(() => renderLoop(false));
             }
@@ -1410,6 +1425,7 @@
             const cx = w / 2;
             const cy = h / 2;
             
+            // Mengaktifkan penghalusan grafis kualitas tinggi untuk seluruh elemen di kanvas agar hasil rekaman lebih tajam
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             
@@ -1420,19 +1436,21 @@
             bboxes.text = null;
             
             let audioReactivity = 0;
-            let bgAudioReactivity = 0; 
+            let bgAudioReactivity = 0; // Sensitivitas extra untuk background
             if(dataArray) {
                 let sum = 0;
                 for(let i=0; i<3; i++) sum += dataArray[i]; 
                 let avgBass = sum / 3 / 255; 
                 audioReactivity = Math.pow(avgBass, 1.8);
                 
+                // Menangkap detail frekuensi lebih luas (15 bin) dengan sensitivitas lebih tinggi (pangkat 1.2)
                 let bgSum = 0;
                 for(let i=0; i<15; i++) bgSum += dataArray[i]; 
                 let bgAvg = bgSum / 15 / 255;
                 bgAudioReactivity = Math.pow(bgAvg, 1.2);
             }
 
+            // Draw Background Image or Color First
             if (state.bg.imgElement) {
                 const imgRatio = state.bg.imgElement.width / state.bg.imgElement.height;
                 const canvasRatio = w / h;
@@ -1458,13 +1476,14 @@
                 let filterBG = 'none';
                 let flashAlpha = 0;
 
+                // Handle Background Effects
                 if (state.bg.effect === 'denyut') {
-                    scaleBG = 1 + (bgAudioReactivity * state.bg.pulseIntensity * 0.4); 
+                    scaleBG = 1 + (bgAudioReactivity * state.bg.pulseIntensity * 0.4); // Denyut lebih responsif & mendetail
                 } else if (state.bg.effect === 'zoom') {
                     scaleBG = 1 + (Math.sin(timeBG * 0.2) * 0.2 * state.bg.pulseIntensity + (0.1 * state.bg.pulseIntensity)) + (bgAudioReactivity * 0.15 * state.bg.pulseIntensity); 
                 } else if (state.bg.effect === 'shake') {
-                    if (bgAudioReactivity > 0.2) { 
-                        let shakeAmt = bgAudioReactivity * 80 * state.bg.pulseIntensity; 
+                    if (bgAudioReactivity > 0.2) { // Threshold diturunkan agar lebih sensitif
+                        let shakeAmt = bgAudioReactivity * 80 * state.bg.pulseIntensity; // Gempa lebih detail
                         xOffBG = (Math.random() - 0.5) * shakeAmt;
                         yOffBG = (Math.random() - 0.5) * shakeAmt;
                     }
@@ -1489,18 +1508,22 @@
                 }
 
                 ctx.save();
+                // Pindah poros ke tengah layar untuk memanipulasi gambar (skala/rotasi)
                 ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG);
                 ctx.rotate(rotBG);
                 ctx.scale(scaleBG, scaleBG);
                 ctx.globalAlpha = alphaBG;
                 ctx.filter = filterBG;
                 
+                // Gambar dengan offset mundur ke -drawW/2 (karena poros (0,0) sudah berada di tengah layar)
                 ctx.drawImage(state.bg.imgElement, -drawW / 2, -drawH / 2, drawW, drawH);
                 ctx.restore();
                 
+                // Lapisan kegelapan di-render seperti biasa setelah gambar agar efeknya tidak mengubah warna overlay ini
                 ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
                 ctx.fillRect(0, 0, w, h);
                 
+                // Render kilatan flash putih (jika ada)
                 if (flashAlpha > 0) {
                     ctx.fillStyle = `rgba(255,255,255,${Math.min(flashAlpha, 1)})`;
                     ctx.fillRect(0, 0, w, h);
@@ -1514,6 +1537,7 @@
 
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
 
+            // Snow Effect
             if (state.bg.weather.includes('salju')) {
                 let currentMaxSnow = state.bg.snowIntensity * 4;
                 let spawnChance = 0.9 - (state.bg.snowIntensity / 150);
@@ -1546,6 +1570,7 @@
                 ctx.globalAlpha = 1.0;
             }
             
+            // Hujan Air
             if (state.bg.weather.includes('hujan_air')) {
                 let currentMaxRain = state.bg.snowIntensity * 6;
                 let spawnChance = 0.8 - (state.bg.snowIntensity / 200);
@@ -1558,12 +1583,12 @@
                             x: Math.random() * w,
                             y: -20,
                             len: Math.random() * 20 + 10,
-                            s: Math.random() * 10 + 15, 
+                            s: Math.random() * 10 + 15, // Cepat jatuh
                             o: Math.random() * 0.3 + 0.2
                         });
                     }
                 }
-                ctx.strokeStyle = '#a0aec0'; 
+                ctx.strokeStyle = '#a0aec0'; // Warna kebiruan/abu-abu
                 ctx.lineWidth = 1.5;
                 ctx.lineCap = 'round';
                 for (let i = raindrops.length - 1; i >= 0; i--) {
@@ -1572,13 +1597,14 @@
                     ctx.globalAlpha = p.o;
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len); 
+                    ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len); // Sedikit miring
                     ctx.stroke();
                     if (p.y > h) raindrops.splice(i, 1);
                 }
                 ctx.globalAlpha = 1.0;
             }
 
+            // Hujan Emas
             if (state.bg.weather.includes('hujan_emas')) {
                 let currentMaxGold = state.bg.snowIntensity * 3;
                 let spawnChance = 0.85 - (state.bg.snowIntensity / 200);
@@ -1597,7 +1623,7 @@
                         });
                     }
                 }
-                ctx.strokeStyle = '#fbbf24'; 
+                ctx.strokeStyle = '#fbbf24'; // Warna emas
                 ctx.lineCap = 'round';
                 for (let i = goldDrops.length - 1; i >= 0; i--) {
                     let p = goldDrops[i];
@@ -1613,6 +1639,7 @@
                 ctx.globalAlpha = 1.0;
             }
 
+            // Efek Petir
             if (state.bg.weather.includes('petir')) {
                 let strikeChance = 0.99 - (state.bg.snowIntensity / 1000) - (audioReactivity * 0.05); 
                 if (Math.random() > strikeChance) {
@@ -1666,6 +1693,7 @@
                 }
             }
             
+            // Efek Asap & Asap Warna
             if (state.bg.weather.includes('asap') || state.bg.weather.includes('asap_warna')) {
                 let maxSmokes = state.bg.snowIntensity * 1.5;
                 let spawnChance = 0.85 - (state.bg.snowIntensity / 300);
@@ -1721,10 +1749,12 @@
                 }
             }
 
+            // Helper for overlay
             const drawOverlayObj = () => {
                 if (!state.overlay.element) return;
                 
                 ctx.save();
+                // Mengaktifkan smoothing kualitas tinggi agar logo tidak buram saat di-scale atau diputar
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
                 
@@ -1791,8 +1821,10 @@
                 ctx.restore();
             };
 
+            // Belakang Layer
             if (state.overlay.lapisan === 'belakang') drawOverlayObj();
 
+            // Visualizer Rendering (Solid color, No Glow)
             if(state.viz.enabled && dataArray && audioElement.src) {
                 let time = Date.now() / 1000;
                 let baseHue = (time * 15) % 360; 
@@ -1805,16 +1837,16 @@
                 let currentVizY = vizY + (state.viz.offsetY || 0);
 
                 const maxH = h * state.viz.size;
-                const solidColor = `hsl(${baseHue}, 100%, 60%)`; 
+                const solidColor = `hsl(${baseHue}, 100%, 60%)`; // Clean solid color
                 
                 ctx.fillStyle = solidColor;
                 ctx.strokeStyle = solidColor;
                 ctx.lineCap = 'round'; 
                 ctx.lineJoin = 'round';
-                ctx.shadowBlur = 0; 
+                ctx.shadowBlur = 0; // Ensures NO GLOW / GRADATION
                 ctx.shadowColor = 'transparent';
 
-                let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30); 
+                let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30); // Very sensitive width
 
                 if (state.viz.type.startsWith('bars')) {
                     const barCount = 64;
@@ -2227,7 +2259,7 @@
                         let radius = h * state.viz.size * 0.6;
                         ctx.save();
                         ctx.translate(currentCx, currentVizY);
-                        ctx.scale(1, 0.35); 
+                        ctx.scale(1, 0.35); // Efek 3D ditarik
                         ctx.rotate(time * 0.2);
                         
                         ctx.lineWidth = 2;
@@ -2280,10 +2312,12 @@
                         ctx.save();
                         ctx.translate(currentCx, currentVizY);
                         
+                        // Cincin luar statis
                         ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, 0.3)`;
                         ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
                         
+                        // Cincin data yang merespon audio dan berputar
                         for (let i = 0; i < 3; i++) {
                             let val = (dataArray[i * 15] || 0) / 255;
                             ctx.beginPath();
@@ -2294,6 +2328,7 @@
                             ctx.stroke();
                         }
                         
+                        // Radar Sweep (Pancaran radar)
                         let sweepGrad = ctx.createConicGradient(time * 3, 0, 0);
                         sweepGrad.addColorStop(0, `hsla(${baseHue}, 100%, 60%, 0)`);
                         sweepGrad.addColorStop(0.8, `hsla(${baseHue}, 100%, 60%, 0.1)`);
@@ -2301,6 +2336,7 @@
                         ctx.fillStyle = sweepGrad;
                         ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
 
+                        // Inti radar berdenyut
                         ctx.fillStyle = `hsla(${(baseHue+180)%360}, 100%, 70%, 0.8)`;
                         ctx.beginPath(); ctx.arc(0, 0, radius * 0.1 * (1 + audioReactivity * 2.5), 0, Math.PI * 2); ctx.fill();
 
@@ -2314,19 +2350,21 @@
                         ctx.translate(currentCx, currentVizY);
                         
                         for (let i = tunnelDepth; i > 0; i--) {
+                            // Hitung progres kedalaman berdasarkan waktu untuk ilusi maju ke dalam
                             let progress = ((time * 0.5) + (i / tunnelDepth)) % 1.0;
                             let currentRadius = maxRadius * Math.pow(progress, 1.5); 
                             
                             if (currentRadius < 2) continue;
 
                             let val = (dataArray[Math.floor((1-progress) * dataArray.length * 0.4)] || 0) / 255;
-                            let alpha = Math.sin(progress * Math.PI); 
+                            let alpha = Math.sin(progress * Math.PI); // Pudar di tengah dan pudar di luar
 
                             ctx.strokeStyle = `hsla(${(baseHue + progress*360)%360}, 100%, 60%, ${alpha})`;
                             ctx.lineWidth = 1 + (progress * 5 * widthFactor) + (val * 8);
                             ctx.shadowBlur = 15 * progress;
                             ctx.shadowColor = ctx.strokeStyle;
 
+                            // Gambar Segienam yang berotasi
                             ctx.beginPath();
                             let sides = 6;
                             let rot = progress * Math.PI + (time * 0.3);
@@ -2356,9 +2394,11 @@
                         
                         for (let i = 0; i <= points; i++) {
                             let angle = (i / points) * Math.PI * 2;
+                            // Petakan data audio ke sudut lingkaran dengan halus
                             let dataIdx = Math.floor(Math.abs(Math.sin(angle)) * dataArray.length * 0.2);
                             let val = (dataArray[dataIdx] || 0) / 255;
                             
+                            // Efek Perlin noise tiruan menggunakan sinus
                             let wobble = Math.sin(angle * 4 + time * 3) * 15 * widthFactor;
                             let wobble2 = Math.cos(angle * 7 - time * 2) * 8 * widthFactor;
                             
@@ -2375,6 +2415,7 @@
                         ctx.shadowColor = `hsl(${baseHue}, 100%, 50%)`;
                         ctx.fill();
                         
+                        // Cahaya core dalam
                         ctx.beginPath(); ctx.arc(0, 0, baseRadius * 0.3 * (1 + audioReactivity), 0, Math.PI*2);
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fill();
                         
@@ -2407,6 +2448,7 @@
                             ctx.lineCap = 'round';
                             ctx.stroke();
                             
+                            // Partikel di ujung sinar yang kuat
                             if (val > 0.6) {
                                 ctx.beginPath();
                                 ctx.arc(Math.cos(angle) * (outerR + 10), Math.sin(angle) * (outerR + 10), val * 5 * widthFactor, 0, Math.PI*2);
@@ -2415,6 +2457,7 @@
                             }
                         }
                         
+                        // Glow pusat bintang
                         let coreGrad = ctx.createRadialGradient(0,0,0, 0,0, maxRadius*0.2*(1+audioReactivity));
                         coreGrad.addColorStop(0, '#ffffff');
                         coreGrad.addColorStop(0.2, `hsla(${baseHue}, 100%, 70%, 1)`);
@@ -2448,12 +2491,14 @@
                                 node.z = 1; node.dist = Math.random(); node.angle = Math.random() * Math.PI * 2;
                             }
 
+                            // Ilusi perspektif 3D
                             let perspective = 1 / (node.z + 0.1);
                             let currentDist = node.dist * fieldRadius * perspective * (1 + val*0.1);
                             
                             let x = Math.cos(node.angle) * currentDist;
                             let y = Math.sin(node.angle) * currentDist;
                             
+                            // Garis laser kuantum jika ketukan bass kuat
                             if (val > 0.6) {
                                 ctx.beginPath();
                                 ctx.moveTo(0, 0); ctx.lineTo(x, y);
@@ -2461,12 +2506,14 @@
                                 ctx.lineWidth = 1 * widthFactor; ctx.stroke();
                             }
 
+                            // Node bintang
                             let pSize = perspective * 2 * (1 + val * 3) * widthFactor;
                             ctx.beginPath(); ctx.arc(x, y, pSize, 0, Math.PI * 2);
                             ctx.fillStyle = `hsla(${(baseHue + node.angle*180/Math.PI)%360}, 100%, 70%, ${1 - node.z})`;
                             ctx.fill();
                         });
                         
+                        // Lubang hitam (pusat)
                         ctx.beginPath(); ctx.arc(0, 0, fieldRadius * 0.05 * (1 + audioReactivity), 0, Math.PI*2);
                         ctx.fillStyle = '#0f1115'; ctx.fill();
                         ctx.strokeStyle = `hsl(${baseHue}, 100%, 60%)`; ctx.lineWidth = 2; ctx.stroke();
@@ -2636,14 +2683,17 @@
                 ctx.save();
                 
                 let displayText = state.textFx.customText;
+                // If custom text is empty, try to get the current track name
                 if (!displayText && currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
                     let trackName = playlist[currentTrackIndex].file.name;
+                    // Remove extension for cleaner look if desired, or keep it. Let's remove common ones.
                     displayText = trackName.replace(/\.[^/.]+$/, "");
                 }
-                if (!displayText) displayText = "TNC7 Visualizer"; 
+                if (!displayText) displayText = "TNC7 Visualizer"; // Fallback
                 
                 let time = Date.now() / 1000;
 
+                // Reset typewriter and trigger smooth fade if track/text changes
                 if (displayText !== lastTrackForText) {
                     typewriterProgress = 0;
                     lastTrackForText = displayText;
@@ -2653,6 +2703,7 @@
                 let fontSize = state.textFx.size;
                 let speedMult = (state.textFx.animSpeed !== undefined ? state.textFx.animSpeed : 50) / 50;
                 
+                // Default position (Top center)
                 let textX = cx + (state.textFx.offsetX || 0);
                 let textY = (h * 0.15) + (state.textFx.offsetY || 0);
                 
@@ -2660,8 +2711,11 @@
                 let scale = 1;
                 let finalDisplayText = displayText;
 
+                // Handle Animations
                 if (state.textFx.anim === 'blink') {
+                    // Modern blink: sine wave between 0.2 and 1
                     alpha = (Math.sin(time * 5 * speedMult) * 0.4) + 0.6;
+                    // If audio is playing, make it blink faster based on beat
                     if (audioReactivity > 0.3) alpha = (Math.sin(time * 15 * speedMult) * 0.5) + 0.5;
                 } else if (state.textFx.anim === 'pulse') {
                     scale = 1 + (audioReactivity * 0.3 * speedMult);
@@ -2676,13 +2730,14 @@
                     }
                 } else if (state.textFx.anim === 'typewriter') {
                     let len = displayText.length;
-                    let pauseFrames = 60; 
-                    let fadeFrames = 30; 
-                    let emptyFrames = 20; 
+                    let pauseFrames = 60; // Durasi diam saat teks sudah utuh
+                    let fadeFrames = 30; // Durasi efek memudar (fade out)
+                    let emptyFrames = 20; // Jeda sejenak sebelum mulai ngetik lagi
                     let totalCycle = len + pauseFrames + fadeFrames + emptyFrames;
                     
-                    typewriterProgress += 0.25 * speedMult; 
+                    typewriterProgress += 0.25 * speedMult; // Kecepatan ngetik
                     
+                    // Reset siklus jika sudah mencapai ujung
                     if (typewriterProgress >= totalCycle) {
                         typewriterProgress = 0;
                     }
@@ -2691,19 +2746,25 @@
                     let showCursor = false;
                     
                     if (typewriterProgress < len) {
+                        // Fase 1: Mengetik maju
                         charsToShow = Math.floor(typewriterProgress);
                         showCursor = true;
                     } else if (typewriterProgress < len + pauseFrames) {
+                        // Fase 2: Teks utuh & diam sejenak untuk dibaca
                         charsToShow = len;
+                        // Kursor berkedip santai
                         showCursor = Math.floor(time * 3 * speedMult) % 2 === 0;
                     } else if (typewriterProgress < len + pauseFrames + fadeFrames) {
+                        // Fase 3: Memudar (Fade out)
                         charsToShow = len;
                         let fadeProgress = typewriterProgress - (len + pauseFrames);
+                        // Mengurangi opacity (alpha) perlahan hingga 0
                         alpha *= Math.max(0, 1 - (fadeProgress / fadeFrames)); 
                         showCursor = false;
                     } else {
+                        // Fase 4: Kosong & diam sejenak
                         charsToShow = 0;
-                        alpha = 0; 
+                        alpha = 0; // Transparan penuh
                         showCursor = false;
                     }
                     
@@ -2714,15 +2775,17 @@
                     }
                 }
 
+                // Smooth fade-in transition saat perpindahan lagu (selama 1 detik)
                 let timeSinceChange = time - textTransitionStart;
                 let transitionFade = Math.min(1, timeSinceChange / 1.0); 
-                alpha *= transitionFade; 
+                alpha *= transitionFade; // Menggabungkan efek transisi halus dengan efek alpha lainnya
 
                 ctx.font = `bold ${fontSize}px ${state.textFx.font}, sans-serif`;
                 ctx.textAlign = state.textFx.align || 'center';
                 ctx.textBaseline = 'middle';
                 ctx.globalAlpha = alpha;
 
+                // Handle Effects
                 ctx.shadowColor = 'transparent';
                 ctx.shadowBlur = 0;
                 ctx.shadowOffsetX = 0;
@@ -2754,9 +2817,10 @@
                     ctx.fillText(finalDisplayText, 0, 0);
                 }
                 
+                // Calculate bounding box for dragging
                 let metrics = ctx.measureText(finalDisplayText);
                 let textW = metrics.width * scale;
-                let textH = fontSize * scale; 
+                let textH = fontSize * scale; // Approximation
                 
                 let bboxX = textX;
                 if ((state.textFx.align || 'center') === 'center') {
@@ -2775,9 +2839,11 @@
                 ctx.restore();
             }
 
+            // Depan / Kunci Layer
             if (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci') drawOverlayObj();
         }
 
+        // --- STREAMING_CHUNK:Interaction logic... ---
         let draggingElement = null;
         let dragStartX = 0;
         let dragStartY = 0;
@@ -2801,6 +2867,7 @@
             let clicked = null;
             
             if (state.textFx.enabled && bboxes.text) {
+                // Add a small padding to the hitbox for easier grabbing
                 const padding = 10;
                 if (pos.x >= bboxes.text.x - padding && pos.x <= bboxes.text.x + bboxes.text.w + padding && 
                     pos.y >= bboxes.text.y - padding && pos.y <= bboxes.text.y + bboxes.text.h + padding) {
@@ -2883,13 +2950,14 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
                     .then(registration => {
-                        console.log('ServiceWorker terdaftar dengan sukses, scope: ', registration.scope);
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
                     })
                     .catch(error => {
-                        console.log('Pendaftaran ServiceWorker gagal: ', error);
+                        console.log('ServiceWorker registration failed: ', error);
                     });
             });
         }
+
     </script>
 </body>
 </html>
