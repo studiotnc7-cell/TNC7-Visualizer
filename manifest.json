@@ -1,20 +1,19 @@
 {
 "name": "TNC7 Visualizer",
 "short_name": "TNC7 Viz",
-"description": "Aplikasi TNC7 Visualizer Audio - Nikmati Prosesnya",
+"description": "Audio Visualizer & Video Generator",
 "start_url": "./index.html",
 "display": "standalone",
 "background_color": "#0f1115",
-"theme_color": "#ffb800",
-"orientation": "landscape",
+"theme_color": "#0f1115",
 "icons": [
 {
-"src": "https://placehold.co/192x192/ffb800/ffffff.png?text=TNC7",
+"src": "https://placehold.co/192x192/facc15/0f1115.png?text=TNC7",
 "sizes": "192x192",
 "type": "image/png"
 },
 {
-"src": "https://placehold.co/512x512/ffb800/ffffff.png?text=TNC7",
+"src": "https://placehold.co/512x512/facc15/0f1115.png?text=TNC7",
 "sizes": "512x512",
 "type": "image/png"
 }
