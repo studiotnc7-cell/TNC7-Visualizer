@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNC7 Visualizer</title>
-    
-    <!-- PWA Manifest -->
+    <!-- Tambahan untuk PWA -->
     <link rel="manifest" href="manifest.json">
-    <!-- Theme Color for Browser/OS integration -->
-    <meta name="theme-color" content="#0f1115">
+    <meta name="theme-color" content="#991b1b">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/991b1b/ffffff.png?text=TNC7">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Poppins:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
@@ -82,6 +81,45 @@
         .btn-active { background-color: #10b981; border-color: #10b981; color: #ffffff; }
         .btn-danger { border-color: rgba(239, 68, 68, 0.5); color: var(--accent-red); }
         .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+        /* Window Header Style (Like Image Reference) */
+        .window-header {
+            background-color: #ffb800; /* Warna kuning dari gambar */
+            color: #111827;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            -webkit-app-region: drag; /* Untuk aplikasi desktop/electron */
+        }
+        
+        .window-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            -webkit-app-region: no-drag;
+        }
+        
+        .window-controls i {
+            cursor: pointer;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .window-controls i:hover {
+            opacity: 1;
+        }
 
         input[type=range] {
             -webkit-appearance: none;
@@ -281,6 +319,21 @@
     </style>
 </head>
 <body>
+    <!-- Window Header -->
+    <div class="window-header">
+        <div class="window-header-title">
+            <span class="bg-red-600 text-white text-[10px] font-bold px-1 rounded-sm">TNC7</span>
+            <span>TNC7 VISUALIZER - Nikmati Prosesnya</span>
+        </div>
+        <div class="window-controls">
+            <i class="fa-regular fa-clone"></i>
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+            <i class="fa-solid fa-minus"></i>
+            <i class="fa-regular fa-square"></i>
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+    </div>
+
     <div id="notification-modal">Pesan Notifikasi</div>
 
     <div class="top-bar">
@@ -2950,18 +3003,18 @@
         window.addEventListener('touchmove', handleDragMove, { passive: false });
         window.addEventListener('touchend', handleDragEnd);
 
+        // --- STREAMING_CHUNK:PWA Service Worker Registration... ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
                     .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        console.log('ServiceWorker terdaftar dengan sukses, scope: ', registration.scope);
                     })
                     .catch(error => {
-                        console.log('ServiceWorker registration failed: ', error);
+                        console.log('Pendaftaran ServiceWorker gagal: ', error);
                     });
             });
         }
-
     </script>
 </body>
 </html>
