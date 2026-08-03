@@ -1,6 +1,6 @@
-const CACHE_NAME = 'tnc7-visualizer-v1';
+const CACHE_NAME = 'tnc7-visualizer-v2';
 
-// Daftar file yang akan disimpan di cache agar bisa dibuka offline (opsional)
+// Daftar file yang akan disimpan di cache agar bisa dibuka offline
 const urlsToCache = [
   './',
   './index.html',
@@ -15,6 +15,8 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  // Memaksa service worker baru untuk langsung aktif (skip waiting)
+  self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
@@ -24,13 +26,13 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Jika file ada di cache, gunakan itu (offline support)
+        // Jika file ada di cache, gunakan itu
         if (response) {
           return response;
         }
-        // Jika tidak, ambil dari jaringan/internet
+        // Jika tidak, ambil dari internet
         return fetch(event.request).catch(() => {
-            console.log('Fetch gagal, mungkin sedang offline dan aset tidak ada di cache.');
+            console.log('Fetch gagal, mungkin sedang offline.');
         });
       })
   );
@@ -42,7 +44,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // Hapus cache lama jika versi berubah
+          // Hapus cache lama (versi sebelumnya) agar browser mengunduh index.html baru
           if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
@@ -50,4 +52,6 @@ self.addEventListener('activate', event => {
       );
     })
   );
+  // Mengambil alih kontrol klien (browser) yang sedang berjalan
+  self.clients.claim();
 });
