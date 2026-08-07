@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tnc7-visualizer-v1';
+const CACHE_NAME = 'tnc7-visualizer-v4';
 const urlsToCache = [
     './index.html',
     './manifest.json'
