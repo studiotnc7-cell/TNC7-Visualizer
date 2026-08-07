@@ -1,68 +1,26 @@
-const CACHE_NAME = 'tnc7-viz-v1';
+// ... existing code ...
+const CACHE_NAME = 'tnc7-viz-v2';
 const urlsToCache = [
   './',
-  './index.html',
-  './manifest.json'
-];
+// ... existing code ...
+```
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
-  self.skipWaiting();
-});
+```html:TNC7 Visualizer:index.html
+<!-- ... existing code ... -->
+</head>
+<body>
+    <!-- Garis kuning dekoratif di atas (dipertebal menjadi h-1.5 dan diberi sedikit efek glow) -->
+    <div class="w-full h-1.5 bg-yellow-400 flex-shrink-0 relative z-50 shadow-[0_0_10px_rgba(250,204,21,0.5)]"></div>
+    
+    <div id="notification-modal">Pesan Notifikasi</div>
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return file from cache if exists
-        if (response) {
-          return response;
-        }
-        
-        // Otherwise fetch from network
-        return fetch(event.request).then(
-          function(response) {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+    <div class="top-bar">
+        <div class="flex items-center gap-4">
+<!-- ... existing code ... -->
+```
 
-            // Clone the response because it's a stream
-            var responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                // Ignore external URLs from caching to avoid issues with CDNs
-                if (event.request.url.startsWith(self.location.origin)) {
-                    cache.put(event.request, responseToCache);
-                }
-              });
-
-            return response;
-          }
-        );
-      })
-  );
-});
-
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
+### 💡 Langkah Penting Setelah Update di GitHub:
+Setelah Anda menyimpan (commit) perubahan `sw.js` dan `index.html` ini ke GitHub, lakukan **Hard Refresh** di browser Anda untuk memaksa browser mengambil versi terbaru:
+*   **Windows/Linux:** Tekan `Ctrl` + `F5` atau `Ctrl` + `Shift` + `R`
+*   **Mac:** Tekan `Cmd` + `Shift` + `R`
+*   **HP (Android/iOS):** Buka pengaturan browser, pilih "Clear Browsing Data" (khususnya *Cached images and files*), lalu muat ulang halamannya.
