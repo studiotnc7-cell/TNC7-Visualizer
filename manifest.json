@@ -1,19 +1,20 @@
 {
 "name": "TNC7 Visualizer",
 "short_name": "TNC7 Viz",
-"description": "Audio Visualizer & Video Generator",
-"start_url": "./index.html",
+"description": "Audio Visualizer & Recorder dengan banyak efek kustomisasi.",
+"start_url": "./",
 "display": "standalone",
 "background_color": "#0f1115",
 "theme_color": "#0f1115",
+"orientation": "any",
 "icons": [
 {
-"src": "https://placehold.co/192x192/facc15/0f1115.png?text=TNC7",
+"src": "https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7",
 "sizes": "192x192",
 "type": "image/png"
 },
 {
-"src": "https://placehold.co/512x512/facc15/0f1115.png?text=TNC7",
+"src": "https://placehold.co/512x512/0f1115/f59e0b.png?text=TNC7",
 "sizes": "512x512",
 "type": "image/png"
 }
