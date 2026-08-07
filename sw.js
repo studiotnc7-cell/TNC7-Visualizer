@@ -1,7 +1,29 @@
 // ... existing code ...
-const CACHE_NAME = 'tnc7-viz-v2';
+// UBAH CACHE_NAME menjadi v3
+const CACHE_NAME = 'tnc7-viz-v3';
 const urlsToCache = [
   './',
+  './index.html',
+  './manifest.json'
+];
+
+self.addEventListener('install', event => {
+  // TAMBAHKAN BARIS INI: Memaksa service worker baru untuk langsung aktif
+  self.skipWaiting(); 
+  
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('activate', event => {
+  // TAMBAHKAN BARIS INI: Mengambil alih kontrol halaman dengan segera
+  event.waitUntil(clients.claim());
+  
+  const cacheWhitelist = [CACHE_NAME];
 // ... existing code ...
 ```
 
@@ -9,18 +31,38 @@ const urlsToCache = [
 <!-- ... existing code ... -->
 </head>
 <body>
-    <!-- Garis kuning dekoratif di atas (dipertebal menjadi h-1.5 dan diberi sedikit efek glow) -->
-    <div class="w-full h-1.5 bg-yellow-400 flex-shrink-0 relative z-50 shadow-[0_0_10px_rgba(250,204,21,0.5)]"></div>
+    <!-- Garis kuning dekoratif di atas (Dibuat absolut dan z-index maksimal agar pasti muncul) -->
+    <div style="width: 100%; height: 6px; background-color: #facc15; box-shadow: 0 0 15px rgba(250,204,21,0.8); z-index: 999999; position: relative; flex-shrink: 0;"></div>
     
     <div id="notification-modal">Pesan Notifikasi</div>
 
     <div class="top-bar">
-        <div class="flex items-center gap-4">
 <!-- ... existing code ... -->
-```
+        canvas.addEventListener('touchstart', handleDragStart, { passive: true });
+        window.addEventListener('touchmove', handleDragMove, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
 
-### 💡 Langkah Penting Setelah Update di GitHub:
-Setelah Anda menyimpan (commit) perubahan `sw.js` dan `index.html` ini ke GitHub, lakukan **Hard Refresh** di browser Anda untuk memaksa browser mengambil versi terbaru:
-*   **Windows/Linux:** Tekan `Ctrl` + `F5` atau `Ctrl` + `Shift` + `R`
-*   **Mac:** Tekan `Cmd` + `Shift` + `R`
-*   **HP (Android/iOS):** Buka pengaturan browser, pilih "Clear Browsing Data" (khususnya *Cached images and files*), lalu muat ulang halamannya.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    // TAMBAHAN: Paksa browser mengecek update di background
+                    registration.update();
+                }).catch(error => {
+                    console.log('ServiceWorker registration failed: ', error);
+                });
+            });
+            
+            // TAMBAHAN: Jika ada update SW baru, otomatis reload halaman agar tampil yang terbaru
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
