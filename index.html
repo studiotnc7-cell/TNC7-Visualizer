@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TNC7 Visualizer - Advanced Audio Visualizer dengan dukungan kustomisasi, PWA, dan export video.">
     <title>TNC7 Visualizer</title>
     
     <!-- PWA Meta Tags -->
@@ -283,7 +284,7 @@
     </style>
 </head>
 <body>
-    <!-- Garis kuning dekoratif ditarik 1px ke atas agar menutupi celah hitam sempurna -->
+    <!-- Garis kuning dekoratif di atas, dibuat absolute & ditarik ke atas 1px untuk menutupi celah hitam/border -->
     <div class="absolute -top-[1px] left-0 w-full h-[10px] bg-yellow-400 z-[9999]"></div>
     <!-- Spacer untuk menggantikan posisi bar yang di-absolute -->
     <div class="w-full h-[9px] flex-shrink-0"></div>
@@ -488,7 +489,6 @@
                 </div>
             </div>
 
-            <!-- Text Overlay Panel -->
             <div class="panel">
                 <div class="panel-header flex justify-between">
                     <span>TEXT OVERLAY</span>
@@ -929,6 +929,20 @@
             return segments;
         }
 
+        function createParticle(x, y, vX, vY, size, color) {
+            return { x, y, vX, vY, size, color, life: 1, maxLife: Math.random() * 50 + 20 };
+        }
+
+        function updateParticles() {
+             for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vX;
+                p.y += p.vY;
+                p.life -= 1;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+        
         function resizeCanvas() {
             canvas.width = 1280;
             canvas.height = 720;
@@ -1411,9 +1425,12 @@
                 let filterBG = 'none';
                 let flashAlpha = 0;
 
+                // Memisahkan frekuensi Kick & Bass khusus untuk efek denyut background agar lebih pas dengan irama (beat)
                 let kickBassReactivity = 0;
                 if (dataArray) {
+                    // Fokus pada frekuensi terendah untuk mendeteksi kick drum (bass drum)
                     let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) / 3 / 255;
+                    // Kurangi sensitivitas (abaikan suara pelan), tapi buat sangat agresif saat ada beat kuat
                     if (kickBassAvg > 0.45) {
                         kickBassReactivity = Math.pow(kickBassAvg, 4.0) * 2.2; 
                     }
@@ -1421,6 +1438,7 @@
 
                 if (state.bg.effect === 'denyut') {
                     let targetScale = 1 + (kickBassReactivity * state.bg.pulseIntensity);
+                    // Attack instan (sangat agresif), Decay sedikit lebih cepat agar snappy
                     if (targetScale > currentBeatScale) {
                         currentBeatScale = targetScale;
                     } else {
@@ -1909,7 +1927,50 @@
                     analyser.getByteFrequencyData(dataArray); 
                 }
                 else if (state.viz.type.startsWith('modern')) {
-                    if (state.viz.type === 'modern_cyber_bars') {
+                    if (state.viz.type === 'modern_plexus') {
+                        if (!window.plexusNodes || window.plexusNodes.length !== 40) {
+                            window.plexusNodes = Array.from({length: 40}, () => ({
+                                x: (Math.random()-0.5)*w*0.5, y: (Math.random()-0.5)*h*0.5,
+                                vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2
+                            }));
+                        }
+                        let radiusScale = state.viz.size * h * 0.4;
+                        ctx.save();
+                        ctx.translate(currentCx, currentVizY);
+                        ctx.lineWidth = 1;
+                        for(let i=0; i<window.plexusNodes.length; i++) {
+                            let n = window.plexusNodes[i];
+                            let val = (dataArray[i * 2] || 0) / 255;
+                            n.x += n.vx * (1 + audioReactivity*2);
+                            n.y += n.vy * (1 + audioReactivity*2);
+                            
+                            let limit = radiusScale * 1.5;
+                            if(n.x > limit || n.x < -limit) n.vx *= -1;
+                            if(n.y > limit || n.y < -limit) n.vy *= -1;
+
+                            ctx.fillStyle = `hsl(${baseHue}, 100%, 60%)`;
+                            ctx.beginPath();
+                            ctx.arc(n.x, n.y, 2 + (val * 5), 0, Math.PI*2);
+                            ctx.fill();
+
+                            for(let j=i+1; j<window.plexusNodes.length; j++) {
+                                let n2 = window.plexusNodes[j];
+                                let dist = Math.hypot(n.x-n2.x, n.y-n2.y);
+                                let connectDist = radiusScale * 0.8;
+                                if(dist < connectDist) {
+                                    ctx.globalAlpha = 1 - (dist / connectDist);
+                                    ctx.strokeStyle = `hsl(${(baseHue + 30)%360}, 100%, 60%)`;
+                                    ctx.beginPath();
+                                    ctx.moveTo(n.x, n.y);
+                                    ctx.lineTo(n2.x, n2.y);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - radiusScale*1.5, y: currentVizY - radiusScale*1.5, w: radiusScale*3, h: radiusScale*3 };
+                    } 
+                    else if (state.viz.type === 'modern_cyber_bars') {
                         const barCount = 48;
                         const spacing = 8 * widthFactor; 
                         const totalW = barCount * spacing;
