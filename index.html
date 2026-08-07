@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f1115">
     <title>TNC7 Visualizer</title>
+    
+    <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f1115">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Poppins:wght@400;700&family=Righteous&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
@@ -103,6 +107,10 @@
             background: var(--border-color);
             border-radius: 2px;
         }
+
+        #vizHueSlider::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+        }
         
         select.custom-select, input[type=text].custom-input {
             appearance: none;
@@ -179,7 +187,6 @@
 
         .preview-container {
             width: 100%;
-            /* Removed max-height and aspect-ratio, we'll control it via canvas styles and wrapper */
             height: calc(100vh - 150px);
             background-color: transparent; 
             border-radius: 8px;
@@ -194,7 +201,6 @@
         }
         
         canvas#previewCanvas { 
-            /* Scale canvas visually to fit container while maintaining 16:9 aspect ratio */
             max-width: 100%; 
             max-height: 100%; 
             object-fit: contain;
@@ -338,21 +344,31 @@
                         <input type="range" min="1" max="100" value="50" id="vizWidthSlider">
                     </div>
                 </div>
+
+                <div class="flex items-start gap-2 mt-1">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider mt-1">WARNA</span>
+                    <div class="flex flex-col gap-1 flex-1">
+                        <div class="flex gap-1 flex-wrap" id="vizColorModeGroup">
+                            <button class="btn-custom btn-active" data-val="auto">ARGB (Auto)</button>
+                            <button class="btn-custom" data-val="custom">Warna Statis</button>
+                        </div>
+                        <div class="flex items-center gap-2 w-full mt-1">
+                            <span class="text-[10px] text-gray-400 w-8" id="vizColorLabel">Speed</span>
+                            <div class="flex-1">
+                                <input type="range" min="1" max="100" value="15" id="vizArgbSpeedSlider">
+                                <input type="range" min="0" max="360" value="0" id="vizHueSlider" class="hidden">
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                <div class="relative">
-                    <!-- Added relative positioning wrapper to handle scroll events locally -->
+                <div class="relative mt-1">
                     <select class="custom-select" id="vizTypeSelect">
                         <optgroup label="Terbaru (Modern) ⭐">
-                            <option value="modern_plexus">Modern - Plexus Network</option>
-                            <option value="modern_neon_ring">Modern - Neon Ring</option>
-                            <option value="modern_gradient_wave">Modern - Gradient Wave</option>
                             <option value="modern_cyber_bars">Modern - Cyberpunk Bars</option>
-                            <option value="modern_hologram">Modern - Hologram 3D</option>
-                            <option value="modern_scifi_radar">Modern - Sci-Fi Radar</option>
-                            <option value="modern_infinity_tunnel">Modern - Infinity Tunnel</option>
-                            <option value="modern_liquid_orb">Modern - Liquid Orb</option>
-                            <option value="modern_supernova">Modern - Supernova Burst</option>
-                            <option value="modern_quantum">Modern - Quantum Particles</option>
+                            <option value="modern_dna_helix">Modern - DNA Helix</option>
+                            <option value="modern_cityscape">Modern - Cityscape EQ</option>
+                            <option value="modern_digital_pixel">Modern - Digital Pixel Wave</option>
                         </optgroup>
                         <optgroup label="Klasik & Bar">
                             <option value="bars">Bars - Normal</option>
@@ -365,23 +381,6 @@
                             <option value="wave_fill">Wave - Filled</option>
                             <option value="wave_double">Wave - Double Helix</option>
                             <option value="wave_glitch">Wave - Glitch</option>
-                        </optgroup>
-                        <optgroup label="Lingkaran (Circle)">
-                            <option value="circle">Circle - Lines Out</option>
-                            <option value="circle_wave">Circle - Continuous Wave</option>
-                            <option value="circle_dots">Circle - Orbiting Dots</option>
-                            <option value="circle_blocks">Circle - Block Ring</option>
-                        </optgroup>
-                        <optgroup label="Geometri & Partikel">
-                            <option value="poly_spin">Polygon - Spin Morph</option>
-                            <option value="poly_fractal">Polygon - Simple Fractal</option>
-                            <option value="part_orbit">Particles - Orbiting</option>
-                            <option value="part_fountain">Particles - Fountain</option>
-                        </optgroup>
-                        <optgroup label="3D & Abstrak">
-                            <option value="3d_cube">3D - Spinning Cube</option>
-                            <option value="abs_blob">Abstract - Liquid Blob</option>
-                            <option value="abs_rings">Abstract - Concentric Rings</option>
                         </optgroup>
                     </select>
                 </div>
@@ -397,7 +396,6 @@
                         <button class="btn-custom" data-val="hujan_emas">H.Emas</button>
                         <button class="btn-custom" data-val="hujan_air">H.Air</button>
                         <button class="btn-custom" data-val="petir">Petir</button>
-                        <button class="btn-custom" data-val="asap">Asap</button>
                         <button class="btn-custom" data-val="asap_warna">Asap RGB</button>
                     </div>
                 </div>
@@ -425,17 +423,13 @@
                         <button class="btn-custom btn-active" data-val="normal">Normal</button>
                         <button class="btn-custom" data-val="denyut">Denyut</button>
                         <button class="btn-custom" data-val="zoom">Zoom</button>
-                        <button class="btn-custom" data-val="shake">Gempa</button>
-                        <button class="btn-custom" data-val="pan">Pan</button>
-                        <button class="btn-custom" data-val="flash">Flash</button>
-                        <button class="btn-custom" data-val="hue">Warna (RGB)</button>
                         <button class="btn-custom" data-val="ayun">Ayun</button>
                     </div>
                 </div>
                 
                 <div class="control-row">
-                    <span class="control-label text-xs w-8">Gelap</span>
-                    <div class="flex-1"><input type="range" id="bgDarknessSlider" min="0" max="100" value="30"></div>
+                    <span class="control-label text-xs w-8" title="Kiri: Terang, Kanan: Gelap">Gelap</span>
+                    <div class="flex-1"><input type="range" id="bgDarknessSlider" min="-100" max="100" value="0" title="Geser ke kiri untuk membuat jauh lebih terang"></div>
                     <span class="control-label ml-1 text-xs w-10">Denyut</span>
                     <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="50"></div>
                 </div>
@@ -480,8 +474,6 @@
                         <button class="btn-custom btn-active" data-val="none">Tanpa anim</button>
                         <button class="btn-custom" data-val="pan">Pan</button>
                         <button class="btn-custom" data-val="denyut">Denyut</button>
-                        <button class="btn-custom" data-val="blitz">Blitz</button>
-                        <button class="btn-custom" data-val="flash">Flash</button>
                         <button class="btn-custom" data-val="float">Float</button>
                         <button class="btn-custom" data-val="shake">Shake</button>
                         <button class="btn-custom" data-val="zoom">Zoom</button>
@@ -648,8 +640,8 @@
 
     <script>
         const state = {
-            viz: { enabled: true, align: 'tengah', size: 0.5, width: 0.5, type: 'bars', offsetX: 0, offsetY: 0 },
-            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0.3, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
+            viz: { enabled: true, align: 'tengah', size: 0.5, width: 0.5, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
+            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'center', animSpeed: 50 }
         };
@@ -684,7 +676,6 @@
         bindButtonGroup('vizAlignGroup', 'viz', 'align');
         bindButtonGroup('bgEffectGroup', 'bg', 'effect');
         
-        // --- STREAMING_CHUNK:Custom binding for combinable weather effects... ---
         const weatherGroup = document.getElementById('bgWeatherGroup');
         if (weatherGroup) {
             const buttons = weatherGroup.querySelectorAll('button');
@@ -693,29 +684,24 @@
                     const val = btn.getAttribute('data-val');
                     
                     if (val === 'normal') {
-                        // Reset ke normal
                         buttons.forEach(b => b.classList.remove('btn-active'));
                         btn.classList.add('btn-active');
                         state.bg.weather = ['normal'];
                     } else {
-                        // Toggle efek lain
                         btn.classList.toggle('btn-active');
                         
-                        // Hapus 'normal' jika ada efek lain yang aktif
                         const normalBtn = weatherGroup.querySelector('button[data-val="normal"]');
                         if (normalBtn && normalBtn.classList.contains('btn-active')) {
                             normalBtn.classList.remove('btn-active');
                             state.bg.weather = state.bg.weather.filter(w => w !== 'normal');
                         }
                         
-                        // Update state array
                         if (btn.classList.contains('btn-active')) {
                             if (!state.bg.weather.includes(val)) state.bg.weather.push(val);
                         } else {
                             state.bg.weather = state.bg.weather.filter(w => w !== val);
                         }
                         
-                        // Jika tidak ada yang aktif, kembali ke normal
                         if (state.bg.weather.length === 0) {
                             if (normalBtn) normalBtn.classList.add('btn-active');
                             state.bg.weather = ['normal'];
@@ -732,7 +718,6 @@
         bindButtonGroup('textAnimGroup', 'textFx', 'anim');
         bindButtonGroup('textAlignGroup', 'textFx', 'align');
 
-        // --- STREAMING_CHUNK:Quick position snap for text overlay... ---
         const textPosBtns = document.querySelectorAll('#textPosGroup button');
         textPosBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -744,8 +729,6 @@
                 const h = canvas.height || 720;
                 const cx = w / 2;
                 
-                // Base coordinate in drawCanvas is: cx + offsetX, (h * 0.15) + offsetY
-                // Menggunakan persentase (h * 0.05 untuk atas, h * 0.95 untuk bawah) agar sejajar matematis dan lebih dekat ke tepi
                 if (pos === 'top-left') {
                     state.textFx.offsetX = -cx + (w * 0.05);
                     state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
@@ -786,24 +769,17 @@
         textFontSelect.addEventListener('change', (e) => { state.textFx.font = e.target.value; });
         
         textFontSelect.addEventListener('wheel', (e) => {
-            e.preventDefault(); // Mencegah scroll halaman saat berada di atas elemen select
-            
+            e.preventDefault();
             const options = Array.from(textFontSelect.options);
             const currentIndex = textFontSelect.selectedIndex;
-            
             let nextIndex = currentIndex;
             if (e.deltaY > 0) {
-                // Scroll bawah -> indeks bertambah
                 nextIndex = Math.min(currentIndex + 1, options.length - 1);
             } else if (e.deltaY < 0) {
-                // Scroll atas -> indeks berkurang
                 nextIndex = Math.max(currentIndex - 1, 0);
             }
-            
-            // Jika ada perubahan indeks
             if (nextIndex !== currentIndex) {
                 textFontSelect.selectedIndex = nextIndex;
-                // Trigger event 'change' secara manual agar state font ikut terupdate
                 textFontSelect.dispatchEvent(new Event('change'));
             }
         });
@@ -851,31 +827,47 @@
         document.getElementById('vizSizeSlider').addEventListener('input', (e) => { state.viz.size = e.target.value / 100; });
         document.getElementById('vizWidthSlider').addEventListener('input', (e) => { state.viz.width = e.target.value / 100; });
         
+        bindButtonGroup('vizColorModeGroup', 'viz', 'colorMode');
+        
+        const vizColorModeGroup = document.getElementById('vizColorModeGroup');
+        const vizColorLabel = document.getElementById('vizColorLabel');
+        const vizArgbSpeedSlider = document.getElementById('vizArgbSpeedSlider');
+        const vizHueSlider = document.getElementById('vizHueSlider');
+
+        if (vizColorModeGroup) {
+            vizColorModeGroup.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (state.viz.colorMode === 'auto') {
+                        vizColorLabel.textContent = 'Speed';
+                        vizArgbSpeedSlider.classList.remove('hidden');
+                        vizHueSlider.classList.add('hidden');
+                    } else {
+                        vizColorLabel.textContent = 'Hue';
+                        vizArgbSpeedSlider.classList.add('hidden');
+                        vizHueSlider.classList.remove('hidden');
+                    }
+                });
+            });
+        }
+
+        document.getElementById('vizArgbSpeedSlider').addEventListener('input', (e) => { state.viz.argbSpeed = parseFloat(e.target.value); });
+        document.getElementById('vizHueSlider').addEventListener('input', (e) => { state.viz.hue = parseFloat(e.target.value); });
+
         const vizTypeSelect = document.getElementById('vizTypeSelect');
         vizTypeSelect.addEventListener('change', (e) => { state.viz.type = e.target.value; });
         
-        // --- STREAMING_CHUNK:Adding mouse scroll support for select dropdown... ---
         vizTypeSelect.addEventListener('wheel', (e) => {
-            e.preventDefault(); // Mencegah scroll halaman saat berada di atas elemen select
-            
-            // Ambil semua opsi yang bukan <optgroup> (hanya <option>)
+            e.preventDefault();
             const options = Array.from(vizTypeSelect.options);
             const currentIndex = vizTypeSelect.selectedIndex;
-            
-            // Tentukan arah scroll (atas/bawah)
             let nextIndex = currentIndex;
             if (e.deltaY > 0) {
-                // Scroll bawah -> indeks bertambah
                 nextIndex = Math.min(currentIndex + 1, options.length - 1);
             } else if (e.deltaY < 0) {
-                // Scroll atas -> indeks berkurang
                 nextIndex = Math.max(currentIndex - 1, 0);
             }
-            
-            // Jika ada perubahan indeks
             if (nextIndex !== currentIndex) {
                 vizTypeSelect.selectedIndex = nextIndex;
-                // Trigger event 'change' secara manual agar state visualizer ikut terupdate
                 vizTypeSelect.dispatchEvent(new Event('change'));
             }
         });
@@ -884,7 +876,6 @@
         document.getElementById('bgDarknessSlider').addEventListener('input', (e) => { state.bg.darkness = e.target.value / 100; });
         document.getElementById('bgPulseIntensitySlider').addEventListener('input', (e) => { state.bg.pulseIntensity = e.target.value / 100; });
 
-        // --- STREAMING_CHUNK:Audio setup and controls... ---
         let audioContext;
         let audioSource;
         let analyser;
@@ -904,10 +895,10 @@
         let playlist = [];
         let currentTrackIndex = -1;
         
-        // State for typewriter effect
         let typewriterProgress = 0;
         let lastTrackForText = "";
         let textTransitionStart = 0;
+        let currentBeatScale = 1;
 
         function generateLightning(startX, startY, h) {
             let segments = [{x: startX, y: startY}];
@@ -947,13 +938,11 @@
         }
         
         function resizeCanvas() {
-            // Set internal resolution to 1280x720 (HD) for consistent, high-quality recording
             canvas.width = 1280;
             canvas.height = 720;
-            // Visual scaling is handled by CSS object-fit
         }
         window.addEventListener('resize', resizeCanvas);
-        setTimeout(resizeCanvas, 100); // Call once on load
+        setTimeout(resizeCanvas, 100);
 
         function setupAudio() {
             if (audioContext) return;
@@ -962,12 +951,12 @@
             audioSource = audioContext.createMediaElementSource(audioElement);
             
             window.audioDest = audioContext.createMediaStreamDestination();
-            window.playbackGain = audioContext.createGain(); // Node khusus untuk mengatur volume ke speaker
+            window.playbackGain = audioContext.createGain();
             
             audioSource.connect(analyser); 
-            audioSource.connect(window.playbackGain); // Koneksikan audio ke GainNode
-            window.playbackGain.connect(audioContext.destination); // Koneksikan GainNode ke speaker
-            audioSource.connect(window.audioDest); // Rekaman tetap dapat audio langsung tanpa melewati GainNode
+            audioSource.connect(window.playbackGain);
+            window.playbackGain.connect(audioContext.destination);
+            audioSource.connect(window.audioDest);
             
             analyser.fftSize = 256;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -999,7 +988,6 @@
             const sidebarRight = document.getElementById('sidebarRight');
             document.getElementById('playlistCount').textContent = `${playlist.length} lagu`;
             
-            // Memastikan sidebar kanan tetap selalu tampil
             sidebarRight.style.display = 'flex';
 
             container.innerHTML = '';
@@ -1012,16 +1000,15 @@
                 nameSpan.textContent = item.file.name;
                 nameSpan.onclick = () => {
                     loadTrack(index);
-                    playAudio(true); // force play when clicking a track
+                    playAudio(true);
                 };
                 
-                // Diubah menggunakan <button> agar area klik (hitbox) lebih besar dan responsif
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-track-btn';
                 removeBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
                 removeBtn.title = 'Hapus lagu ini';
                 removeBtn.onclick = (e) => {
-                    e.stopPropagation(); // Mencegah klik terhitung sebagai memutar lagu
+                    e.stopPropagation();
                     removeTrack(index);
                 };
 
@@ -1034,19 +1021,15 @@
         function removeTrack(index) {
             if (index < 0 || index >= playlist.length) return;
             playlist.splice(index, 1);
-            
-            // Memberikan respon visual ketika lagu dihapus
             showNotification("Lagu berhasil dihapus");
             
             if (playlist.length === 0) {
                 clearAllAudio();
             } else {
                 if (currentTrackIndex === index) {
-                    // if removing currently playing track, load the next one (or previous if it was the last)
                     let nextIndex = index >= playlist.length ? playlist.length - 1 : index;
                     loadTrack(nextIndex);
                 } else if (currentTrackIndex > index) {
-                    // adjust index if a track before the current one was removed
                     currentTrackIndex--;
                 }
                 renderPlaylist();
@@ -1080,7 +1063,6 @@
             } else {
                 renderPlaylist();
             }
-            // Reset input so the same files can be selected again if needed
             e.target.value = '';
         });
 
@@ -1120,17 +1102,13 @@
             const current = audioElement.currentTime;
             const duration = audioElement.duration;
             
-            // Update teks waktu (contoh: 1:05 / 3:40)
             timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
-            
-            // Update panjang garis biru dan posisi titik putih
             const percent = (current / duration) * 100;
             progressBar.style.width = `${percent}%`;
             progressHandle.style.left = `${percent}%`;
         });
 
         audioElement.addEventListener('loadedmetadata', () => {
-            // Tampilkan total waktu seketika saat lagu dimuat
             timeDisplay.textContent = `0:00 / ${formatTime(audioElement.duration)}`;
             progressBar.style.width = `0%`;
             progressHandle.style.left = `0%`;
@@ -1160,13 +1138,12 @@
             if (isRecording) {
                 if (currentTrackIndex < playlist.length - 1) {
                     autoNextTrackIndex = currentTrackIndex + 1;
-                    stopRecording(false); // Stop rekam untuk unduh, lalu lanjut otomatis
+                    stopRecording(false);
                 } else {
-                    stopRecording(false); // Playlist selesai, stop rekam
+                    stopRecording(false);
                 }
             } else {
                 if (currentTrackIndex < playlist.length - 1) {
-                    // Play next track
                     loadTrack(currentTrackIndex + 1);
                     playAudio(true);
                 } else {
@@ -1182,17 +1159,15 @@
             audioElement.currentTime = ((e.clientX - rect.left) / rect.width) * audioElement.duration;
         });
 
-        // --- STREAMING_CHUNK:Media recording logic... ---
         let mediaRecorder;
         let recordedChunks = [];
         let isRecording = false;
         let autoNextTrackIndex = -1;
-        let exportDirectoryHandle = null; // Menyimpan izin akses folder untuk batch download
+        let exportDirectoryHandle = null;
 
         function startRecording() {
             setupAudio();
             
-            // Matikan suara (mute) yang keluar dari speaker saat merekam
             if (window.playbackGain) window.playbackGain.gain.value = 0;
 
             const canvasStream = canvas.captureStream(30);
@@ -1202,10 +1177,8 @@
                 ...window.audioDest.stream.getAudioTracks()
             ]);
             
-            // Mengoptimalkan bitrate ke 3.5 Mbps: Kualitas jernih, file tetap kecil dan anti patah-patah
             let options = { videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000 };
             
-            // Memilih Codec yang paling ringan (Hardware Accelerated H.264 Baseline diutamakan agar tidak patah-patah)
             if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
                 options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
             } else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4d002a, mp4a.40.2"')) {
@@ -1213,12 +1186,11 @@
             } else if (MediaRecorder.isTypeSupported('video/mp4')) {
                 options.mimeType = 'video/mp4';
             } else {
-                options.mimeType = 'video/webm; codecs=vp8,opus'; // Fallback ke VP8 (lebih ringan dari VP9)
+                options.mimeType = 'video/webm; codecs=vp8,opus';
             }
 
             mediaRecorder = new MediaRecorder(combinedStream, options);
             
-            // Aktifkan background rendering agar animasi tidak berhenti saat tab di-minimize
             isBackgroundRender = true;
             if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('start');
             
@@ -1227,28 +1199,22 @@
             };
             
             mediaRecorder.onstop = async () => {
-                // Matikan background rendering
                 isBackgroundRender = false;
                 if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('stop');
                 requestAnimationFrame(() => renderLoop(false));
 
-                // Ekstrak tipe mime untuk memastikan file tidak korup
                 let actualMimeType = mediaRecorder.mimeType || 'video/mp4';
                 const blob = new Blob(recordedChunks, { type: actualMimeType });
                 
-                // NAMA FILE OTOMATIS: samakan dengan nama file audio
                 let downloadName = 'viz_export';
                 if (currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
                     let audioName = playlist[currentTrackIndex].file.name;
-                    // Hapus ekstensi audio (.mp3, .wav) agar nama video bersih (namalagu.mp4)
                     downloadName = audioName.substring(0, audioName.lastIndexOf('.')) || audioName;
                 }
                 
-                // Tentukan ekstensi berdasarkan mimeType fallback
                 let ext = actualMimeType.includes('webm') ? '.webm' : '.mp4';
                 downloadName += ext;
                 
-                // --- STREAMING_CHUNK:Simpan file ke folder otomatis tanpa popup block browser... ---
                 let saveSuccess = false;
                 
                 if (exportDirectoryHandle) {
@@ -1260,12 +1226,10 @@
                         saveSuccess = true;
                         showNotification("Video " + downloadName + " berhasil disimpan ke folder!");
                     } catch (err) {
-                        console.error("Gagal menyimpan ke folder, mengalihkan ke unduhan normal:", err);
-                        // Jika akses gagal/hilang, kode di bawah akan dieksekusi sebagai cadangan
+                        console.error("Gagal menyimpan ke folder:", err);
                     }
                 }
                 
-                // Fallback (cara lama) jika pengguna belum memilih folder atau API tidak didukung
                 if (!saveSuccess) {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1276,7 +1240,6 @@
                     document.body.appendChild(a);
                     a.click();
                     
-                    // Cleanup
                     setTimeout(() => {
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
@@ -1286,28 +1249,23 @@
                 
                 recordedChunks = [];
 
-                // Logic Batch / Auto Next Record (Rekam lagu berikutnya secara otomatis)
                 if (autoNextTrackIndex !== -1 && autoNextTrackIndex < playlist.length) {
                     let nextIdx = autoNextTrackIndex;
-                    autoNextTrackIndex = -1; // Reset trigger
+                    autoNextTrackIndex = -1;
                     
-                    // Jeda lebih lama untuk memastikan file sebelumnya tersimpan dengan baik di browser
                     setTimeout(() => {
-                        // Matikan state sebentar agar loadTrack tidak langsung memulai play secara prematur
                         isPlaying = false;
-                        isRecording = false; // Setel ke false agar loadTrack tidak otomatis memutar lagu
+                        isRecording = false;
                         
                         loadTrack(nextIdx);
                         
-                        // Berikan waktu sejenak agar audio termuat ke buffer sebelum mulai merekam
                         setTimeout(() => {
                            startRecording();
                         }, 500);
                         
-                    }, 1500); // Jeda 1.5 detik antar lagu
+                    }, 1500);
                 } else {
                     isRecording = false;
-                    // Nyalakan kembali suara (unmute) saat rekaman telah selesai/berhenti
                     if (window.playbackGain) window.playbackGain.gain.value = 1; 
 
                     const btn = document.getElementById('btnRekam');
@@ -1318,8 +1276,6 @@
                 }
             };
             
-            // Timeslice 1000ms: Memecah data video per 1 detik saat merekam. 
-            // Ini SANGAT MENGURANGI beban RAM dan mencegah patah-patah/lag parah selama rekaman.
             mediaRecorder.start(1000);
             isRecording = true;
             
@@ -1333,7 +1289,7 @@
         }
 
         function stopRecording(manual = false) {
-            if (manual) autoNextTrackIndex = -1; // Batalkan antrean rekam otomatis jika user men-stop paksa
+            if (manual) autoNextTrackIndex = -1;
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
@@ -1341,32 +1297,26 @@
         
         document.getElementById('btnRekam').addEventListener('click', async function() {
             if(!isRecording) {
-                autoNextTrackIndex = -1; // Reset jika mulai manual
+                autoNextTrackIndex = -1;
                 
-                // --- STREAMING_CHUNK:Minta akses folder untuk menyimpan otomatis... ---
                 if (playlist.length > 0 && window.showDirectoryPicker) {
                     try {
-                        // Selalu meminta user memilih folder tujuan setiap kali mulai rekam baru
                         exportDirectoryHandle = await window.showDirectoryPicker({
                             mode: 'readwrite',
                             id: 'tnc7_export_folder'
                         });
                     } catch (err) {
-                        console.warn("Pemilihan folder dibatalkan, menggunakan mode unduh standar.", err);
-                        // Tetap lanjut meskipun dibatalkan (akan fallback ke cara lama)
+                        console.warn("Pemilihan folder dibatalkan.", err);
                     }
                 }
 
                 if (playlist.length > 0) {
-                    // Setel isPlaying dan isRecording ke false sementara agar tidak terjadi putar ganda
                     isPlaying = false;
                     isRecording = false;
                     
-                    // Auto kembali ke audio pertama dan mulai dari awal (detik 0)
                     loadTrack(0);
                     if (audioElement) audioElement.currentTime = 0;
                     
-                    // Beri sedikit jeda agar audio buffer siap sebelum merekam
                     setTimeout(() => {
                         startRecording();
                     }, 500);
@@ -1374,19 +1324,16 @@
                     startRecording();
                 }
             } else {
-                stopRecording(true); // Berhenti merekam secara manual
+                stopRecording(true);
             }
         });
 
-        // --- STREAMING_CHUNK:Main rendering and visualizer loop... ---
-        
-        // Web Worker untuk menjaga frame rate tetap berjalan saat tab di-minimize (background)
         const workerCode = `
             let timer = null;
             self.onmessage = function(e) {
                 if (e.data === 'start') {
                     if (timer) clearInterval(timer);
-                    timer = setInterval(() => self.postMessage('tick'), 1000 / 30); // Memaksa 30 FPS konstan
+                    timer = setInterval(() => self.postMessage('tick'), 1000 / 30);
                 } else if (e.data === 'stop') {
                     clearInterval(timer);
                     timer = null;
@@ -1406,7 +1353,6 @@
         requestAnimationFrame(() => renderLoop(false));
 
         function renderLoop(fromWorker = false) {
-            // Hanya gunakan requestAnimationFrame standar jika TIDAK sedang dikendalikan oleh Web Worker
             if (!isBackgroundRender && !fromWorker) {
                 requestAnimationFrame(() => renderLoop(false));
             }
@@ -1425,7 +1371,6 @@
             const cx = w / 2;
             const cy = h / 2;
             
-            // Mengaktifkan penghalusan grafis kualitas tinggi untuk seluruh elemen di kanvas agar hasil rekaman lebih tajam
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             
@@ -1436,21 +1381,19 @@
             bboxes.text = null;
             
             let audioReactivity = 0;
-            let bgAudioReactivity = 0; // Sensitivitas extra untuk background
+            let bgAudioReactivity = 0;
             if(dataArray) {
                 let sum = 0;
                 for(let i=0; i<3; i++) sum += dataArray[i]; 
                 let avgBass = sum / 3 / 255; 
                 audioReactivity = Math.pow(avgBass, 1.8);
                 
-                // Menangkap detail frekuensi lebih luas (15 bin) dengan sensitivitas lebih tinggi (pangkat 1.2)
                 let bgSum = 0;
                 for(let i=0; i<15; i++) bgSum += dataArray[i]; 
                 let bgAvg = bgSum / 15 / 255;
                 bgAudioReactivity = Math.pow(bgAvg, 1.2);
             }
 
-            // Draw Background Image or Color First
             if (state.bg.imgElement) {
                 const imgRatio = state.bg.imgElement.width / state.bg.imgElement.height;
                 const canvasRatio = w / h;
@@ -1476,14 +1419,31 @@
                 let filterBG = 'none';
                 let flashAlpha = 0;
 
-                // Handle Background Effects
+                // Memisahkan frekuensi Kick & Bass khusus untuk efek denyut background agar lebih pas dengan irama (beat)
+                let kickBassReactivity = 0;
+                if (dataArray) {
+                    // Fokus pada frekuensi terendah untuk mendeteksi kick drum (bass drum)
+                    let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) / 3 / 255;
+                    // Kurangi sensitivitas (abaikan suara pelan), tapi buat sangat agresif saat ada beat kuat
+                    if (kickBassAvg > 0.45) {
+                        kickBassReactivity = Math.pow(kickBassAvg, 4.0) * 2.2; 
+                    }
+                }
+
                 if (state.bg.effect === 'denyut') {
-                    scaleBG = 1 + (bgAudioReactivity * state.bg.pulseIntensity * 0.4); // Denyut lebih responsif & mendetail
+                    let targetScale = 1 + (kickBassReactivity * state.bg.pulseIntensity);
+                    // Attack instan (sangat agresif), Decay sedikit lebih cepat agar snappy
+                    if (targetScale > currentBeatScale) {
+                        currentBeatScale = targetScale;
+                    } else {
+                        currentBeatScale += (targetScale - currentBeatScale) * 0.25;
+                    }
+                    scaleBG = currentBeatScale;
                 } else if (state.bg.effect === 'zoom') {
                     scaleBG = 1 + (Math.sin(timeBG * 0.2) * 0.2 * state.bg.pulseIntensity + (0.1 * state.bg.pulseIntensity)) + (bgAudioReactivity * 0.15 * state.bg.pulseIntensity); 
                 } else if (state.bg.effect === 'shake') {
-                    if (bgAudioReactivity > 0.2) { // Threshold diturunkan agar lebih sensitif
-                        let shakeAmt = bgAudioReactivity * 80 * state.bg.pulseIntensity; // Gempa lebih detail
+                    if (bgAudioReactivity > 0.2) {
+                        let shakeAmt = bgAudioReactivity * 80 * state.bg.pulseIntensity;
                         xOffBG = (Math.random() - 0.5) * shakeAmt;
                         yOffBG = (Math.random() - 0.5) * shakeAmt;
                     }
@@ -1500,30 +1460,29 @@
                     scaleBG = 1.05 + (bgAudioReactivity * 0.05 * state.bg.pulseIntensity);
                     let hueDeg = (timeBG * 50 * state.bg.pulseIntensity) + (bgAudioReactivity * 300 * state.bg.pulseIntensity); 
                     filterBG = `hue-rotate(${hueDeg}deg)`;
-                } else if (state.bg.effect === 'ayun') {
-                    scaleBG = 1.15 + (0.1 * state.bg.pulseIntensity) + (bgAudioReactivity * 0.1 * state.bg.pulseIntensity);
-                    xOffBG = Math.sin(timeBG * 0.8) * 30 * state.bg.pulseIntensity + (Math.cos(timeBG * 2.5) * bgAudioReactivity * 20 * state.bg.pulseIntensity);
-                    yOffBG = Math.cos(timeBG * 0.6) * 30 * state.bg.pulseIntensity + (Math.sin(timeBG * 2.5) * bgAudioReactivity * 20 * state.bg.pulseIntensity);
-                    rotBG = Math.sin(timeBG * 0.4) * 0.05 * state.bg.pulseIntensity + (Math.cos(timeBG * 2) * bgAudioReactivity * 0.03 * state.bg.pulseIntensity);
+                }
+
+                if (state.bg.darkness < 0) {
+                    let brightVal = 1 + (-state.bg.darkness * 3);
+                    if (filterBG === 'none') filterBG = `brightness(${brightVal})`;
+                    else filterBG += ` brightness(${brightVal})`;
                 }
 
                 ctx.save();
-                // Pindah poros ke tengah layar untuk memanipulasi gambar (skala/rotasi)
                 ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG);
                 ctx.rotate(rotBG);
                 ctx.scale(scaleBG, scaleBG);
                 ctx.globalAlpha = alphaBG;
                 ctx.filter = filterBG;
                 
-                // Gambar dengan offset mundur ke -drawW/2 (karena poros (0,0) sudah berada di tengah layar)
                 ctx.drawImage(state.bg.imgElement, -drawW / 2, -drawH / 2, drawW, drawH);
                 ctx.restore();
                 
-                // Lapisan kegelapan di-render seperti biasa setelah gambar agar efeknya tidak mengubah warna overlay ini
-                ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
-                ctx.fillRect(0, 0, w, h);
+                if (state.bg.darkness > 0) {
+                    ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
+                    ctx.fillRect(0, 0, w, h);
+                }
                 
-                // Render kilatan flash putih (jika ada)
                 if (flashAlpha > 0) {
                     ctx.fillStyle = `rgba(255,255,255,${Math.min(flashAlpha, 1)})`;
                     ctx.fillRect(0, 0, w, h);
@@ -1531,13 +1490,17 @@
             } else if (state.bg.color !== '#0f1115' && state.bg.color !== 'transparent' && state.bg.color !== '') {
                 ctx.fillStyle = state.bg.color;
                 ctx.fillRect(0,0,w,h);
-                ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
-                ctx.fillRect(0,0,w,h);
+                if (state.bg.darkness > 0) {
+                    ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
+                    ctx.fillRect(0,0,w,h);
+                } else if (state.bg.darkness < 0) {
+                    ctx.fillStyle = `rgba(255,255,255,${-state.bg.darkness})`;
+                    ctx.fillRect(0,0,w,h);
+                }
             }
 
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
 
-            // Snow Effect
             if (state.bg.weather.includes('salju')) {
                 let currentMaxSnow = state.bg.snowIntensity * 4;
                 let spawnChance = 0.9 - (state.bg.snowIntensity / 150);
@@ -1570,7 +1533,6 @@
                 ctx.globalAlpha = 1.0;
             }
             
-            // Hujan Air
             if (state.bg.weather.includes('hujan_air')) {
                 let currentMaxRain = state.bg.snowIntensity * 6;
                 let spawnChance = 0.8 - (state.bg.snowIntensity / 200);
@@ -1583,12 +1545,12 @@
                             x: Math.random() * w,
                             y: -20,
                             len: Math.random() * 20 + 10,
-                            s: Math.random() * 10 + 15, // Cepat jatuh
+                            s: Math.random() * 10 + 15,
                             o: Math.random() * 0.3 + 0.2
                         });
                     }
                 }
-                ctx.strokeStyle = '#a0aec0'; // Warna kebiruan/abu-abu
+                ctx.strokeStyle = '#a0aec0';
                 ctx.lineWidth = 1.5;
                 ctx.lineCap = 'round';
                 for (let i = raindrops.length - 1; i >= 0; i--) {
@@ -1597,14 +1559,13 @@
                     ctx.globalAlpha = p.o;
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len); // Sedikit miring
+                    ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len);
                     ctx.stroke();
                     if (p.y > h) raindrops.splice(i, 1);
                 }
                 ctx.globalAlpha = 1.0;
             }
 
-            // Hujan Emas
             if (state.bg.weather.includes('hujan_emas')) {
                 let currentMaxGold = state.bg.snowIntensity * 3;
                 let spawnChance = 0.85 - (state.bg.snowIntensity / 200);
@@ -1623,7 +1584,7 @@
                         });
                     }
                 }
-                ctx.strokeStyle = '#fbbf24'; // Warna emas
+                ctx.strokeStyle = '#fbbf24';
                 ctx.lineCap = 'round';
                 for (let i = goldDrops.length - 1; i >= 0; i--) {
                     let p = goldDrops[i];
@@ -1639,7 +1600,6 @@
                 ctx.globalAlpha = 1.0;
             }
 
-            // Efek Petir
             if (state.bg.weather.includes('petir')) {
                 let strikeChance = 0.99 - (state.bg.snowIntensity / 1000) - (audioReactivity * 0.05); 
                 if (Math.random() > strikeChance) {
@@ -1693,7 +1653,6 @@
                 }
             }
             
-            // Efek Asap & Asap Warna
             if (state.bg.weather.includes('asap') || state.bg.weather.includes('asap_warna')) {
                 let maxSmokes = state.bg.snowIntensity * 1.5;
                 let spawnChance = 0.85 - (state.bg.snowIntensity / 300);
@@ -1749,12 +1708,10 @@
                 }
             }
 
-            // Helper for overlay
             const drawOverlayObj = () => {
                 if (!state.overlay.element) return;
                 
                 ctx.save();
-                // Mengaktifkan smoothing kualitas tinggi agar logo tidak buram saat di-scale atau diputar
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
                 
@@ -1821,13 +1778,17 @@
                 ctx.restore();
             };
 
-            // Belakang Layer
             if (state.overlay.lapisan === 'belakang') drawOverlayObj();
 
-            // Visualizer Rendering (Solid color, No Glow)
             if(state.viz.enabled && dataArray && audioElement.src) {
                 let time = Date.now() / 1000;
-                let baseHue = (time * 15) % 360; 
+                
+                let baseHue = 0;
+                if (state.viz.colorMode === 'auto') {
+                    baseHue = (time * state.viz.argbSpeed) % 360; 
+                } else {
+                    baseHue = state.viz.hue;
+                }
                 
                 let vizY = cy;
                 if(state.viz.align === 'bawah') vizY = h - (h * 0.1);
@@ -1837,16 +1798,16 @@
                 let currentVizY = vizY + (state.viz.offsetY || 0);
 
                 const maxH = h * state.viz.size;
-                const solidColor = `hsl(${baseHue}, 100%, 60%)`; // Clean solid color
+                const solidColor = `hsl(${baseHue}, 100%, 60%)`;
                 
                 ctx.fillStyle = solidColor;
                 ctx.strokeStyle = solidColor;
                 ctx.lineCap = 'round'; 
                 ctx.lineJoin = 'round';
-                ctx.shadowBlur = 0; // Ensures NO GLOW / GRADATION
+                ctx.shadowBlur = 0;
                 ctx.shadowColor = 'transparent';
 
-                let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30); // Very sensitive width
+                let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30);
 
                 if (state.viz.type.startsWith('bars')) {
                     const barCount = 64;
@@ -1877,9 +1838,6 @@
                                 ctx.roundRect(xPos, currentVizY - barH, barThickness, barH, barThickness/2);
                                 ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
                                 break;
-                            case 'bars_top':
-                                ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
-                                break;
                             case 'bars_split':
                                 if (i < barCount/2) ctx.roundRect(xPos, currentVizY - barH, barThickness, barH, barThickness/2);
                                 else ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
@@ -1887,29 +1845,6 @@
                             case 'bars_stair':
                                 let stairH = ((i/barCount) * maxH * (val/255));
                                 ctx.roundRect(xPos, currentVizY - stairH, barThickness, Math.max(4, stairH), barThickness/2);
-                                break;
-                            case 'bars_stair_inv':
-                                let stairHInv = ((1-(i/barCount)) * maxH * (val/255));
-                                ctx.roundRect(xPos, currentVizY - stairHInv, barThickness, Math.max(4, stairHInv), barThickness/2);
-                                break;
-                            case 'bars_dots':
-                                ctx.arc(xPos + barThickness/2, currentVizY - barH, barThickness/2, 0, Math.PI*2);
-                                break;
-                            case 'bars_dash':
-                                for(let d=0; d<barH; d+=12) ctx.roundRect(xPos, currentVizY - d, barThickness, 6, 3);
-                                break;
-                            case 'bars_triangle':
-                                ctx.moveTo(xPos, currentVizY);
-                                ctx.lineTo(xPos + barThickness, currentVizY);
-                                ctx.lineTo(xPos + barThickness/2, currentVizY - barH);
-                                ctx.closePath();
-                                break;
-                            case 'bars_diamond':
-                                ctx.moveTo(xPos + barThickness/2, currentVizY);
-                                ctx.lineTo(xPos + barThickness, currentVizY - barH/2);
-                                ctx.lineTo(xPos + barThickness/2, currentVizY - barH);
-                                ctx.lineTo(xPos, currentVizY - barH/2);
-                                ctx.closePath();
                                 break;
                         }
                         ctx.fill();
@@ -1937,15 +1872,11 @@
                         let v = dataArray[i] / 128.0; 
                         let x = startWaveX + (i * sliceW);
                         
-                        if(state.viz.type === 'wave_pulse' && audioReactivity > 0.4) v = 1 + ((v-1)*1.8);
                         if(state.viz.type === 'wave_glitch' && Math.random() > 0.95) v += (Math.random()-0.5)*0.8;
-                        if(state.viz.type === 'wave_blocky') { x = startWaveX + (Math.floor(i/15)*15 * sliceW); v = dataArray[Math.floor(i/15)*15]/128.0; }
 
                         let y = currentVizY + ((v - 1) * (h / 2) * amp);
 
-                        if (state.viz.type === 'wave_dots') {
-                            ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
-                        } else if (state.viz.type === 'wave_blocky' || state.viz.type === 'wave_glitch') {
+                        if (state.viz.type === 'wave_glitch') {
                             ctx.lineTo(x, y);
                         } else {
                             let xc = (prevX + x) / 2;
@@ -1956,23 +1887,8 @@
                         prevX = x; prevY = y;
                     }
                     
-                    if (!state.viz.type.includes('dots') && !state.viz.type.includes('blocky') && !state.viz.type.includes('glitch')) {
+                    if (!state.viz.type.includes('glitch')) {
                         ctx.lineTo(prevX, prevY); 
-                    }
-
-                    if(state.viz.type.includes('mirror')) {
-                        ctx.moveTo(startWaveX, currentVizY);
-                        let pX = startWaveX;
-                        let pY = currentVizY - (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
-                        for (let i = 1; i < dataArray.length; i++) {
-                            let v = dataArray[i] / 128.0; 
-                            let x = startWaveX + (i * sliceW);
-                            let y = currentVizY - ((v - 1) * (h / 2) * amp);
-                            let xc = (pX + x) / 2; let yc = (pY + y) / 2;
-                            ctx.quadraticCurveTo(pX, pY, xc, yc);
-                            pX = x; pY = y;
-                        }
-                        ctx.lineTo(pX, pY);
                     }
 
                     if(state.viz.type === 'wave_double') {
@@ -2003,80 +1919,6 @@
                     }
                     
                     analyser.getByteFrequencyData(dataArray); 
-                }
-                else if (state.viz.type.startsWith('circle')) {
-                    const dynamicBaseRadius = (Math.min(cx, cy) * 0.25) + (audioReactivity * 40 * state.viz.size);
-                    const radius = dynamicBaseRadius * widthFactor;
-                    const barCount = state.viz.type === 'circle_wave' ? dataArray.length : 90;
-                    const step = (Math.PI * 2) / barCount;
-                    
-                    let maxLen = Math.min(cx,cy) * 0.5 * state.viz.size;
-                    let maxRadius = radius + maxLen;
-                    bboxes.viz = { x: currentCx - maxRadius, y: currentVizY - maxRadius, w: maxRadius * 2, h: maxRadius * 2 };
-
-                    if(!state.viz.type.includes('dots') && !state.viz.type.includes('blocks')) {
-                        ctx.beginPath();
-                        ctx.arc(currentCx, currentVizY, radius, 0, Math.PI*2);
-                        ctx.lineWidth = 4;
-                        ctx.stroke();
-                    }
-
-                    ctx.lineWidth = Math.max(3, 8 - (widthFactor * 0.2));
-                    
-                    if(state.viz.type === 'circle_wave') analyser.getByteTimeDomainData(dataArray);
-
-                    ctx.beginPath();
-                    for (let i = 0; i < barCount; i++) {
-                        let val, len;
-                        if(state.viz.type === 'circle_wave') {
-                            val = dataArray[i];
-                            len = ((val/128.0) - 1) * maxLen * 2;
-                        } else {
-                            const dataIdx = Math.floor(i * (dataArray.length / barCount) * 0.5);
-                            val = dataArray[dataIdx] || 0;
-                            len = Math.pow(val / 255, 1.5) * maxLen;
-                        }
-
-                        let rotOffset = (state.viz.type.includes('gear') || state.viz.type.includes('dots')) ? time : 0;
-                        const angle = i * step - (Math.PI / 2) + rotOffset;
-                        
-                        let x1 = currentCx + Math.cos(angle)*radius;
-                        let y1 = currentVizY + Math.sin(angle)*radius;
-                        let x2 = currentCx + Math.cos(angle)*(radius+len);
-                        let y2 = currentVizY + Math.sin(angle)*(radius+len);
-                        let xIn = currentCx + Math.cos(angle)*Math.max(10, radius-len);
-                        let yIn = currentVizY + Math.sin(angle)*Math.max(10, radius-len);
-
-                        switch(state.viz.type) {
-                            case 'circle':
-                            default: ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); break;
-                            case 'circle_in': ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(xIn, yIn); ctx.stroke(); break;
-                            case 'circle_both': ctx.beginPath(); ctx.moveTo(xIn, yIn); ctx.lineTo(x2, y2); ctx.stroke(); break;
-                            case 'circle_wave': if(i===0) ctx.moveTo(x2,y2); else ctx.lineTo(x2,y2); break;
-                            case 'circle_dots': ctx.beginPath(); ctx.arc(x2, y2, Math.max(3, len*0.1), 0, Math.PI*2); ctx.fill(); break;
-                            case 'circle_blocks':
-                                ctx.save(); ctx.translate(x1,y1); ctx.rotate(angle); 
-                                ctx.roundRect(0, -ctx.lineWidth/2, len, ctx.lineWidth, ctx.lineWidth/2); 
-                                ctx.fill(); ctx.restore(); break;
-                            case 'circle_dash':
-                                for(let d=0; d<len; d+=15) {
-                                    let dx = currentCx + Math.cos(angle)*(radius+d);
-                                    let dy = currentVizY + Math.sin(angle)*(radius+d);
-                                    ctx.beginPath(); ctx.arc(dx, dy, 3, 0, Math.PI*2); ctx.fill();
-                                } break;
-                            case 'circle_tri':
-                                ctx.save(); ctx.translate(x2,y2); ctx.rotate(angle); 
-                                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-15,-8); ctx.lineTo(-15,8); ctx.fill(); ctx.restore(); break;
-                            case 'circle_flower': ctx.beginPath(); ctx.bezierCurveTo(x1, y1, x2+30, y2+30, x2, y2); ctx.stroke(); break;
-                            case 'circle_gear':
-                                ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); 
-                                ctx.lineTo(x2+Math.cos(angle+0.1)*(radius+len), y2+Math.sin(angle+0.1)*(radius+len)); ctx.stroke(); break;
-                        }
-                    }
-                    if(state.viz.type === 'circle_wave') {
-                        ctx.closePath(); ctx.stroke();
-                        analyser.getByteFrequencyData(dataArray);
-                    }
                 }
                 else if (state.viz.type.startsWith('modern')) {
                     if (state.viz.type === 'modern_plexus') {
@@ -2122,90 +1964,6 @@
                         ctx.restore();
                         bboxes.viz = { x: currentCx - radiusScale*1.5, y: currentVizY - radiusScale*1.5, w: radiusScale*3, h: radiusScale*3 };
                     } 
-                    else if (state.viz.type === 'modern_neon_ring') {
-                        let radius = h * state.viz.size * 0.4;
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        ctx.shadowBlur = 15;
-                        
-                        for (let i = 0; i < 3; i++) {
-                            let val = (dataArray[i * 10] || 0) / 255;
-                            let r = radius * (1 + i * 0.2) + (val * 40 * widthFactor);
-                            let rot = time * (i % 2 === 0 ? 1 : -1) * 0.5;
-                            
-                            ctx.shadowColor = `hsl(${(baseHue + i*40)%360}, 100%, 60%)`;
-                            ctx.strokeStyle = `hsl(${(baseHue + i*40)%360}, 100%, 60%)`;
-                            ctx.lineWidth = 4 + val * 6;
-                            
-                            ctx.beginPath();
-                            if (i === 1) ctx.setLineDash([15, 15]);
-                            else if (i === 2) ctx.setLineDash([5, 20]);
-                            
-                            ctx.arc(0, 0, r, rot, rot + Math.PI * 1.5);
-                            ctx.stroke();
-                            ctx.setLineDash([]);
-                        }
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - radius*2, y: currentVizY - radius*2, w: radius*4, h: radius*4 };
-                    }
-                    else if (state.viz.type === 'modern_gradient_wave') {
-                        analyser.getByteTimeDomainData(dataArray);
-                        const totalWaveWidth = w * widthFactor * 1.5;
-                        const sliceW = totalWaveWidth / dataArray.length;
-                        let startWaveX = currentCx - (totalWaveWidth / 2);
-                        const amp = state.viz.size * 2.5;
-                        
-                        let grad = ctx.createLinearGradient(startWaveX, 0, startWaveX + totalWaveWidth, 0);
-                        grad.addColorStop(0, `hsl(${baseHue}, 100%, 50%)`);
-                        grad.addColorStop(0.5, `hsl(${(baseHue + 60)%360}, 100%, 50%)`);
-                        grad.addColorStop(1, `hsl(${(baseHue + 120)%360}, 100%, 50%)`);
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(startWaveX, currentVizY + (h/2*amp));
-                        let prevX = startWaveX;
-                        let prevY = currentVizY + (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
-                        ctx.lineTo(prevX, prevY);
-                        
-                        for (let i = 1; i < dataArray.length; i++) {
-                            let v = dataArray[i] / 128.0; 
-                            let x = startWaveX + (i * sliceW);
-                            let y = currentVizY + ((v - 1) * (h / 2) * amp);
-                            let xc = (prevX + x) / 2;
-                            let yc = (prevY + y) / 2;
-                            ctx.quadraticCurveTo(prevX, prevY, xc, yc);
-                            prevX = x; prevY = y;
-                        }
-                        ctx.lineTo(prevX, prevY);
-                        ctx.lineTo(startWaveX + totalWaveWidth, currentVizY + (h/2*amp));
-                        ctx.closePath();
-                        
-                        ctx.fillStyle = grad;
-                        ctx.globalAlpha = 0.8;
-                        ctx.fill();
-                        
-                        ctx.lineWidth = 3;
-                        ctx.strokeStyle = `hsl(${(baseHue + 60)%360}, 100%, 70%)`;
-                        ctx.globalAlpha = 1.0;
-                        
-                        ctx.beginPath();
-                        prevX = startWaveX;
-                        prevY = currentVizY + (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
-                        ctx.moveTo(prevX, prevY);
-                        for (let i = 1; i < dataArray.length; i++) {
-                            let v = dataArray[i] / 128.0; 
-                            let x = startWaveX + (i * sliceW);
-                            let y = currentVizY + ((v - 1) * (h / 2) * amp);
-                            let xc = (prevX + x) / 2;
-                            let yc = (prevY + y) / 2;
-                            ctx.quadraticCurveTo(prevX, prevY, xc, yc);
-                            prevX = x; prevY = y;
-                        }
-                        ctx.lineTo(prevX, prevY);
-                        ctx.stroke();
-                        
-                        analyser.getByteFrequencyData(dataArray); 
-                        bboxes.viz = { x: startWaveX, y: currentVizY - (h/2*amp), w: totalWaveWidth, h: h*amp*2 };
-                    }
                     else if (state.viz.type === 'modern_cyber_bars') {
                         const barCount = 48;
                         const spacing = 8 * widthFactor; 
@@ -2255,445 +2013,182 @@
                         ctx.shadowBlur = 0;
                         bboxes.viz = { x: startX, y: currentVizY - maxH - 20, w: totalW, h: maxH * 2 + 40 };
                     }
-                    else if (state.viz.type === 'modern_hologram') {
-                        let radius = h * state.viz.size * 0.6;
+                    else if (state.viz.type === 'modern_dna_helix') {
+                        let helixHeight = h * state.viz.size * 1.5;
+                        let helixWidth = w * 0.15 * widthFactor;
+                        let strands = 30;
+                        
                         ctx.save();
                         ctx.translate(currentCx, currentVizY);
-                        ctx.scale(1, 0.35); // Efek 3D ditarik
-                        ctx.rotate(time * 0.2);
                         
-                        ctx.lineWidth = 2;
-                        for (let ring = 1; ring <= 5; ring++) {
-                            let r = radius * (ring / 5);
-                            ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, ${0.2 + (ring*0.1)})`;
-                            ctx.beginPath();
-                            ctx.arc(0, 0, r, 0, Math.PI * 2);
-                            ctx.stroke();
+                        for (let i = 0; i < strands; i++) {
+                            let yProgress = (i / strands) - 0.5;
+                            let yPos = yProgress * helixHeight;
                             
-                            let segments = ring * 12;
-                            for (let i = 0; i < segments; i++) {
-                                let val = (dataArray[(i * ring * 2) % dataArray.length] || 0) / 255;
-                                if (val > 0.4) {
-                                    let startAngle = (i / segments) * Math.PI * 2;
-                                    let endAngle = startAngle + (Math.PI * 2 / segments) * 0.7;
-                                    
-                                    ctx.beginPath();
-                                    ctx.strokeStyle = `hsla(${(baseHue + 180)%360}, 100%, 60%, ${val})`;
-                                    ctx.lineWidth = 4 * widthFactor + (val * 12);
-                                    ctx.arc(0, 0, r, startAngle, endAngle);
-                                    ctx.stroke();
-                                }
-                            }
-                        }
-                        
-                        ctx.restore();
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        
-                        let pillarVal = (dataArray[0] || 0) / 255;
-                        let pillarH = pillarVal * radius * 1.8;
-                        
-                        let grad = ctx.createLinearGradient(0, 0, 0, -pillarH);
-                        grad.addColorStop(0, `hsla(${baseHue}, 100%, 60%, 0.9)`);
-                        grad.addColorStop(1, `hsla(${baseHue}, 100%, 60%, 0)`);
-                        
-                        ctx.fillStyle = grad;
-                        ctx.beginPath();
-                        ctx.moveTo(-15*widthFactor, 0);
-                        ctx.lineTo(15*widthFactor, 0);
-                        ctx.lineTo(0, -pillarH);
-                        ctx.fill();
-                        
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - radius, y: currentVizY - radius, w: radius*2, h: radius*2 };
-                    }
-                    else if (state.viz.type === 'modern_scifi_radar') {
-                        let radius = h * state.viz.size * 0.5;
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        
-                        // Cincin luar statis
-                        ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, 0.3)`;
-                        ctx.lineWidth = 2;
-                        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
-                        
-                        // Cincin data yang merespon audio dan berputar
-                        for (let i = 0; i < 3; i++) {
-                            let val = (dataArray[i * 15] || 0) / 255;
-                            ctx.beginPath();
-                            ctx.strokeStyle = `hsla(${(baseHue + 40*i)%360}, 100%, 60%, 0.8)`;
-                            ctx.lineWidth = 4 + (val * 12 * widthFactor);
-                            let rotSpeed = time * (i + 1) * 0.5;
-                            ctx.arc(0, 0, radius * (0.4 + i*0.2) + (val*10), rotSpeed, rotSpeed + Math.PI*(0.5 + val));
-                            ctx.stroke();
-                        }
-                        
-                        // Radar Sweep (Pancaran radar)
-                        let sweepGrad = ctx.createConicGradient(time * 3, 0, 0);
-                        sweepGrad.addColorStop(0, `hsla(${baseHue}, 100%, 60%, 0)`);
-                        sweepGrad.addColorStop(0.8, `hsla(${baseHue}, 100%, 60%, 0.1)`);
-                        sweepGrad.addColorStop(1, `hsla(${baseHue}, 100%, 60%, 0.6)`);
-                        ctx.fillStyle = sweepGrad;
-                        ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
-
-                        // Inti radar berdenyut
-                        ctx.fillStyle = `hsla(${(baseHue+180)%360}, 100%, 70%, 0.8)`;
-                        ctx.beginPath(); ctx.arc(0, 0, radius * 0.1 * (1 + audioReactivity * 2.5), 0, Math.PI * 2); ctx.fill();
-
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - radius, y: currentVizY - radius, w: radius*2, h: radius*2 };
-                    }
-                    else if (state.viz.type === 'modern_infinity_tunnel') {
-                        let maxRadius = h * state.viz.size;
-                        let tunnelDepth = 15;
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        
-                        for (let i = tunnelDepth; i > 0; i--) {
-                            // Hitung progres kedalaman berdasarkan waktu untuk ilusi maju ke dalam
-                            let progress = ((time * 0.5) + (i / tunnelDepth)) % 1.0;
-                            let currentRadius = maxRadius * Math.pow(progress, 1.5); 
-                            
-                            if (currentRadius < 2) continue;
-
-                            let val = (dataArray[Math.floor((1-progress) * dataArray.length * 0.4)] || 0) / 255;
-                            let alpha = Math.sin(progress * Math.PI); // Pudar di tengah dan pudar di luar
-
-                            ctx.strokeStyle = `hsla(${(baseHue + progress*360)%360}, 100%, 60%, ${alpha})`;
-                            ctx.lineWidth = 1 + (progress * 5 * widthFactor) + (val * 8);
-                            ctx.shadowBlur = 15 * progress;
-                            ctx.shadowColor = ctx.strokeStyle;
-
-                            // Gambar Segienam yang berotasi
-                            ctx.beginPath();
-                            let sides = 6;
-                            let rot = progress * Math.PI + (time * 0.3);
-                            for (let s = 0; s <= sides; s++) {
-                                let angle = rot + (s * Math.PI * 2 / sides);
-                                let x = Math.cos(angle) * currentRadius * (1 + val*0.1);
-                                let y = Math.sin(angle) * currentRadius * (1 + val*0.1);
-                                if (s === 0) ctx.moveTo(x, y);
-                                else ctx.lineTo(x, y);
-                            }
-                            ctx.stroke();
-                        }
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - maxRadius, y: currentVizY - maxRadius, w: maxRadius*2, h: maxRadius*2 };
-                    }
-                    else if (state.viz.type === 'modern_liquid_orb') {
-                        let baseRadius = h * state.viz.size * 0.4;
-                        let points = 90;
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        ctx.beginPath();
-                        
-                        let grad = ctx.createRadialGradient(0, 0, 0, 0, 0, baseRadius * 2);
-                        grad.addColorStop(0, `hsla(${baseHue}, 100%, 70%, 0.8)`);
-                        grad.addColorStop(0.5, `hsla(${(baseHue+60)%360}, 100%, 50%, 0.6)`);
-                        grad.addColorStop(1, `hsla(${(baseHue+120)%360}, 100%, 30%, 0)`);
-                        
-                        for (let i = 0; i <= points; i++) {
-                            let angle = (i / points) * Math.PI * 2;
-                            // Petakan data audio ke sudut lingkaran dengan halus
-                            let dataIdx = Math.floor(Math.abs(Math.sin(angle)) * dataArray.length * 0.2);
+                            let dataIdx = Math.floor(Math.abs(yProgress) * 2 * dataArray.length * 0.4);
                             let val = (dataArray[dataIdx] || 0) / 255;
                             
-                            // Efek Perlin noise tiruan menggunakan sinus
-                            let wobble = Math.sin(angle * 4 + time * 3) * 15 * widthFactor;
-                            let wobble2 = Math.cos(angle * 7 - time * 2) * 8 * widthFactor;
+                            let phase = (yProgress * Math.PI * 6) + (time * 2);
                             
-                            let r = baseRadius + wobble + wobble2 + (val * baseRadius * audioReactivity * 2.5);
-                            let x = Math.cos(angle) * r;
-                            let y = Math.sin(angle) * r;
+                            let xPos1 = Math.sin(phase) * helixWidth;
+                            let zPos1 = Math.cos(phase) * helixWidth;
                             
-                            if (i === 0) ctx.moveTo(x, y);
-                            else ctx.lineTo(x, y);
-                        }
-                        
-                        ctx.fillStyle = grad;
-                        ctx.shadowBlur = 20 + (audioReactivity * 40);
-                        ctx.shadowColor = `hsl(${baseHue}, 100%, 50%)`;
-                        ctx.fill();
-                        
-                        // Cahaya core dalam
-                        ctx.beginPath(); ctx.arc(0, 0, baseRadius * 0.3 * (1 + audioReactivity), 0, Math.PI*2);
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fill();
-                        
-                        ctx.restore();
-                        let maxR = baseRadius * 3;
-                        bboxes.viz = { x: currentCx - maxR, y: currentVizY - maxR, w: maxR*2, h: maxR*2 };
-                    }
-                    else if (state.viz.type === 'modern_supernova') {
-                        let maxRadius = h * state.viz.size;
-                        let numRays = 120;
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        ctx.rotate(time * 0.05);
-                        
-                        for (let i = 0; i < numRays; i++) {
-                            let dataIdx = Math.floor(i * (dataArray.length / numRays));
-                            let val = (dataArray[dataIdx] || 0) / 255;
+                            let xPos2 = Math.sin(phase + Math.PI) * helixWidth;
+                            let zPos2 = Math.cos(phase + Math.PI) * helixWidth;
                             
-                            if (val < 0.1) continue; 
+                            let depthRef = helixWidth * 1.5;
+                            let scale1 = (zPos1 + depthRef) / (depthRef * 2);
+                            let scale2 = (zPos2 + depthRef) / (depthRef * 2);
                             
-                            let angle = (i / numRays) * Math.PI * 2;
-                            let innerR = maxRadius * 0.15 * (1 + audioReactivity);
-                            let outerR = innerR + Math.pow(val, 1.5) * maxRadius;
-                            
-                            ctx.beginPath();
-                            ctx.moveTo(Math.cos(angle) * innerR, Math.sin(angle) * innerR);
-                            ctx.lineTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
-                            ctx.strokeStyle = `hsla(${(baseHue + val*120)%360}, 100%, 60%, ${0.2 + val*0.8})`;
-                            ctx.lineWidth = 1 + (val * 6 * widthFactor);
-                            ctx.lineCap = 'round';
-                            ctx.stroke();
-                            
-                            // Partikel di ujung sinar yang kuat
-                            if (val > 0.6) {
+                            if (val > 0.1) {
                                 ctx.beginPath();
-                                ctx.arc(Math.cos(angle) * (outerR + 10), Math.sin(angle) * (outerR + 10), val * 5 * widthFactor, 0, Math.PI*2);
-                                ctx.fillStyle = '#ffffff';
+                                ctx.moveTo(xPos1 * scale1, yPos);
+                                ctx.lineTo(xPos2 * scale2, yPos);
+                                ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, ${val * 0.5})`;
+                                ctx.lineWidth = 1 + val * 2;
+                                ctx.stroke();
+                            }
+                            
+                            let drawNode = (x, y, s, z, isFront) => {
+                                ctx.beginPath();
+                                let r = 3 + (val * 8) * s;
+                                ctx.arc(x, y, Math.max(1, r), 0, Math.PI * 2);
+                                
+                                let nodeHue = (baseHue + (isFront ? 0 : 180) + (yProgress*120)) % 360;
+                                ctx.fillStyle = `hsla(${nodeHue}, 100%, 60%, ${0.4 + s * 0.6})`;
+                                ctx.shadowBlur = s * 10 * val;
+                                ctx.shadowColor = ctx.fillStyle;
                                 ctx.fill();
+                            };
+                            
+                            if (zPos1 < zPos2) {
+                                drawNode(xPos1 * scale1, yPos, scale1, zPos1, true);
+                                drawNode(xPos2 * scale2, yPos, scale2, zPos2, false);
+                            } else {
+                                drawNode(xPos2 * scale2, yPos, scale2, zPos2, false);
+                                drawNode(xPos1 * scale1, yPos, scale1, zPos1, true);
                             }
                         }
                         
-                        // Glow pusat bintang
-                        let coreGrad = ctx.createRadialGradient(0,0,0, 0,0, maxRadius*0.2*(1+audioReactivity));
-                        coreGrad.addColorStop(0, '#ffffff');
-                        coreGrad.addColorStop(0.2, `hsla(${baseHue}, 100%, 70%, 1)`);
-                        coreGrad.addColorStop(1, `hsla(${baseHue}, 100%, 50%, 0)`);
-                        ctx.beginPath(); ctx.arc(0,0, maxRadius*0.2*(1+audioReactivity), 0, Math.PI*2);
-                        ctx.fillStyle = coreGrad; ctx.fill();
-
+                        ctx.shadowBlur = 0;
                         ctx.restore();
-                        bboxes.viz = { x: currentCx - maxRadius, y: currentVizY - maxRadius, w: maxRadius*2, h: maxRadius*2 };
+                        bboxes.viz = { x: currentCx - helixWidth, y: currentVizY - helixHeight/2, w: helixWidth*2, h: helixHeight };
                     }
-                    else if (state.viz.type === 'modern_quantum') {
-                        let fieldRadius = h * state.viz.size;
-                        let numNodes = 100;
+                    else if (state.viz.type === 'modern_cityscape') {
+                        let cityWidth = w * 0.8 * widthFactor;
+                        let maxBldgHeight = h * state.viz.size;
+                        let numBuildings = 40;
+                        let bldgWidth = cityWidth / numBuildings;
                         
-                        if (!window.quantumNodes || window.quantumNodes.length !== numNodes) {
-                            window.quantumNodes = Array.from({length: numNodes}, () => ({
-                                angle: Math.random() * Math.PI * 2, dist: Math.random(),
-                                speed: (Math.random() - 0.5) * 0.03, z: Math.random()
-                            }));
-                        }
-
                         ctx.save();
-                        ctx.translate(currentCx, currentVizY);
+                        ctx.translate(currentCx - cityWidth/2, currentVizY + (maxBldgHeight*0.4)); 
                         
-                        window.quantumNodes.forEach((node, i) => {
-                            let val = (dataArray[i % 64] || 0) / 255;
+                        for (let i = 0; i < numBuildings; i++) {
+                            let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2;
+                            let dataIdx = Math.floor(distFromCenter * dataArray.length * 0.4);
                             
-                            node.angle += node.speed * (1 + audioReactivity * 3);
-                            node.z -= 0.005 + (audioReactivity * 0.02);
-                            if (node.z < 0) {
-                                node.z = 1; node.dist = Math.random(); node.angle = Math.random() * Math.PI * 2;
+                            let val1 = (dataArray[dataIdx] || 0) / 255;
+                            let val2 = (dataArray[Math.min(dataArray.length-1, dataIdx+1)] || 0) / 255;
+                            let val = (val1 + val2) / 2;
+                            
+                            let targetHeight = val * maxBldgHeight;
+                            let seed = (i * 137.5) % 1;
+                            let baseHeight = maxBldgHeight * 0.1 * (seed + 0.5);
+                            let finalHeight = baseHeight + targetHeight;
+                            
+                            let x = i * bldgWidth;
+                            
+                            let bColor = `hsl(${(baseHue + distFromCenter*120)%360}, 80%, ${10 + val*40}%)`;
+                            ctx.fillStyle = bColor;
+                            ctx.fillRect(x + 1, -finalHeight, bldgWidth - 2, finalHeight);
+                            
+                            ctx.fillStyle = `hsl(${(baseHue + distFromCenter*120)%360}, 100%, 60%)`;
+                            ctx.fillRect(x + 1, -finalHeight, bldgWidth - 2, Math.max(2, val * 8));
+                            
+                            if (val > 0.3 && bldgWidth > 10) {
+                                ctx.fillStyle = `rgba(255, 255, 255, ${val})`;
+                                for (let wy = -finalHeight + 10; wy < -10; wy += 15) {
+                                    if ((i + wy) % 3 === 0) {
+                                        ctx.fillRect(x + bldgWidth*0.3, wy, bldgWidth*0.4, 4);
+                                    }
+                                }
                             }
-
-                            // Ilusi perspektif 3D
-                            let perspective = 1 / (node.z + 0.1);
-                            let currentDist = node.dist * fieldRadius * perspective * (1 + val*0.1);
-                            
-                            let x = Math.cos(node.angle) * currentDist;
-                            let y = Math.sin(node.angle) * currentDist;
-                            
-                            // Garis laser kuantum jika ketukan bass kuat
-                            if (val > 0.6) {
-                                ctx.beginPath();
-                                ctx.moveTo(0, 0); ctx.lineTo(x, y);
-                                ctx.strokeStyle = `hsla(${(baseHue + node.z*180)%360}, 100%, 60%, ${val * 0.4})`;
-                                ctx.lineWidth = 1 * widthFactor; ctx.stroke();
-                            }
-
-                            // Node bintang
-                            let pSize = perspective * 2 * (1 + val * 3) * widthFactor;
-                            ctx.beginPath(); ctx.arc(x, y, pSize, 0, Math.PI * 2);
-                            ctx.fillStyle = `hsla(${(baseHue + node.angle*180/Math.PI)%360}, 100%, 70%, ${1 - node.z})`;
-                            ctx.fill();
-                        });
+                        }
                         
-                        // Lubang hitam (pusat)
-                        ctx.beginPath(); ctx.arc(0, 0, fieldRadius * 0.05 * (1 + audioReactivity), 0, Math.PI*2);
-                        ctx.fillStyle = '#0f1115'; ctx.fill();
-                        ctx.strokeStyle = `hsl(${baseHue}, 100%, 60%)`; ctx.lineWidth = 2; ctx.stroke();
+                        ctx.globalAlpha = 0.3;
+                        ctx.scale(1, -0.4);
+                        for (let i = 0; i < numBuildings; i++) {
+                            let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2;
+                            let dataIdx = Math.floor(distFromCenter * dataArray.length * 0.4);
+                            let val = (dataArray[dataIdx] || 0) / 255;
+                            let seed = (i * 137.5) % 1;
+                            let finalHeight = (maxBldgHeight * 0.1 * (seed + 0.5)) + (val * maxBldgHeight);
+                            
+                            let x = i * bldgWidth;
+                            ctx.fillStyle = `hsl(${(baseHue + distFromCenter*120)%360}, 100%, 50%)`;
+                            ctx.fillRect(x + 1, 0, bldgWidth - 2, -finalHeight);
+                        }
                         
                         ctx.restore();
-                        bboxes.viz = { x: currentCx - fieldRadius*1.5, y: currentVizY - fieldRadius*1.5, w: fieldRadius*3, h: fieldRadius*3 };
+                        bboxes.viz = { x: currentCx - cityWidth/2, y: currentVizY - maxBldgHeight*0.6, w: cityWidth, h: maxBldgHeight*1.2 };
                     }
-                }
-                else if (state.viz.type.startsWith('poly') || state.viz.type.startsWith('sym') || state.viz.type.startsWith('abs')) {
-                    let baseSize = 50 * widthFactor;
-                    let size = baseSize + (Math.pow(audioReactivity, 1.5) * h * state.viz.size * 1.5);
-                    bboxes.viz = { x: currentCx - size, y: currentVizY - size, w: size * 2, h: size * 2 };
-                    
-                    ctx.save();
-                    ctx.translate(currentCx, currentVizY);
-                    
-                    let rotSpeed = time * (0.5 + audioReactivity);
-                    if(state.viz.type.includes('spin') || state.viz.type.includes('kaleido') || state.viz.type.includes('sym')) {
-                        ctx.rotate(rotSpeed);
-                    }
-
-                    ctx.lineWidth = 4;
-                    ctx.lineJoin = 'round';
-                    
-                    if(state.viz.type.startsWith('poly')) {
-                        ctx.beginPath();
-                        if(state.viz.type === 'poly_triangle') drawPoly(ctx, 3, size);
-                        else if(state.viz.type === 'poly_square') drawPoly(ctx, 4, size);
-                        else if(state.viz.type === 'poly_pentagon') drawPoly(ctx, 5, size);
-                        else if(state.viz.type === 'poly_hexagon') drawPoly(ctx, 6, size);
-                        else if(state.viz.type === 'poly_oct') drawPoly(ctx, 8, size);
-                        else if(state.viz.type === 'poly_star_5') drawStar(ctx, 5, size, size/2.5);
-                        else if(state.viz.type === 'poly_star_8') drawStar(ctx, 8, size, size/2.5);
-                        else if(state.viz.type === 'poly_pulse') {
-                            let sides = Math.max(3, Math.min(12, 4 + Math.floor(audioReactivity*10)));
-                            drawPoly(ctx, sides, size);
-                        }
-                        else if(state.viz.type === 'poly_spin') drawPoly(ctx, 4, size);
-                        else if(state.viz.type === 'poly_fractal') {
-                            drawPoly(ctx, 3, size); drawPoly(ctx, 3, size/2, true); drawPoly(ctx, 3, size/4, true);
-                        }
-                        ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.2)`;
-                        ctx.fill(); ctx.stroke();
-                    }
-                    else if(state.viz.type.startsWith('sym')) {
-                        let axes = 4;
-                        if(state.viz.type === 'sym_6') axes = 6;
-                        if(state.viz.type === 'sym_8' || state.viz.type === 'sym_kaleido') axes = 8;
-                        if(state.viz.type === 'sym_12') axes = 12;
+                    else if (state.viz.type === 'modern_digital_pixel') {
+                        let totalW = w * 0.6 * widthFactor;
+                        let maxH = h * state.viz.size;
+                        let cols = 32;
+                        let rows = 16;
+                        let pixelW = totalW / cols;
+                        let pixelH = maxH / rows;
+                        let gap = 2;
                         
-                        for(let i=0; i<axes; i++) {
-                            ctx.rotate(Math.PI*2/axes);
-                            ctx.beginPath();
-                            if(state.viz.type === 'sym_cross') { ctx.roundRect(-size/2, -5, size, 10, 5); ctx.fill(); }
-                            else if (state.viz.type === 'sym_x') { ctx.moveTo(0,0); ctx.lineTo(size, size); ctx.stroke(); }
-                            else if (state.viz.type === 'sym_web') { 
-                                ctx.moveTo(0,0); ctx.lineTo(size, 0); 
-                                ctx.moveTo(size/2,0); ctx.lineTo(Math.cos(Math.PI*2/axes)*size/2, Math.sin(Math.PI*2/axes)*size/2); 
-                                ctx.stroke();
-                            }
-                            else { 
-                                ctx.moveTo(0,0);
-                                for(let d=0; d<15; d++) {
-                                    let v = (dataArray[d*3]||0)/255;
-                                    ctx.quadraticCurveTo(d*10, v*size, d*15, (v*size)/2);
-                                }
-                                ctx.stroke();
-                            }
-                        }
-                    }
-                    else if(state.viz.type.startsWith('abs')) {
-                        ctx.beginPath();
-                        if(state.viz.type === 'abs_blob') {
-                            for(let i=0; i<30; i++) {
-                                let angle = (i/30)*Math.PI*2;
-                                let r = size * (0.6 + Math.pow((dataArray[i*3]||0)/255, 2) * 0.6);
-                                if(i===0) ctx.moveTo(Math.cos(angle)*r, Math.sin(angle)*r);
-                                else ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
-                            }
-                            ctx.closePath(); ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.5)`; ctx.fill();
-                        }
-                        else if(state.viz.type === 'abs_rings') {
-                            for(let i=0; i<6; i++) {
-                                 let r = size*(0.15*(i+1)) + Math.pow((dataArray[i*5]||0)/255, 2)*60;
-                                 ctx.beginPath(); ctx.arc(0,0, r, 0, Math.PI*2); ctx.stroke();
-                            }
-                        } else { ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke(); }
-                    }
-                    
-                    ctx.restore();
-                }
-                else {
-                    updateParticles();
-                    let emitCount = Math.floor(Math.pow(audioReactivity, 2) * 15);
-                    if(emitCount > 0 && particles.length < maxParticles) {
-                        for(let i=0; i<emitCount; i++) {
-                            let vx = (Math.random()-0.5)*12;
-                            let vy = (Math.random()-0.5)*12;
-                            let c = `hsl(${(baseHue + Math.random()*60 - 30) % 360}, 100%, 60%)`; 
+                        ctx.save();
+                        ctx.translate(currentCx - totalW/2, currentVizY - maxH/2);
+                        
+                        for (let c = 0; c < cols; c++) {
+                            let dataIdx = Math.floor(Math.abs((c/cols)-0.5)*2 * dataArray.length * 0.5);
+                            let val = (dataArray[dataIdx] || 0) / 255;
+                            let activeRows = Math.floor(val * rows);
                             
-                            if(state.viz.type === 'part_fountain') { vy = -Math.abs(vy)*2 - 5; vx = vx*0.5; }
-                            if(state.viz.type === 'part_rain') { vy = Math.abs(vy)*2 + 5; vx = vx*0.2; }
-                            if(state.viz.type === 'part_orbit') { 
-                                let angle = Math.random() * Math.PI * 2;
-                                vx = Math.cos(angle) * (5 + audioReactivity*10); 
-                                vy = Math.sin(angle) * (5 + audioReactivity*10); 
+                            for (let r = 0; r < rows; r++) {
+                                let x = c * pixelW;
+                                let y = maxH - ((r + 1) * pixelH);
+                                
+                                ctx.beginPath();
+                                ctx.rect(x + gap/2, y + gap/2, pixelW - gap, pixelH - gap);
+                                
+                                if (r < activeRows) {
+                                    let pColor = `hsl(${(baseHue + (r/rows)*120)%360}, 100%, ${50 + (val*20)}%)`;
+                                    ctx.fillStyle = pColor;
+                                    ctx.shadowBlur = 10;
+                                    ctx.shadowColor = pColor;
+                                    ctx.fill();
+                                } else {
+                                    ctx.fillStyle = `hsla(${baseHue}, 20%, 20%, 0.2)`;
+                                    ctx.shadowBlur = 0;
+                                    ctx.fill();
+                                }
                             }
-                            particles.push(createParticle(currentCx, currentVizY, vx, vy, Math.random()*4+2, c));
                         }
-                    }
-
-                    bboxes.viz = { x: currentCx - w/3, y: currentVizY - h/3, w: w/1.5, h: h/1.5 };
-
-                    for(let p of particles) {
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = Math.max(0, p.life / p.maxLife); 
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size * (1 + audioReactivity*0.5), 0, Math.PI*2);
-                        ctx.fill();
-                    }
-                    ctx.globalAlpha = 1.0;
-                    
-                    if(state.viz.type.startsWith('exp') || state.viz.type.startsWith('3d')) {
-                         ctx.lineWidth = 3;
-                         if(state.viz.type === 'exp_noise') {
-                             for(let i=0; i<150; i++) {
-                                 if(Math.random() < audioReactivity * 1.5) {
-                                     ctx.fillRect(currentCx + (Math.random()-0.5)*w*0.8, currentVizY + (Math.random()-0.5)*h*0.8, 4, 4);
-                                 }
-                             }
-                         }
-                         if(state.viz.type === '3d_cube') {
-                             let s = 120 * widthFactor * (1 + audioReactivity*0.4);
-                             ctx.save(); ctx.translate(currentCx, currentVizY); ctx.rotate(time * 0.5);
-                             
-                             ctx.strokeRect(-s/2, -s/2, s, s); ctx.strokeRect(-s/4, -s/4, s, s);
-                             ctx.beginPath(); ctx.moveTo(-s/2, -s/2); ctx.lineTo(-s/4, -s/4); ctx.stroke();
-                             ctx.beginPath(); ctx.moveTo(s/2, -s/2); ctx.lineTo(3*s/4, -s/4); ctx.stroke();
-                             ctx.beginPath(); ctx.moveTo(-s/2, s/2); ctx.lineTo(-s/4, 3*s/4); ctx.stroke();
-                             ctx.beginPath(); ctx.moveTo(s/2, s/2); ctx.lineTo(3*s/4, 3*s/4); ctx.stroke();
-                             ctx.restore();
-                         }
+                        
+                        ctx.shadowBlur = 0;
+                        ctx.restore();
+                        bboxes.viz = { x: currentCx - totalW/2, y: currentVizY - maxH/2, w: totalW, h: maxH };
                     }
                 }
-            }
-
-            function drawPoly(ctx, sides, radius, flip=false) {
-                let a = (Math.PI * 2) / sides;
-                ctx.moveTo(radius, 0);
-                for (let i = 1; i <= sides; i++) ctx.lineTo(radius * Math.cos(a * i), radius * Math.sin(a * i) * (flip ? -1 : 1));
-                ctx.closePath();
-            }
-            
-            function drawStar(ctx, spikes, outerRadius, innerRadius) {
-                let rot = Math.PI / 2 * 3;
-                let x = 0, y = 0;
-                let step = Math.PI / spikes;
-                ctx.moveTo(x, y - outerRadius);
-                for (let i = 0; i < spikes; i++) {
-                    x = Math.cos(rot) * outerRadius; y = Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step;
-                    x = Math.cos(rot) * innerRadius; y = Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step;
-                }
-                ctx.closePath();
             }
 
             if (state.textFx.enabled) {
                 ctx.save();
                 
                 let displayText = state.textFx.customText;
-                // If custom text is empty, try to get the current track name
                 if (!displayText && currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
                     let trackName = playlist[currentTrackIndex].file.name;
-                    // Remove extension for cleaner look if desired, or keep it. Let's remove common ones.
                     displayText = trackName.replace(/\.[^/.]+$/, "");
                 }
-                if (!displayText) displayText = "TNC7 Visualizer"; // Fallback
+                if (!displayText) displayText = "TNC7 Visualizer";
                 
                 let time = Date.now() / 1000;
 
-                // Reset typewriter and trigger smooth fade if track/text changes
                 if (displayText !== lastTrackForText) {
                     typewriterProgress = 0;
                     lastTrackForText = displayText;
@@ -2703,7 +2198,6 @@
                 let fontSize = state.textFx.size;
                 let speedMult = (state.textFx.animSpeed !== undefined ? state.textFx.animSpeed : 50) / 50;
                 
-                // Default position (Top center)
                 let textX = cx + (state.textFx.offsetX || 0);
                 let textY = (h * 0.15) + (state.textFx.offsetY || 0);
                 
@@ -2711,11 +2205,8 @@
                 let scale = 1;
                 let finalDisplayText = displayText;
 
-                // Handle Animations
                 if (state.textFx.anim === 'blink') {
-                    // Modern blink: sine wave between 0.2 and 1
                     alpha = (Math.sin(time * 5 * speedMult) * 0.4) + 0.6;
-                    // If audio is playing, make it blink faster based on beat
                     if (audioReactivity > 0.3) alpha = (Math.sin(time * 15 * speedMult) * 0.5) + 0.5;
                 } else if (state.textFx.anim === 'pulse') {
                     scale = 1 + (audioReactivity * 0.3 * speedMult);
@@ -2730,14 +2221,13 @@
                     }
                 } else if (state.textFx.anim === 'typewriter') {
                     let len = displayText.length;
-                    let pauseFrames = 60; // Durasi diam saat teks sudah utuh
-                    let fadeFrames = 30; // Durasi efek memudar (fade out)
-                    let emptyFrames = 20; // Jeda sejenak sebelum mulai ngetik lagi
+                    let pauseFrames = 60;
+                    let fadeFrames = 30;
+                    let emptyFrames = 20;
                     let totalCycle = len + pauseFrames + fadeFrames + emptyFrames;
                     
-                    typewriterProgress += 0.25 * speedMult; // Kecepatan ngetik
+                    typewriterProgress += 0.25 * speedMult;
                     
-                    // Reset siklus jika sudah mencapai ujung
                     if (typewriterProgress >= totalCycle) {
                         typewriterProgress = 0;
                     }
@@ -2746,25 +2236,19 @@
                     let showCursor = false;
                     
                     if (typewriterProgress < len) {
-                        // Fase 1: Mengetik maju
                         charsToShow = Math.floor(typewriterProgress);
                         showCursor = true;
                     } else if (typewriterProgress < len + pauseFrames) {
-                        // Fase 2: Teks utuh & diam sejenak untuk dibaca
                         charsToShow = len;
-                        // Kursor berkedip santai
                         showCursor = Math.floor(time * 3 * speedMult) % 2 === 0;
                     } else if (typewriterProgress < len + pauseFrames + fadeFrames) {
-                        // Fase 3: Memudar (Fade out)
                         charsToShow = len;
                         let fadeProgress = typewriterProgress - (len + pauseFrames);
-                        // Mengurangi opacity (alpha) perlahan hingga 0
                         alpha *= Math.max(0, 1 - (fadeProgress / fadeFrames)); 
                         showCursor = false;
                     } else {
-                        // Fase 4: Kosong & diam sejenak
                         charsToShow = 0;
-                        alpha = 0; // Transparan penuh
+                        alpha = 0;
                         showCursor = false;
                     }
                     
@@ -2775,17 +2259,15 @@
                     }
                 }
 
-                // Smooth fade-in transition saat perpindahan lagu (selama 1 detik)
                 let timeSinceChange = time - textTransitionStart;
                 let transitionFade = Math.min(1, timeSinceChange / 1.0); 
-                alpha *= transitionFade; // Menggabungkan efek transisi halus dengan efek alpha lainnya
+                alpha *= transitionFade;
 
                 ctx.font = `bold ${fontSize}px ${state.textFx.font}, sans-serif`;
                 ctx.textAlign = state.textFx.align || 'center';
                 ctx.textBaseline = 'middle';
                 ctx.globalAlpha = alpha;
 
-                // Handle Effects
                 ctx.shadowColor = 'transparent';
                 ctx.shadowBlur = 0;
                 ctx.shadowOffsetX = 0;
@@ -2817,10 +2299,9 @@
                     ctx.fillText(finalDisplayText, 0, 0);
                 }
                 
-                // Calculate bounding box for dragging
                 let metrics = ctx.measureText(finalDisplayText);
                 let textW = metrics.width * scale;
-                let textH = fontSize * scale; // Approximation
+                let textH = fontSize * scale;
                 
                 let bboxX = textX;
                 if ((state.textFx.align || 'center') === 'center') {
@@ -2839,11 +2320,9 @@
                 ctx.restore();
             }
 
-            // Depan / Kunci Layer
             if (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci') drawOverlayObj();
         }
 
-        // --- STREAMING_CHUNK:Interaction logic... ---
         let draggingElement = null;
         let dragStartX = 0;
         let dragStartY = 0;
@@ -2867,7 +2346,6 @@
             let clicked = null;
             
             if (state.textFx.enabled && bboxes.text) {
-                // Add a small padding to the hitbox for easier grabbing
                 const padding = 10;
                 if (pos.x >= bboxes.text.x - padding && pos.x <= bboxes.text.x + bboxes.text.w + padding && 
                     pos.y >= bboxes.text.y - padding && pos.y <= bboxes.text.y + bboxes.text.h + padding) {
@@ -2948,13 +2426,11 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('ServiceWorker registration failed: ', error);
-                    });
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }).catch(error => {
+                    console.log('ServiceWorker registration failed: ', error);
+                });
             });
         }
 
