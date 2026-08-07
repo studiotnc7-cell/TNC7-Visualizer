@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tnc7-viz-cache-v1';
+const CACHE_NAME = 'tnc7-viz-v1';
 const urlsToCache = [
   './',
   './index.html',
@@ -13,18 +13,40 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Cache hit - kembalikan response dari cache
+        // Return file from cache if exists
         if (response) {
           return response;
         }
-        // Jika tidak ada di cache, ambil dari network
-        return fetch(event.request);
+        
+        // Otherwise fetch from network
+        return fetch(event.request).then(
+          function(response) {
+            // Check if we received a valid response
+            if(!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Clone the response because it's a stream
+            var responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                // Ignore external URLs from caching to avoid issues with CDNs
+                if (event.request.url.startsWith(self.location.origin)) {
+                    cache.put(event.request, responseToCache);
+                }
+              });
+
+            return response;
+          }
+        );
       })
   );
 });
@@ -36,11 +58,11 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // Hapus cache lama jika versinya sudah berubah
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  self.clients.claim();
 });
