@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="TNC7 Visualizer - Advanced Audio Visualizer dengan dukungan kustomisasi, PWA, dan export video.">
     <title>TNC7 Visualizer</title>
     
     <!-- PWA Meta Tags -->
@@ -1425,12 +1424,9 @@
                 let filterBG = 'none';
                 let flashAlpha = 0;
 
-                // Memisahkan frekuensi Kick & Bass khusus untuk efek denyut background agar lebih pas dengan irama (beat)
                 let kickBassReactivity = 0;
                 if (dataArray) {
-                    // Fokus pada frekuensi terendah untuk mendeteksi kick drum (bass drum)
                     let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) / 3 / 255;
-                    // Kurangi sensitivitas (abaikan suara pelan), tapi buat sangat agresif saat ada beat kuat
                     if (kickBassAvg > 0.45) {
                         kickBassReactivity = Math.pow(kickBassAvg, 4.0) * 2.2; 
                     }
@@ -1438,7 +1434,6 @@
 
                 if (state.bg.effect === 'denyut') {
                     let targetScale = 1 + (kickBassReactivity * state.bg.pulseIntensity);
-                    // Attack instan (sangat agresif), Decay sedikit lebih cepat agar snappy
                     if (targetScale > currentBeatScale) {
                         currentBeatScale = targetScale;
                     } else {
