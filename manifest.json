@@ -1,7 +1,6 @@
 {
 "name": "TNC7 Visualizer",
-"short_name": "TNC7 Viz",
-"description": "Aplikasi Web Audio Visualizer Modern",
+"short_name": "TNC7Viz",
 "start_url": "./index.html",
 "display": "standalone",
 "background_color": "#0f1115",
