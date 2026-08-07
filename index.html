@@ -7,7 +7,8 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f1115">
+    <meta name="theme-color" content="#facc15">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -280,17 +281,27 @@
         .playlist-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 8px; }
         .remove-track-btn { color: var(--accent-red); cursor: pointer; padding: 6px 10px; border-radius: 4px; background: transparent; border: none; outline: none; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; }
         .remove-track-btn:hover { background-color: rgba(239, 68, 68, 0.2); }
+
+        /* Bar kuning statis melayang di atas tanpa menggeser layout */
+        #yellow-top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 12px; /* Cukup tipis agar tidak terlalu menutupi logo di bawahnya */
+            background-color: #facc15;
+            z-index: 10000;
+            -webkit-app-region: drag; /* Tetap bisa didrag jika dibuka sebagai PWA */
+        }
     </style>
 </head>
 <body>
-    <!-- Garis kuning dekoratif di atas, dibuat absolute & ditarik ke atas 1px untuk menutupi celah hitam/border -->
-    <div class="absolute -top-[1px] left-0 w-full h-[10px] bg-yellow-400 z-[9999]"></div>
-    <!-- Spacer untuk menggantikan posisi bar yang di-absolute -->
-    <div class="w-full h-[9px] flex-shrink-0"></div>
+    <!-- Bar kuning tetap di atas tanpa menggeser elemen di bawahnya -->
+    <div id="yellow-top-bar"></div>
     
     <div id="notification-modal">Pesan Notifikasi</div>
 
-    <div class="top-bar">
+    <div class="top-bar" style="margin-top: 12px;">
         <div class="flex items-center gap-4">
             <div class="logo">
                 <i class="fa-solid fa-circle-play text-yellow-400"></i>
@@ -1424,9 +1435,12 @@
                 let filterBG = 'none';
                 let flashAlpha = 0;
 
+                // Memisahkan frekuensi Kick & Bass khusus untuk efek denyut background agar lebih pas dengan irama (beat)
                 let kickBassReactivity = 0;
                 if (dataArray) {
+                    // Fokus pada frekuensi terendah untuk mendeteksi kick drum (bass drum)
                     let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) / 3 / 255;
+                    // Kurangi sensitivitas (abaikan suara pelan), tapi buat sangat agresif saat ada beat kuat
                     if (kickBassAvg > 0.45) {
                         kickBassReactivity = Math.pow(kickBassAvg, 4.0) * 2.2; 
                     }
@@ -1434,6 +1448,7 @@
 
                 if (state.bg.effect === 'denyut') {
                     let targetScale = 1 + (kickBassReactivity * state.bg.pulseIntensity);
+                    // Attack instan (sangat agresif), Decay sedikit lebih cepat agar snappy
                     if (targetScale > currentBeatScale) {
                         currentBeatScale = targetScale;
                     } else {
@@ -2427,7 +2442,8 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(registration => {
+                // Using a relative path which works better for GitHub Pages subdirectories
+                navigator.serviceWorker.register('sw.js').then(registration => {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 }).catch(error => {
                     console.log('ServiceWorker registration failed: ', error);
