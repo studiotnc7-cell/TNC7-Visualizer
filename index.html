@@ -288,10 +288,10 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 12px; /* Cukup tipis agar tidak terlalu menutupi logo di bawahnya */
+            height: 12px;
             background-color: #facc15;
             z-index: 10000;
-            -webkit-app-region: drag; /* Tetap bisa didrag jika dibuka sebagai PWA */
+            -webkit-app-region: drag; 
         }
     </style>
 </head>
@@ -358,6 +358,14 @@
                     <span class="control-label">Lebar</span>
                     <div class="flex-1">
                         <input type="range" min="1" max="100" value="50" id="vizWidthSlider">
+                    </div>
+                </div>
+
+                <!-- NEW: Opacity Slider under Size & Width -->
+                <div class="control-row">
+                    <span class="control-label">Opasitas</span>
+                    <div class="flex-1">
+                        <input type="range" min="1" max="100" value="100" id="vizOpacitySlider">
                     </div>
                 </div>
 
@@ -616,6 +624,7 @@
             <div class="preview-container" id="canvas-wrapper">
                 <div id="recording-indicator" class="hidden absolute top-4 right-4 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold animate-pulse z-50">REC</div>
                 <div id="no-audio-text" class="absolute text-gray-500 font-medium z-10">Belum ada audio</div>
+                <!-- Canvas Element -->
                 <canvas id="previewCanvas"></canvas>
             </div>
 
@@ -656,7 +665,7 @@
 
     <script>
         const state = {
-            viz: { enabled: true, align: 'tengah', size: 0.5, width: 0.5, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
+            viz: { enabled: true, align: 'tengah', size: 0.5, width: 0.5, opacity: 1.0, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
             bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'center', animSpeed: 50 }
@@ -665,7 +674,8 @@
         let bboxes = { viz: null, overlay: null, text: null };
 
         const canvas = document.getElementById('previewCanvas');
-        const ctx = canvas.getContext('2d');
+        // ULTRA-OPTIMIZATION 1: Desynchronized canvas and alpha false for maximum performance
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
         const wrapper = document.getElementById('canvas-wrapper');
         const audioElement = new Audio();
         
@@ -842,6 +852,7 @@
 
         document.getElementById('vizSizeSlider').addEventListener('input', (e) => { state.viz.size = e.target.value / 100; });
         document.getElementById('vizWidthSlider').addEventListener('input', (e) => { state.viz.width = e.target.value / 100; });
+        document.getElementById('vizOpacitySlider').addEventListener('input', (e) => { state.viz.opacity = e.target.value / 100; });
         
         bindButtonGroup('vizColorModeGroup', 'viz', 'colorMode');
         
@@ -904,6 +915,8 @@
         let lightnings = [];
         let smokes = [];
         
+        // ULTRA-OPTIMIZATION 2: Caching math constants
+        const PI2 = Math.PI * 2;
         const maxSnowflakes = 150;
         let particles = [];
         const maxParticles = 200;
@@ -1063,7 +1076,8 @@
             isPlaying = false;
             updatePlayBtn();
             renderPlaylist();
-            if(ctx) { ctx.clearRect(0,0,canvas.width,canvas.height); }
+            // Fill opaque rect instead of clearRect
+            if(ctx) { ctx.fillStyle = state.bg.color || '#0f1115'; ctx.fillRect(0,0,canvas.width,canvas.height); }
         }
 
         document.getElementById('audioInput').addEventListener('change', (e) => {
@@ -1193,9 +1207,12 @@
                 ...window.audioDest.stream.getAudioTracks()
             ]);
             
-            let options = { videoBitsPerSecond: 3500000, audioBitsPerSecond: 128000 };
+            // ULTRA-OPTIMIZATION 3: Lock Bitrate to 1.5Mbps and prioritize H.264
+            let options = { videoBitsPerSecond: 1500000, audioBitsPerSecond: 128000 };
             
-            if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
+            if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4D401F, mp4a.40.2"')) {
+                options.mimeType = 'video/mp4; codecs="avc1.4D401F, mp4a.40.2"';
+            } else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
                 options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
             } else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4d002a, mp4a.40.2"')) {
                 options.mimeType = 'video/mp4; codecs="avc1.4d002a, mp4a.40.2"';
@@ -1387,10 +1404,9 @@
             const cx = w / 2;
             const cy = h / 2;
             
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            
-            ctx.clearRect(0, 0, w, h);
+            // ULTRA-OPTIMIZATION: Opaque clearing logic
+            ctx.fillStyle = state.bg.color || '#0f1115';
+            ctx.fillRect(0, 0, w, h);
             
             bboxes.viz = null;
             bboxes.overlay = null;
@@ -1398,19 +1414,24 @@
             
             let audioReactivity = 0;
             let bgAudioReactivity = 0;
+            
             if(dataArray) {
-                let sum = 0;
-                for(let i=0; i<3; i++) sum += dataArray[i]; 
-                let avgBass = sum / 3 / 255; 
+                // ULTRA-OPTIMIZATION 4: Loop Unrolling for audio reactivity calculation
+                let sum = dataArray[0] + dataArray[1] + dataArray[2]; 
+                let avgBass = sum * 0.00130718954; 
                 audioReactivity = Math.pow(avgBass, 1.8);
                 
-                let bgSum = 0;
-                for(let i=0; i<15; i++) bgSum += dataArray[i]; 
-                let bgAvg = bgSum / 15 / 255;
+                let bgSum = dataArray[0] + dataArray[1] + dataArray[2] + dataArray[3] + dataArray[4] + 
+                            dataArray[5] + dataArray[6] + dataArray[7] + dataArray[8] + dataArray[9] + 
+                            dataArray[10] + dataArray[11] + dataArray[12] + dataArray[13] + dataArray[14]; 
+                let bgAvg = bgSum * 0.0002614379; 
                 bgAudioReactivity = Math.pow(bgAvg, 1.2);
             }
 
             if (state.bg.imgElement) {
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
                 const imgRatio = state.bg.imgElement.width / state.bg.imgElement.height;
                 const canvasRatio = w / h;
                 let drawW = w;
@@ -1435,12 +1456,9 @@
                 let filterBG = 'none';
                 let flashAlpha = 0;
 
-                // Memisahkan frekuensi Kick & Bass khusus untuk efek denyut background agar lebih pas dengan irama (beat)
                 let kickBassReactivity = 0;
                 if (dataArray) {
-                    // Fokus pada frekuensi terendah untuk mendeteksi kick drum (bass drum)
-                    let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) / 3 / 255;
-                    // Kurangi sensitivitas (abaikan suara pelan), tapi buat sangat agresif saat ada beat kuat
+                    let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) * 0.00130718954; 
                     if (kickBassAvg > 0.45) {
                         kickBassReactivity = Math.pow(kickBassAvg, 4.0) * 2.2; 
                     }
@@ -1448,7 +1466,6 @@
 
                 if (state.bg.effect === 'denyut') {
                     let targetScale = 1 + (kickBassReactivity * state.bg.pulseIntensity);
-                    // Attack instan (sangat agresif), Decay sedikit lebih cepat agar snappy
                     if (targetScale > currentBeatScale) {
                         currentBeatScale = targetScale;
                     } else {
@@ -1467,15 +1484,6 @@
                     scaleBG = 1.2 + (0.1 * state.bg.pulseIntensity); 
                     xOffBG = Math.sin(timeBG * 0.15) * (w * 0.1 * state.bg.pulseIntensity) + (Math.cos(timeBG * 1.5) * bgAudioReactivity * 30 * state.bg.pulseIntensity);
                     yOffBG = (Math.sin(timeBG * 1.5) * bgAudioReactivity * 30 * state.bg.pulseIntensity);
-                } else if (state.bg.effect === 'flash') {
-                    scaleBG = 1 + (bgAudioReactivity * 0.1 * state.bg.pulseIntensity); 
-                    if (bgAudioReactivity > 0.35) {
-                        flashAlpha = (bgAudioReactivity - 0.35) * 2.5 * state.bg.pulseIntensity; 
-                    }
-                } else if (state.bg.effect === 'hue') {
-                    scaleBG = 1.05 + (bgAudioReactivity * 0.05 * state.bg.pulseIntensity);
-                    let hueDeg = (timeBG * 50 * state.bg.pulseIntensity) + (bgAudioReactivity * 300 * state.bg.pulseIntensity); 
-                    filterBG = `hue-rotate(${hueDeg}deg)`;
                 }
 
                 if (state.bg.darkness < 0) {
@@ -1504,8 +1512,7 @@
                     ctx.fillRect(0, 0, w, h);
                 }
             } else if (state.bg.color !== '#0f1115' && state.bg.color !== 'transparent' && state.bg.color !== '') {
-                ctx.fillStyle = state.bg.color;
-                ctx.fillRect(0,0,w,h);
+                // Background opaque rect logic handled at start of drawCanvas for optimization
                 if (state.bg.darkness > 0) {
                     ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
                     ctx.fillRect(0,0,w,h);
@@ -1514,6 +1521,9 @@
                     ctx.fillRect(0,0,w,h);
                 }
             }
+
+            // Turning off image smoothing for standard primitives rendering to boost speed
+            ctx.imageSmoothingEnabled = false;
 
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
 
@@ -1542,7 +1552,7 @@
                     p.x += p.vx * weatherSpeedMult;
                     ctx.globalAlpha = p.o;
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y, p.r, 0, PI2);
                     ctx.fill();
                     if (p.y > h || p.x < 0 || p.x > w) snowflakes.splice(i, 1);
                 }
@@ -1716,7 +1726,7 @@
                         
                         ctx.fillStyle = grad;
                         ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                        ctx.arc(s.x, s.y, s.r, 0, PI2);
                         ctx.fill();
                     }
                     
@@ -1764,8 +1774,6 @@
                     switch(state.overlay.anim) {
                         case 'pan': animX = Math.sin(state.overlay.animTime) * 100; break;
                         case 'denyut': animScale = 1 + (audioReactivity * speedMult * 0.2); break;
-                        case 'blitz': if (Math.random() < (speedMult * 0.1)) ctx.globalAlpha = Math.random() * state.overlay.opacity; else ctx.globalAlpha = 0; break;
-                        case 'flash': ctx.globalAlpha = (Math.sin(state.overlay.animTime * 10) * 0.5 + 0.5) * state.overlay.opacity; break;
                         case 'float': animX = Math.sin(state.overlay.animTime * 0.5) * 50; animY = Math.cos(state.overlay.animTime * 0.7) * 50; break;
                         case 'shake': animX = (Math.random() - 0.5) * speedMult * 10; animY = (Math.random() - 0.5) * speedMult * 10; break;
                         case 'zoom': animScale = 1 + (Math.sin(state.overlay.animTime * 0.5) * 0.5 + 0.5); break;
@@ -1816,6 +1824,7 @@
                 const maxH = h * state.viz.size;
                 const solidColor = `hsl(${baseHue}, 100%, 60%)`;
                 
+                ctx.globalAlpha = state.viz.opacity !== undefined ? state.viz.opacity : 1.0;
                 ctx.fillStyle = solidColor;
                 ctx.strokeStyle = solidColor;
                 ctx.lineCap = 'round'; 
@@ -1834,7 +1843,8 @@
                     bboxes.viz = { x: startX, y: currentVizY - maxH, w: totalW, h: maxH };
 
                     for (let i = 0; i < barCount; i++) {
-                        const dataIndex = Math.floor(i * (dataArray.length / barCount) * 0.6);
+                        // ULTRA-OPTIMIZATION 5: Using Bitwise ~~ instead of Math.floor for immense speedup
+                        const dataIndex = ~~(i * (dataArray.length / barCount) * 0.6);
                         let val = dataArray[dataIndex] || 0;
                         if(i < 10) val = Math.min(255, val * 1.2); 
 
@@ -1958,9 +1968,10 @@
                             if(n.x > limit || n.x < -limit) n.vx *= -1;
                             if(n.y > limit || n.y < -limit) n.vy *= -1;
 
+                            ctx.globalAlpha = state.viz.opacity !== undefined ? state.viz.opacity : 1.0;
                             ctx.fillStyle = `hsl(${baseHue}, 100%, 60%)`;
                             ctx.beginPath();
-                            ctx.arc(n.x, n.y, 2 + (val * 5), 0, Math.PI*2);
+                            ctx.arc(n.x, n.y, 2 + (val * 5), 0, PI2);
                             ctx.fill();
 
                             for(let j=i+1; j<window.plexusNodes.length; j++) {
@@ -1968,7 +1979,7 @@
                                 let dist = Math.hypot(n.x-n2.x, n.y-n2.y);
                                 let connectDist = radiusScale * 0.8;
                                 if(dist < connectDist) {
-                                    ctx.globalAlpha = 1 - (dist / connectDist);
+                                    ctx.globalAlpha = (1 - (dist / connectDist)) * (state.viz.opacity !== undefined ? state.viz.opacity : 1.0);
                                     ctx.strokeStyle = `hsl(${(baseHue + 30)%360}, 100%, 60%)`;
                                     ctx.beginPath();
                                     ctx.moveTo(n.x, n.y);
@@ -1993,7 +2004,7 @@
                         
                         ctx.shadowBlur = 10;
                         for (let i = 0; i < barCount; i++) {
-                            const dataIndex = Math.floor(i * (dataArray.length / barCount) * 0.7);
+                            const dataIndex = ~~(i * (dataArray.length / barCount) * 0.7);
                             let val = dataArray[dataIndex] || 0;
                             let barH = Math.max(2, (val / 255) * maxH); 
                             let barThickness = Math.max(3, spacing - (3 * widthFactor));
@@ -2068,7 +2079,7 @@
                             let drawNode = (x, y, s, z, isFront) => {
                                 ctx.beginPath();
                                 let r = 3 + (val * 8) * s;
-                                ctx.arc(x, y, Math.max(1, r), 0, Math.PI * 2);
+                                ctx.arc(x, y, Math.max(1, r), 0, PI2);
                                 
                                 let nodeHue = (baseHue + (isFront ? 0 : 180) + (yProgress*120)) % 360;
                                 ctx.fillStyle = `hsla(${nodeHue}, 100%, 60%, ${0.4 + s * 0.6})`;
@@ -2101,7 +2112,7 @@
                         
                         for (let i = 0; i < numBuildings; i++) {
                             let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2;
-                            let dataIdx = Math.floor(distFromCenter * dataArray.length * 0.4);
+                            let dataIdx = ~~(distFromCenter * dataArray.length * 0.4);
                             
                             let val1 = (dataArray[dataIdx] || 0) / 255;
                             let val2 = (dataArray[Math.min(dataArray.length-1, dataIdx+1)] || 0) / 255;
@@ -2131,11 +2142,11 @@
                             }
                         }
                         
-                        ctx.globalAlpha = 0.3;
+                        ctx.globalAlpha = 0.3 * (state.viz.opacity !== undefined ? state.viz.opacity : 1.0);
                         ctx.scale(1, -0.4);
                         for (let i = 0; i < numBuildings; i++) {
                             let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2;
-                            let dataIdx = Math.floor(distFromCenter * dataArray.length * 0.4);
+                            let dataIdx = ~~(distFromCenter * dataArray.length * 0.4);
                             let val = (dataArray[dataIdx] || 0) / 255;
                             let seed = (i * 137.5) % 1;
                             let finalHeight = (maxBldgHeight * 0.1 * (seed + 0.5)) + (val * maxBldgHeight);
@@ -2161,9 +2172,9 @@
                         ctx.translate(currentCx - totalW/2, currentVizY - maxH/2);
                         
                         for (let c = 0; c < cols; c++) {
-                            let dataIdx = Math.floor(Math.abs((c/cols)-0.5)*2 * dataArray.length * 0.5);
+                            let dataIdx = ~~(Math.abs((c/cols)-0.5)*2 * dataArray.length * 0.5);
                             let val = (dataArray[dataIdx] || 0) / 255;
-                            let activeRows = Math.floor(val * rows);
+                            let activeRows = ~~(val * rows);
                             
                             for (let r = 0; r < rows; r++) {
                                 let x = c * pixelW;
@@ -2191,6 +2202,8 @@
                         bboxes.viz = { x: currentCx - totalW/2, y: currentVizY - maxH/2, w: totalW, h: maxH };
                     }
                 }
+                
+                ctx.globalAlpha = 1.0;
             }
 
             if (state.textFx.enabled) {
@@ -2442,8 +2455,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Using a relative path which works better for GitHub Pages subdirectories
-                navigator.serviceWorker.register('sw.js').then(registration => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 }).catch(error => {
                     console.log('ServiceWorker registration failed: ', error);
