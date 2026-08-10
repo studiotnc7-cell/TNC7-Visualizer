@@ -674,7 +674,7 @@
         let bboxes = { viz: null, overlay: null, text: null };
 
         const canvas = document.getElementById('previewCanvas');
-        // ULTRA-OPTIMIZATION 1: Alpha false for maximum performance
+        // Alpha false for maximum performance
         const ctx = canvas.getContext('2d', { alpha: false });
         const wrapper = document.getElementById('canvas-wrapper');
         const audioElement = new Audio();
@@ -815,7 +815,6 @@
         document.getElementById('textIntensitySlider').addEventListener('input', (e) => { state.textFx.intensity = parseInt(e.target.value); });
         document.getElementById('textAnimSpeedSlider').addEventListener('input', (e) => { state.textFx.animSpeed = parseInt(e.target.value); });
 
-
         document.getElementById('snowIntensitySlider').addEventListener('input', (e) => { state.bg.snowIntensity = parseInt(e.target.value); });
         document.getElementById('weatherSpeedSlider').addEventListener('input', (e) => { state.bg.weatherSpeed = parseInt(e.target.value); });
         
@@ -915,7 +914,7 @@
         let lightnings = [];
         let smokes = [];
         
-        // ULTRA-OPTIMIZATION 2: Caching math constants
+        // Caching math constants
         const PI2 = Math.PI * 2;
         const maxSnowflakes = 150;
         let particles = [];
@@ -967,6 +966,7 @@
         }
         
         function resizeCanvas() {
+            // Target resolusi dikunci ke 720p (1280x720) secara konstan
             canvas.width = 1280;
             canvas.height = 720;
         }
@@ -1184,7 +1184,8 @@
 
         document.getElementById('progress-container').addEventListener('click', (e) => {
             if(!audioElement.duration) return;
-            if(isRecording) return; // MENGUNCI DURASI: Mencegah error sinkronisasi saat sedang merekam
+            // MENGUNCI DURASI saat Merekam (Mencegah video rusak/tidak sinkron karena di click-skip)
+            if(isRecording) return; 
             const rect = e.currentTarget.getBoundingClientRect();
             audioElement.currentTime = ((e.clientX - rect.left) / rect.width) * audioElement.duration;
         });
@@ -1202,6 +1203,7 @@
         let audioEncoder = null;
         let trackProcessorReader = null;
         let frameCount = 0;
+        window.lastEncodedTimestamp = -1; 
         // ---------------------------
 
         async function finishRecordingProcess(blob, actualMimeType) {
@@ -1283,26 +1285,27 @@
             if (window.playbackGain) window.playbackGain.gain.value = 0;
 
             useWebCodecs = false;
+            window.lastEncodedTimestamp = -1; // Reset tracker waktu tiap mulai rekam
 
-            // --- SPESIFIKASI RENDER ABSOLUT (Sesuai Permintaan) ---
-            const TARGET_WIDTH = 1280;      // Resolusi 720p
-            const TARGET_HEIGHT = 720;      // Resolusi 720p
-            const TARGET_FPS = 30;          // Frame rate 30 FPS
-            const TARGET_BITRATE = 2000000; // Target rata-rata Bitrate 2.0 Mbps
-            // ------------------------------------------------------
+            // --- SPESIFIKASI RENDER ABSOLUT ---
+            const TARGET_WIDTH = 1280;      // 720p HD
+            const TARGET_HEIGHT = 720;      // 720p HD
+            const TARGET_FPS = 30;          // Stabil 30 FPS
+            const TARGET_BITRATE = 2000000; // Maksimal 2.0 Mbps
+            // ----------------------------------
 
-            // CEK DUKUNGAN WEBCODECS & HARDWARE
+            // MESIN UTAMA: Pengecekan WebCodecs API
             if (window.VideoEncoder && window.AudioEncoder && window.MediaStreamTrackProcessor && typeof Mp4Muxer !== 'undefined') {
                 const sampleR = audioContext.sampleRate || 48000;
                 
                 const videoConfig = {
-                    codec: 'avc1.4D001F', // H.264 Main Profile (Sangat Optimal & Standar untuk 720p)
+                    codec: 'avc1.4D001F', // H.264 Main Profile
                     width: TARGET_WIDTH,
                     height: TARGET_HEIGHT,
                     hardwareAcceleration: "prefer-hardware",
                     bitrate: TARGET_BITRATE,
                     framerate: TARGET_FPS,
-                    bitrateMode: "variable" // Menggunakan VBR agar ukuran file lebih kecil & efisien
+                    bitrateMode: "variable" // VBR (Ukuran file lebih hemat & kualitas bagus)
                 };
                 
                 const audioConfig = {
@@ -1316,25 +1319,24 @@
                     const vSupport = await VideoEncoder.isConfigSupported(videoConfig);
                     const aSupport = await AudioEncoder.isConfigSupported(audioConfig);
                     
-                    // Hanya gunakan WebCodecs JIKA Hardware benar-benar mendukung format H.264 dan AAC
+                    // Gunakan Mesin Utama JIKA PC mendukung sepenuhnya (Anti-Crash)
                     if (vSupport.supported && aSupport.supported) {
                         useWebCodecs = true;
                     } else {
-                        console.warn("Hardware Encoder H.264/AAC tidak didukung penuh, otomatis beralih ke MediaRecorder.");
+                        console.warn("GPU H.264/AAC tidak support penuh, fallback ke Mesin Cadangan.");
                     }
                 } catch (e) {
-                    console.warn("Pengecekan WebCodecs gagal:", e);
+                    console.warn("Gagal mengecek dukungan WebCodecs:", e);
                 }
             }
 
+            // Eksekusi Mesin Utama (WebCodecs - Ultra Sync)
             if (useWebCodecs) {
                 try {
                     frameCount = 0;
-                    window.lastEncodedTimestamp = -1; // Setup tracker absolut untuk Ultra-Sync
                     const audioTrack = window.audioDest.stream.getAudioTracks()[0];
                     const sampleR = audioContext.sampleRate || 48000;
                     
-                    // Muxer Inisialisasi
                     muxer = new Mp4Muxer.Muxer({
                         target: new Mp4Muxer.ArrayBufferTarget(),
                         video: { codec: 'avc', width: TARGET_WIDTH, height: TARGET_HEIGHT, frameRate: TARGET_FPS },
@@ -1344,7 +1346,6 @@
 
                     let encodeErrorOccurred = false;
 
-                    // Video Encoder
                     videoEncoder = new VideoEncoder({
                         output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
                         error: (e) => {
@@ -1352,17 +1353,17 @@
                             encodeErrorOccurred = true;
                         }
                     });
+                    
                     videoEncoder.configure({
-                        codec: 'avc1.4D001F', // H.264 Main Profile
+                        codec: 'avc1.4D001F', 
                         width: TARGET_WIDTH,
                         height: TARGET_HEIGHT,
                         hardwareAcceleration: "prefer-hardware",
                         bitrate: TARGET_BITRATE,
                         framerate: TARGET_FPS,
-                        bitrateMode: "variable" // Eksekusi VBR
+                        bitrateMode: "variable"
                     });
 
-                    // Audio Encoder
                     audioEncoder = new AudioEncoder({
                         output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
                         error: (e) => {
@@ -1370,6 +1371,7 @@
                             encodeErrorOccurred = true;
                         }
                     });
+                    
                     audioEncoder.configure({
                         codec: 'mp4a.40.2',
                         sampleRate: sampleR,
@@ -1377,12 +1379,10 @@
                         bitrate: 128000
                     });
 
-                    // Cek jika saat config mesin langsung crash (Fallback segera)
                     if (encodeErrorOccurred) {
-                        throw new Error("Encoder gagal inisialisasi awal.");
+                        throw new Error("Mesin Utama gagal start. Auto-Fallback.");
                     }
 
-                    // Ambil Audio secara sinkron per frame (MediaStreamTrackProcessor)
                     const trackProcessor = new MediaStreamTrackProcessor({ track: audioTrack });
                     trackProcessorReader = trackProcessor.readable.getReader();
 
@@ -1392,7 +1392,6 @@
                                 const { done, value } = await trackProcessorReader.read();
                                 if (done) break;
                                 if (value) {
-                                    // Pastikan state aman sebelum encode audio
                                     if (audioEncoder && audioEncoder.state === 'configured') {
                                         audioEncoder.encode(value);
                                     }
@@ -1408,17 +1407,17 @@
                     isBackgroundRender = true;
                     if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('start');
                 } catch (err) {
-                    console.error("Gagal menginisialisasi mesin WebCodecs H.264! Menggunakan Fallback Pintar MediaRecorder...", err);
+                    console.error("Mesin Utama (WebCodecs) Error! Menggunakan Mesin Cadangan Pintar...", err);
                     useWebCodecs = false;
-                    // Bersihkan instance gagal
+                    // Bersihkan memory mesin yang rusak agar siap fallback
                     if(videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
                     if(audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
                 }
             }
             
-            // --- FALLBACK PINTAR MEDIARECORDER ---
+            // --- MESIN CADANGAN PINTAR (MediaRecorder) ---
             if (!useWebCodecs) {
-                console.log("Menjalankan mesin MediaRecorder untuk menjamin video pasti tersimpan...");
+                console.log("Menjalankan Mesin Cadangan (MediaRecorder) untuk menjamin MP4 tidak 0 KB...");
                 const canvasStream = canvas.captureStream(TARGET_FPS); // Murni 30 FPS
                 const combinedStream = new MediaStream([
                     ...canvasStream.getVideoTracks(),
@@ -1427,11 +1426,10 @@
                 
                 let options = { videoBitsPerSecond: TARGET_BITRATE, audioBitsPerSecond: 128000 };
                 
-                // Prioritas ketat H.264 MP4
                 if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4D401F, mp4a.40.2"')) options.mimeType = 'video/mp4; codecs="avc1.4D401F, mp4a.40.2"';
                 else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
                 else if (MediaRecorder.isTypeSupported('video/mp4')) options.mimeType = 'video/mp4';
-                else options.mimeType = 'video/webm; codecs=vp8,opus'; // Darurat VP8/WebM (Jika GPU benar2 menolak H.264)
+                else options.mimeType = 'video/webm; codecs=vp8,opus'; // Pilihan terakhir jika perangkat jadul
 
                 mediaRecorder = new MediaRecorder(combinedStream, options);
                 
@@ -1467,7 +1465,7 @@
             if (manual) autoNextTrackIndex = -1;
             
             if (useWebCodecs && isRecording) {
-                isRecording = false; // Stop frame & audio reading loops
+                isRecording = false;
                 
                 const btn = document.getElementById('btnRekam');
                 btn.textContent = 'Memproses...';
@@ -1477,7 +1475,7 @@
                         try { await trackProcessorReader.cancel(); } catch (e) {}
                     }
                     
-                    // PERBAIKAN FATAL 0KB: Pastikan encoder dalam keadaan 'configured' sebelum di flush()
+                    // Pencegah file 0 KB: Cek status encoder sebelum di flush
                     if (videoEncoder && videoEncoder.state === 'configured') await videoEncoder.flush();
                     if (audioEncoder && audioEncoder.state === 'configured') await audioEncoder.flush();
                     
@@ -1491,7 +1489,7 @@
                     
                     finishRecordingProcess(blob, 'video/mp4');
                 } catch (err) {
-                    console.error("Gagal Finalisasi WebCodecs:", err);
+                    console.error("Gagal Memproses MP4 WebCodecs:", err);
                     finishRecordingProcess(new Blob([], {type: 'video/mp4'}), 'video/mp4');
                 }
             } else if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -1552,16 +1550,15 @@
             if (isBackgroundRender) {
                 renderLoop(true);
                 
-                // --- TANGKAP FRAME ULTRA-SYNC ABSOLUT ---
+                // --- ULTRA-SYNC PADA MESIN UTAMA ---
+                // Menyinkronkan frame 100% akurat dengan waktu audio
                 if (useWebCodecs && isRecording && videoEncoder && videoEncoder.state === 'configured') {
                     try {
-                        // Ambil waktu persis lagu saat ini. Jika PC ngelag, timestamp ini akan mengkoreksi 
-                        // dan menempatkan gambar di milidetik yang 100% pas dengan ketukan lagunya.
-                        const currentAudioTime = audioElement.currentTime;
-                        const timestamp = Math.round(currentAudioTime * 1000000); 
+                        // Menggunakan waktu lagu aktual (bukan waktu PC), jika PC ngelag, timestamp menjahit di waktu yg tepat!
+                        const timestamp = Math.round(audioElement.currentTime * 1000000); 
 
-                        // Pastikan timestamp selalu berjalan maju (Wajib untuk H.264 Encoder)
-                        if (timestamp > (window.lastEncodedTimestamp || -1)) {
+                        // Pastikan timestamp frame selalu berjalan maju untuk encoder MP4
+                        if (timestamp > window.lastEncodedTimestamp) {
                             window.lastEncodedTimestamp = timestamp;
                             
                             const frame = new VideoFrame(canvas, { timestamp }); 
@@ -1573,7 +1570,6 @@
                         console.error("VideoFrame encode error", e);
                     }
                 }
-                // --------------------------------------------
             }
         };
 
@@ -1598,7 +1594,6 @@
             const cx = w / 2;
             const cy = h / 2;
             
-            // ULTRA-OPTIMIZATION: Opaque clearing logic
             ctx.fillStyle = state.bg.color || '#0f1115';
             ctx.fillRect(0, 0, w, h);
             
@@ -1610,7 +1605,6 @@
             let bgAudioReactivity = 0;
             
             if(dataArray) {
-                // ULTRA-OPTIMIZATION 4: Loop Unrolling for audio reactivity calculation
                 let sum = dataArray[0] + dataArray[1] + dataArray[2]; 
                 let avgBass = sum * 0.00130718954; 
                 audioReactivity = Math.pow(avgBass, 1.8);
@@ -1706,7 +1700,6 @@
                     ctx.fillRect(0, 0, w, h);
                 }
             } else if (state.bg.color !== '#0f1115' && state.bg.color !== 'transparent' && state.bg.color !== '') {
-                // Background opaque rect logic handled at start of drawCanvas for optimization
                 if (state.bg.darkness > 0) {
                     ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
                     ctx.fillRect(0,0,w,h);
@@ -1716,7 +1709,6 @@
                 }
             }
 
-            // Turning off image smoothing for standard primitives rendering to boost speed
             ctx.imageSmoothingEnabled = false;
 
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
@@ -2037,7 +2029,6 @@
                     bboxes.viz = { x: startX, y: currentVizY - maxH, w: totalW, h: maxH };
 
                     for (let i = 0; i < barCount; i++) {
-                        // ULTRA-OPTIMIZATION 5: Using Bitwise ~~ instead of Math.floor for immense speedup
                         const dataIndex = ~~(i * (dataArray.length / barCount) * 0.6);
                         let val = dataArray[dataIndex] || 0;
                         if(i < 10) val = Math.min(255, val * 1.2); 
