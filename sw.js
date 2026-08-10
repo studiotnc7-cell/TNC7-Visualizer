@@ -1,5 +1,5 @@
-// Ganti angka versi ini menjadi v3.1 untuk memaksa update di browser pengguna
-const CACHE_NAME = 'tnc7-viz-v3.1'; 
+// Ganti angka versi ini menjadi v3.2 untuk memaksa update di browser pengguna (Update Warna Merah)
+const CACHE_NAME = 'tnc7-viz-v3.2'; 
 
 const ASSETS_TO_CACHE = [
     './',
@@ -12,7 +12,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('[Service Worker] Caching files for v3.0');
+                console.log('[Service Worker] Caching files for v3.2');
                 return cache.addAll(ASSETS_TO_CACHE);
             })
             .then(() => self.skipWaiting())
