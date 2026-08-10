@@ -7,7 +7,7 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#facc15">
+    <meta name="theme-color" content="#991b1b">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7">
     
@@ -290,14 +290,13 @@
             left: 0;
             right: 0;
             height: 12px;
-            background-color: #facc15;
+            background-color: #991b1b; 
             z-index: 10000;
             -webkit-app-region: drag; 
         }
     </style>
 </head>
 <body>
-    <!-- Bar kuning tetap di atas tanpa menggeser elemen di bawahnya -->
     <div id="yellow-top-bar"></div>
     
     <div id="notification-modal">Pesan Notifikasi</div>
@@ -674,11 +673,15 @@
         let bboxes = { viz: null, overlay: null, text: null };
 
         const canvas = document.getElementById('previewCanvas');
-        // Alpha false for maximum performance
-        const ctx = canvas.getContext('2d', { alpha: false });
+        // Alpha false for maximum performance, desynchronized untuk rendering super ringan dan cepat
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
         const wrapper = document.getElementById('canvas-wrapper');
         const audioElement = new Audio();
         
+        // --- TAMBAHAN UNTUK PEMBERSIHAN MEMORI ---
+        let audioObjectURLs = []; // Menyimpan semua URL Object audio agar bisa dibersihkan
+        // -----------------------------------------
+
         function showNotification(msg) {
             const notif = document.getElementById('notification-modal');
             notif.textContent = msg;
@@ -997,9 +1000,16 @@
             setupAudio();
             currentTrackIndex = index;
             const file = playlist[index].file;
-            const url = URL.createObjectURL(file);
             
+            // --- PERBAIKAN MEMORY LEAK: Bebaskan URL object sebelumnya ---
+            if (audioElement.src && audioElement.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audioElement.src);
+            }
+            // -------------------------------------------------------------
+            
+            const url = URL.createObjectURL(file);
             audioElement.src = url;
+            
             document.getElementById('player-title').textContent = file.name;
             document.getElementById('track-name-display').textContent = file.name;
             document.getElementById('no-audio-text').style.display = 'none';
@@ -1067,6 +1077,13 @@
 
         function clearAllAudio() {
             audioElement.pause();
+            
+            // --- PERBAIKAN MEMORY LEAK: Bebaskan URL object saat dihapus ---
+            if (audioElement.src && audioElement.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audioElement.src);
+            }
+            // ---------------------------------------------------------------
+            
             audioElement.src = "";
             playlist = [];
             currentTrackIndex = -1;
@@ -1206,6 +1223,36 @@
         window.lastEncodedTimestamp = -1; 
         // ---------------------------
 
+        // --- FUNGSI MEMBERSIHKAN MEMORI (GARBAGE COLLECTION MANUAL) ---
+        function forceGarbageCollection() {
+            // Mengosongkan buffer array memori
+            if (recordedChunks.length > 0) recordedChunks = [];
+            
+            // Mereset variabel-variabel particles & cuaca yang memakan memori seiring waktu
+            snowflakes = [];
+            raindrops = [];
+            goldDrops = [];
+            lightnings = [];
+            smokes = [];
+            particles = [];
+            
+            // Membersihkan variabel efek modern
+            window.plexusNodes = null;
+            window.cyberCaps = null;
+
+            // Membersihkan WebCodecs Muxer Cache (Jika ada yang tersangkut)
+            if (muxer && muxer.target && muxer.target.buffer) {
+                muxer = null; 
+            }
+            
+            // Hard reset canvas buffer di GPU untuk mencegah fragmentasi VRAM
+            if (canvas) {
+                canvas.width = 1280;
+                canvas.height = 720;
+            }
+        }
+        // --------------------------------------------------------------
+
         async function finishRecordingProcess(blob, actualMimeType) {
             isBackgroundRender = false;
             if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('stop');
@@ -1251,6 +1298,11 @@
                 }, 100);
                 showNotification("Video " + downloadName + " berhasil diunduh!");
             }
+            
+            // --- EKSEKUSI PEMBERSIHAN MEMORI SETELAH FILE DI-SAVE ---
+            forceGarbageCollection();
+            blob = null; // [MUTLAK] Menghancurkan Blob (file besar) dari RAM seketika setelah selesai
+            // --------------------------------------------------------
 
             if (autoNextTrackIndex !== -1 && autoNextTrackIndex < playlist.length) {
                 let nextIdx = autoNextTrackIndex;
@@ -1262,9 +1314,11 @@
                     
                     loadTrack(nextIdx);
                     
+                    // Jeda lebih lama (2 detik) sebelum mulai lagu berikutnya 
+                    // memberi waktu browser untuk membersihkan memori (GC)
                     setTimeout(() => {
                        startRecording();
-                    }, 500);
+                    }, 2000); 
                     
                 }, 1500);
             } else {
@@ -1288,10 +1342,10 @@
             window.lastEncodedTimestamp = -1; // Reset tracker waktu tiap mulai rekam
 
             // --- SPESIFIKASI RENDER ABSOLUT ---
-            const TARGET_WIDTH = 1280;      // 720p HD
-            const TARGET_HEIGHT = 720;      // 720p HD
-            const TARGET_FPS = 30;          // Stabil 30 FPS
-            const TARGET_BITRATE = 2000000; // Maksimal 2.0 Mbps
+            const TARGET_WIDTH = 1280;      // 720p HD mutlak
+            const TARGET_HEIGHT = 720;      // 720p HD mutlak
+            const TARGET_FPS = 30;          // Stabil 30 FPS mutlak
+            const TARGET_BITRATE = 2500000; // CBR 2.5 Mbps mutlak secara konstan
             // ----------------------------------
 
             // MESIN UTAMA: Pengecekan WebCodecs API
@@ -1302,7 +1356,7 @@
                     codec: 'avc1.4D001F', // H.264 Main Profile
                     width: TARGET_WIDTH,
                     height: TARGET_HEIGHT,
-                    hardwareAcceleration: "prefer-hardware",
+                    hardwareAcceleration: "prefer-hardware", // Memaksa menggunakan Hardware GPU
                     bitrate: TARGET_BITRATE,
                     framerate: TARGET_FPS,
                     bitrateMode: "constant" // CBR (Sesuai permintaan untuk kestabilan)
@@ -1347,9 +1401,11 @@
                     let encodeErrorOccurred = false;
 
                     videoEncoder = new VideoEncoder({
-                        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+                        output: (chunk, meta) => {
+                            if (isRecording && muxer) muxer.addVideoChunk(chunk, meta);
+                        },
                         error: (e) => {
-                            console.error("VideoEncoder Error (GPU Crash):", e);
+                            console.error("VideoEncoder Error (GPU Crash/Memory Full):", e);
                             encodeErrorOccurred = true;
                         }
                     });
@@ -1361,11 +1417,14 @@
                         hardwareAcceleration: "prefer-hardware",
                         bitrate: TARGET_BITRATE,
                         framerate: TARGET_FPS,
-                        bitrateMode: "constant"
+                        bitrateMode: "constant",
+                        latencyMode: "realtime" // Optimasi memori agar tidak menahan frame di memori terlalu lama
                     });
 
                     audioEncoder = new AudioEncoder({
-                        output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+                        output: (chunk, meta) => {
+                            if (isRecording && muxer) muxer.addAudioChunk(chunk, meta);
+                        },
                         error: (e) => {
                             console.error("AudioEncoder Error:", e);
                             encodeErrorOccurred = true;
@@ -1392,14 +1451,22 @@
                                 const { done, value } = await trackProcessorReader.read();
                                 if (done) break;
                                 if (value) {
-                                    if (audioEncoder && audioEncoder.state === 'configured') {
-                                        audioEncoder.encode(value);
+                                    try {
+                                        if (audioEncoder && audioEncoder.state === 'configured') {
+                                            audioEncoder.encode(value);
+                                        }
+                                    } finally {
+                                        value.close(); // [MUTLAK] PENTING UNTUK MEMORY LEAK: Pastikan frame audio ditutup meski error
                                     }
-                                    value.close();
                                 }
                             }
                         } catch (e) {
                             console.error("Audio read err:", e);
+                        } finally {
+                            // Memastikan Reader dilepas jika loop berhenti
+                            if (trackProcessorReader) {
+                                trackProcessorReader.releaseLock();
+                            }
                         }
                     };
                     readAudio();
@@ -1412,6 +1479,7 @@
                     // Bersihkan memory mesin yang rusak agar siap fallback
                     if(videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
                     if(audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
+                    if (trackProcessorReader) trackProcessorReader.releaseLock();
                 }
             }
             
@@ -1445,6 +1513,9 @@
                     const blob = new Blob(recordedChunks, { type: actualMimeType });
                     recordedChunks = [];
                     finishRecordingProcess(blob, actualMimeType);
+                    
+                    // PERBAIKAN MEMORI LEAK MESIN CADANGAN
+                    canvasStream.getTracks().forEach(track => track.stop());
                 };
                 
                 mediaRecorder.start(1000);
@@ -1479,15 +1550,24 @@
                     if (videoEncoder && videoEncoder.state === 'configured') await videoEncoder.flush();
                     if (audioEncoder && audioEncoder.state === 'configured') await audioEncoder.flush();
                     
-                    muxer.finalize();
+                    if (muxer) {
+                        muxer.finalize();
+                        const buffer = muxer.target.buffer;
+                        const blob = new Blob([buffer], { type: 'video/mp4' });
+                        
+                        if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
+                        if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
+                        
+                        // Kosongkan variabel encoder sepenuhnya agar Memory GC Browser bisa bekerja
+                        videoEncoder = null;
+                        audioEncoder = null;
+                        muxer = null; // Kosongkan muxer agar VRAM dibebaskan
+                        
+                        finishRecordingProcess(blob, 'video/mp4');
+                    } else {
+                         finishRecordingProcess(new Blob([], {type: 'video/mp4'}), 'video/mp4');
+                    }
                     
-                    const buffer = muxer.target.buffer;
-                    const blob = new Blob([buffer], { type: 'video/mp4' });
-                    
-                    if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
-                    if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
-                    
-                    finishRecordingProcess(blob, 'video/mp4');
                 } catch (err) {
                     console.error("Gagal Memproses MP4 WebCodecs:", err);
                     finishRecordingProcess(new Blob([], {type: 'video/mp4'}), 'video/mp4');
@@ -1553,21 +1633,33 @@
                 // --- ULTRA-SYNC PADA MESIN UTAMA ---
                 // Menyinkronkan frame 100% akurat dengan waktu audio
                 if (useWebCodecs && isRecording && videoEncoder && videoEncoder.state === 'configured') {
-                    try {
-                        // Menggunakan waktu lagu aktual (bukan waktu PC), jika PC ngelag, timestamp menjahit di waktu yg tepat!
-                        const timestamp = Math.round(audioElement.currentTime * 1000000); 
+                    // Kunci waktu mutlak di 30 FPS untuk CBR yang stabil sempurna
+                    // Mengonversi detik ke mikrodetik dengan interval mutlak 1000000 / 30
+                    const frameDurationMicros = 1000000 / TARGET_FPS;
+                    const expectedFrameIndex = Math.floor(audioElement.currentTime * TARGET_FPS);
+                    const timestamp = Math.round(expectedFrameIndex * frameDurationMicros); 
 
-                        // Pastikan timestamp frame selalu berjalan maju untuk encoder MP4
-                        if (timestamp > window.lastEncodedTimestamp) {
-                            window.lastEncodedTimestamp = timestamp;
+                    // Pastikan timestamp frame selalu berjalan maju untuk encoder MP4
+                    if (timestamp > window.lastEncodedTimestamp) {
+                        window.lastEncodedTimestamp = timestamp;
+                        
+                        let frame = null;
+                        try {
+                            frame = new VideoFrame(canvas, { timestamp }); 
                             
-                            const frame = new VideoFrame(canvas, { timestamp }); 
-                            videoEncoder.encode(frame, { keyFrame: frameCount % 60 === 0 });
-                            frame.close();
-                            frameCount++;
+                            // Toleransi antrian frame GPU dinaikkan ke 15 agar kualitas tidak drop meski PC agak sibuk
+                            if (videoEncoder.encodeQueueSize <= 15) {
+                                // Paksa KeyFrame setiap 1 detik (sesuai FPS) agar CBR benar-benar stabil mutlak
+                                videoEncoder.encode(frame, { keyFrame: frameCount % TARGET_FPS === 0 });
+                                frameCount++;
+                            } else {
+                                console.warn("GPU Lag terdeteksi. Skip 1 frame untuk mencegah Memory Leak/Crash.");
+                            }
+                        } catch(e) {
+                            console.error("VideoFrame encode error", e);
+                        } finally {
+                            if (frame) frame.close(); // [MUTLAK] Sangat vital: Hapus frame dari VRAM GPU apapun yang terjadi
                         }
-                    } catch(e) {
-                        console.error("VideoFrame encode error", e);
                     }
                 }
             }
