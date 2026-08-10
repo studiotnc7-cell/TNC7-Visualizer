@@ -1,5 +1,5 @@
-// Ganti angka versi ini menjadi v3.0 untuk memaksa update di browser pengguna
-const CACHE_NAME = 'tnc7-viz-v3.0'; 
+// Ganti angka versi ini menjadi v3.1 untuk memaksa update di browser pengguna
+const CACHE_NAME = 'tnc7-viz-v3.1'; 
 
 const ASSETS_TO_CACHE = [
     './',
