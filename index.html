@@ -7,7 +7,7 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#991b1b">
+    <meta name="theme-color" content="#facc15">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7">
     
@@ -290,7 +290,7 @@
             left: 0;
             right: 0;
             height: 12px;
-            background-color: #991b1b; /* Diubah dari #facc15 (kuning) menjadi merah gelap */
+            background-color: #facc15;
             z-index: 10000;
             -webkit-app-region: drag; 
         }
@@ -1305,7 +1305,7 @@
                     hardwareAcceleration: "prefer-hardware",
                     bitrate: TARGET_BITRATE,
                     framerate: TARGET_FPS,
-                    bitrateMode: "variable" // VBR (Ukuran file lebih hemat & kualitas bagus)
+                    bitrateMode: "constant" // CBR (Sesuai permintaan untuk kestabilan)
                 };
                 
                 const audioConfig = {
@@ -1361,7 +1361,7 @@
                         hardwareAcceleration: "prefer-hardware",
                         bitrate: TARGET_BITRATE,
                         framerate: TARGET_FPS,
-                        bitrateMode: "variable"
+                        bitrateMode: "constant"
                     });
 
                     audioEncoder = new AudioEncoder({
