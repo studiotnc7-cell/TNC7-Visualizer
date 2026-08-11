@@ -7,11 +7,11 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#991b1b">
+    <meta name="theme-color" content="#10b981">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7">
     
-    <!-- Tambahan Library MP4 Muxer untuk WebCodecs API -->
+    <!-- Library MP4 Muxer untuk WebCodecs API -->
     <script src="https://unpkg.com/mp4-muxer/build/mp4-muxer.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -290,7 +290,7 @@
             left: 0;
             right: 0;
             height: 12px;
-            background-color: #991b1b; 
+            background-color: #10b981; 
             z-index: 10000;
             -webkit-app-region: drag; 
         }
@@ -324,7 +324,7 @@
             
             <div class="w-px h-4 bg-gray-700 mx-1"></div>
             
-            <button class="btn-custom btn-danger ml-2" id="btnRekam">Rekam</button>
+            <button class="btn-custom btn-danger ml-2" id="btnRekam">Mulai Render</button>
         </div>
     </div>
 
@@ -621,7 +621,20 @@
 
         <div class="main-content">
             <div class="preview-container" id="canvas-wrapper">
-                <div id="recording-indicator" class="hidden absolute top-4 right-4 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold animate-pulse z-50">REC</div>
+                <div id="recording-indicator" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1115]/90 backdrop-blur-md text-white px-8 py-6 rounded-2xl z-50 shadow-[0_10px_40px_rgba(0,0,0,0.8),0_0_30px_rgba(239,68,68,0.2)] border border-gray-700 flex flex-col gap-2 items-center min-w-[340px] transform transition-all">
+                    <!-- Modern Spinner Icon -->
+                    <div class="relative flex items-center justify-center w-12 h-12 mb-2">
+                        <div class="absolute w-full h-full border-4 border-gray-600 border-t-red-500 rounded-full animate-spin"></div>
+                        <div class="absolute w-6 h-6 bg-red-500/30 rounded-full animate-ping"></div>
+                        <i class="fa-solid fa-compact-disc text-red-500 animate-pulse text-sm"></i>
+                    </div>
+                    <!-- Status Text -->
+                    <span id="recording-status" class="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-yellow-400 drop-shadow-sm uppercase text-center">SIAP...</span>
+                    <!-- Playlist Track Info Box -->
+                    <div class="bg-gray-800/60 rounded-lg px-4 py-2 mt-2 border border-gray-700/50 w-full text-center shadow-inner">
+                        <span id="recording-playlist-status" class="text-[11px] text-gray-300 font-medium tracking-wide"></span>
+                    </div>
+                </div>
                 <div id="no-audio-text" class="absolute text-gray-500 font-medium z-10">Belum ada audio</div>
                 <!-- Canvas Element -->
                 <canvas id="previewCanvas"></canvas>
@@ -673,14 +686,20 @@
         let bboxes = { viz: null, overlay: null, text: null };
 
         const canvas = document.getElementById('previewCanvas');
-        // Alpha false for maximum performance, desynchronized untuk rendering super ringan dan cepat
-        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+        const ctx = canvas.getContext('2d');
         const wrapper = document.getElementById('canvas-wrapper');
         const audioElement = new Audio();
         
-        // --- TAMBAHAN UNTUK PEMBERSIHAN MEMORI ---
-        let audioObjectURLs = []; // Menyimpan semua URL Object audio agar bisa dibersihkan
-        // -----------------------------------------
+        let audioObjectURLs = []; 
+        let isOfflineRendering = false;
+        let isRenderingPlaylist = false;
+        let renderQueueIndex = 0;
+        window.offlineCurrentTime = 0;
+
+        function getRenderTime() {
+            if (isOfflineRendering) return window.offlineCurrentTime;
+            return Date.now() / 1000;
+        }
 
         function showNotification(msg) {
             const notif = document.getElementById('notification-modal');
@@ -711,26 +730,22 @@
             buttons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const val = btn.getAttribute('data-val');
-                    
                     if (val === 'normal') {
                         buttons.forEach(b => b.classList.remove('btn-active'));
                         btn.classList.add('btn-active');
                         state.bg.weather = ['normal'];
                     } else {
                         btn.classList.toggle('btn-active');
-                        
                         const normalBtn = weatherGroup.querySelector('button[data-val="normal"]');
                         if (normalBtn && normalBtn.classList.contains('btn-active')) {
                             normalBtn.classList.remove('btn-active');
                             state.bg.weather = state.bg.weather.filter(w => w !== 'normal');
                         }
-                        
                         if (btn.classList.contains('btn-active')) {
                             if (!state.bg.weather.includes(val)) state.bg.weather.push(val);
                         } else {
                             state.bg.weather = state.bg.weather.filter(w => w !== val);
                         }
-                        
                         if (state.bg.weather.length === 0) {
                             if (normalBtn) normalBtn.classList.add('btn-active');
                             state.bg.weather = ['normal'];
@@ -742,7 +757,6 @@
         
         bindButtonGroup('overlayBlendGroup', 'overlay', 'blend');
         bindButtonGroup('overlayAnimGroup', 'overlay', 'anim');
-
         bindButtonGroup('textEffectGroup', 'textFx', 'effect');
         bindButtonGroup('textAnimGroup', 'textFx', 'anim');
         bindButtonGroup('textAlignGroup', 'textFx', 'align');
@@ -752,41 +766,17 @@
             btn.addEventListener('click', () => {
                 textPosBtns.forEach(b => b.classList.remove('btn-active'));
                 btn.classList.add('btn-active');
-                
                 const pos = btn.getAttribute('data-pos');
                 const w = canvas.width || 1280;
                 const h = canvas.height || 720;
                 const cx = w / 2;
-                
-                if (pos === 'top-left') {
-                    state.textFx.offsetX = -cx + (w * 0.05);
-                    state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
-                    document.querySelector('#textAlignGroup button[data-val="left"]').click();
-                } else if (pos === 'top-right') {
-                    state.textFx.offsetX = cx - (w * 0.05);
-                    state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
-                    document.querySelector('#textAlignGroup button[data-val="right"]').click();
-                } else if (pos === 'top-center') {
-                    state.textFx.offsetX = 0;
-                    state.textFx.offsetY = -(h * 0.15) + (h * 0.05);
-                    document.querySelector('#textAlignGroup button[data-val="center"]').click();
-                } else if (pos === 'middle-center') {
-                    state.textFx.offsetX = 0;
-                    state.textFx.offsetY = (h / 2) - (h * 0.15);
-                    document.querySelector('#textAlignGroup button[data-val="center"]').click();
-                } else if (pos === 'bottom-left') {
-                    state.textFx.offsetX = -cx + (w * 0.05);
-                    state.textFx.offsetY = h - (h * 0.15) - (h * 0.05);
-                    document.querySelector('#textAlignGroup button[data-val="left"]').click();
-                } else if (pos === 'bottom-center') {
-                    state.textFx.offsetX = 0;
-                    state.textFx.offsetY = h - (h * 0.15) - (h * 0.05);
-                    document.querySelector('#textAlignGroup button[data-val="center"]').click();
-                } else if (pos === 'bottom-right') {
-                    state.textFx.offsetX = cx - (w * 0.05);
-                    state.textFx.offsetY = h - (h * 0.15) - (h * 0.05);
-                    document.querySelector('#textAlignGroup button[data-val="right"]').click();
-                }
+                if (pos === 'top-left') { state.textFx.offsetX = -cx + (w * 0.05); state.textFx.offsetY = -(h * 0.15) + (h * 0.05); document.querySelector('#textAlignGroup button[data-val="left"]').click(); } 
+                else if (pos === 'top-right') { state.textFx.offsetX = cx - (w * 0.05); state.textFx.offsetY = -(h * 0.15) + (h * 0.05); document.querySelector('#textAlignGroup button[data-val="right"]').click(); } 
+                else if (pos === 'top-center') { state.textFx.offsetX = 0; state.textFx.offsetY = -(h * 0.15) + (h * 0.05); document.querySelector('#textAlignGroup button[data-val="center"]').click(); } 
+                else if (pos === 'middle-center') { state.textFx.offsetX = 0; state.textFx.offsetY = (h / 2) - (h * 0.15); document.querySelector('#textAlignGroup button[data-val="center"]').click(); } 
+                else if (pos === 'bottom-left') { state.textFx.offsetX = -cx + (w * 0.05); state.textFx.offsetY = h - (h * 0.15) - (h * 0.05); document.querySelector('#textAlignGroup button[data-val="left"]').click(); } 
+                else if (pos === 'bottom-center') { state.textFx.offsetX = 0; state.textFx.offsetY = h - (h * 0.15) - (h * 0.05); document.querySelector('#textAlignGroup button[data-val="center"]').click(); } 
+                else if (pos === 'bottom-right') { state.textFx.offsetX = cx - (w * 0.05); state.textFx.offsetY = h - (h * 0.15) - (h * 0.05); document.querySelector('#textAlignGroup button[data-val="right"]').click(); }
             });
         });
 
@@ -797,27 +787,10 @@
         const textFontSelect = document.getElementById('textFontSelect');
         textFontSelect.addEventListener('change', (e) => { state.textFx.font = e.target.value; });
         
-        textFontSelect.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const options = Array.from(textFontSelect.options);
-            const currentIndex = textFontSelect.selectedIndex;
-            let nextIndex = currentIndex;
-            if (e.deltaY > 0) {
-                nextIndex = Math.min(currentIndex + 1, options.length - 1);
-            } else if (e.deltaY < 0) {
-                nextIndex = Math.max(currentIndex - 1, 0);
-            }
-            if (nextIndex !== currentIndex) {
-                textFontSelect.selectedIndex = nextIndex;
-                textFontSelect.dispatchEvent(new Event('change'));
-            }
-        });
-
         document.getElementById('textSizeSlider').addEventListener('input', (e) => { state.textFx.size = parseInt(e.target.value); });
         document.getElementById('textColorPicker').addEventListener('input', (e) => { state.textFx.color = e.target.value; });
         document.getElementById('textIntensitySlider').addEventListener('input', (e) => { state.textFx.intensity = parseInt(e.target.value); });
         document.getElementById('textAnimSpeedSlider').addEventListener('input', (e) => { state.textFx.animSpeed = parseInt(e.target.value); });
-
         document.getElementById('snowIntensitySlider').addEventListener('input', (e) => { state.bg.snowIntensity = parseInt(e.target.value); });
         document.getElementById('weatherSpeedSlider').addEventListener('input', (e) => { state.bg.weatherSpeed = parseInt(e.target.value); });
         
@@ -830,27 +803,16 @@
             if (!file) return;
             const url = URL.createObjectURL(file);
             document.getElementById('overlayNameDisplay').textContent = file.name;
-            
             if (file.type.startsWith('video/')) {
                 const vid = document.createElement('video');
-                vid.src = url;
-                vid.loop = true;
-                vid.muted = true;
-                vid.play();
-                state.overlay.element = vid;
-                state.overlay.type = 'video';
+                vid.src = url; vid.loop = true; vid.muted = true; vid.play();
+                state.overlay.element = vid; state.overlay.type = 'video';
             } else {
-                const img = new Image();
-                img.src = url;
-                state.overlay.element = img;
-                state.overlay.type = 'image';
+                const img = new Image(); img.src = url;
+                state.overlay.element = img; state.overlay.type = 'image';
             }
         });
-
-        document.getElementById('btnHapusOverlay').addEventListener('click', () => {
-            state.overlay.element = null;
-            document.getElementById('overlayNameDisplay').textContent = "Belum ada";
-        });
+        document.getElementById('btnHapusOverlay').addEventListener('click', () => { state.overlay.element = null; document.getElementById('overlayNameDisplay').textContent = "Belum ada"; });
 
         document.getElementById('vizSizeSlider').addEventListener('input', (e) => { state.viz.size = e.target.value / 100; });
         document.getElementById('vizWidthSlider').addEventListener('input', (e) => { state.viz.width = e.target.value / 100; });
@@ -867,35 +829,25 @@
             vizColorModeGroup.querySelectorAll('button').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (state.viz.colorMode === 'auto') {
-                        vizColorLabel.textContent = 'Speed';
-                        vizArgbSpeedSlider.classList.remove('hidden');
-                        vizHueSlider.classList.add('hidden');
+                        vizColorLabel.textContent = 'Speed'; vizArgbSpeedSlider.classList.remove('hidden'); vizHueSlider.classList.add('hidden');
                     } else {
-                        vizColorLabel.textContent = 'Hue';
-                        vizArgbSpeedSlider.classList.add('hidden');
-                        vizHueSlider.classList.remove('hidden');
+                        vizColorLabel.textContent = 'Hue'; vizArgbSpeedSlider.classList.add('hidden'); vizHueSlider.classList.remove('hidden');
                     }
                 });
             });
         }
-
         document.getElementById('vizArgbSpeedSlider').addEventListener('input', (e) => { state.viz.argbSpeed = parseFloat(e.target.value); });
         document.getElementById('vizHueSlider').addEventListener('input', (e) => { state.viz.hue = parseFloat(e.target.value); });
-
         const vizTypeSelect = document.getElementById('vizTypeSelect');
         vizTypeSelect.addEventListener('change', (e) => { state.viz.type = e.target.value; });
         
         vizTypeSelect.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const options = Array.from(vizTypeSelect.options);
-            const currentIndex = vizTypeSelect.selectedIndex;
-            let nextIndex = currentIndex;
-            if (e.deltaY > 0) {
-                nextIndex = Math.min(currentIndex + 1, options.length - 1);
-            } else if (e.deltaY < 0) {
-                nextIndex = Math.max(currentIndex - 1, 0);
-            }
-            if (nextIndex !== currentIndex) {
+            e.preventDefault(); // Mencegah scroll pada panel utama
+            const delta = Math.sign(e.deltaY);
+            let currentIndex = vizTypeSelect.selectedIndex;
+            let nextIndex = currentIndex + delta;
+            
+            if (nextIndex >= 0 && nextIndex < vizTypeSelect.options.length) {
                 vizTypeSelect.selectedIndex = nextIndex;
                 vizTypeSelect.dispatchEvent(new Event('change'));
             }
@@ -917,12 +869,8 @@
         let lightnings = [];
         let smokes = [];
         
-        // Caching math constants
         const PI2 = Math.PI * 2;
-        const maxSnowflakes = 150;
         let particles = [];
-        const maxParticles = 200;
-        
         let playlist = [];
         let currentTrackIndex = -1;
         
@@ -931,45 +879,7 @@
         let textTransitionStart = 0;
         let currentBeatScale = 1;
 
-        function generateLightning(startX, startY, h) {
-            let segments = [{x: startX, y: startY}];
-            let curX = startX;
-            let curY = startY;
-            while (curY < h) {
-                curX += (Math.random() - 0.5) * 80; 
-                curY += Math.random() * 50 + 20; 
-                let branch = null;
-                if (Math.random() > 0.75) {
-                    branch = [];
-                    let bx = curX;
-                    let by = curY;
-                    for (let b = 0; b < 3; b++) {
-                        bx += (Math.random() - 0.5) * 60;
-                        by += Math.random() * 40 + 10;
-                        branch.push({x: bx, y: by});
-                    }
-                }
-                segments.push({x: curX, y: curY, branch: branch});
-            }
-            return segments;
-        }
-
-        function createParticle(x, y, vX, vY, size, color) {
-            return { x, y, vX, vY, size, color, life: 1, maxLife: Math.random() * 50 + 20 };
-        }
-
-        function updateParticles() {
-             for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vX;
-                p.y += p.vY;
-                p.life -= 1;
-                if (p.life <= 0) particles.splice(i, 1);
-            }
-        }
-        
         function resizeCanvas() {
-            // Target resolusi dikunci ke 720p (1280x720) secara konstan
             canvas.width = 1280;
             canvas.height = 720;
         }
@@ -981,44 +891,25 @@
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
             audioSource = audioContext.createMediaElementSource(audioElement);
-            
-            window.audioDest = audioContext.createMediaStreamDestination();
-            window.playbackGain = audioContext.createGain();
-            
             audioSource.connect(analyser); 
-            audioSource.connect(window.playbackGain);
-            window.playbackGain.connect(audioContext.destination);
-            audioSource.connect(window.audioDest);
-            
+            analyser.connect(audioContext.destination);
             analyser.fftSize = 256;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
         }
 
         function loadTrack(index) {
             if (index < 0 || index >= playlist.length) return;
-            
             setupAudio();
             currentTrackIndex = index;
             const file = playlist[index].file;
-            
-            // --- PERBAIKAN MEMORY LEAK: Bebaskan URL object sebelumnya ---
-            if (audioElement.src && audioElement.src.startsWith('blob:')) {
-                URL.revokeObjectURL(audioElement.src);
-            }
-            // -------------------------------------------------------------
-            
+            if (audioElement.src && audioElement.src.startsWith('blob:')) URL.revokeObjectURL(audioElement.src);
             const url = URL.createObjectURL(file);
             audioElement.src = url;
-            
             document.getElementById('player-title').textContent = file.name;
             document.getElementById('track-name-display').textContent = file.name;
             document.getElementById('no-audio-text').style.display = 'none';
-            
             renderPlaylist();
-            
-            if (isPlaying || isRecording) {
-                audioElement.play().catch(e => console.error("Playback failed:", e));
-            }
+            if (isPlaying) audioElement.play().catch(e => console.error(e));
         }
 
         function renderPlaylist() {
@@ -1026,110 +917,60 @@
             const panel = document.getElementById('playlistPanel');
             const sidebarRight = document.getElementById('sidebarRight');
             document.getElementById('playlistCount').textContent = `${playlist.length} lagu`;
-            
             sidebarRight.style.display = 'flex';
-
             container.innerHTML = '';
             playlist.forEach((item, index) => {
                 const el = document.createElement('div');
                 el.className = `playlist-item ${index === currentTrackIndex ? 'active' : ''}`;
-                
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'playlist-item-name';
                 nameSpan.textContent = item.file.name;
-                nameSpan.onclick = () => {
-                    loadTrack(index);
-                    playAudio(true);
-                };
-                
+                nameSpan.onclick = () => { loadTrack(index); playAudio(true); };
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-track-btn';
                 removeBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                removeBtn.title = 'Hapus lagu ini';
-                removeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    removeTrack(index);
-                };
-
-                el.appendChild(nameSpan);
-                el.appendChild(removeBtn);
-                container.appendChild(el);
+                removeBtn.onclick = (e) => { e.stopPropagation(); removeTrack(index); };
+                el.appendChild(nameSpan); el.appendChild(removeBtn); container.appendChild(el);
             });
         }
 
         function removeTrack(index) {
-            if (index < 0 || index >= playlist.length) return;
             playlist.splice(index, 1);
             showNotification("Lagu berhasil dihapus");
-            
-            if (playlist.length === 0) {
-                clearAllAudio();
-            } else {
-                if (currentTrackIndex === index) {
-                    let nextIndex = index >= playlist.length ? playlist.length - 1 : index;
-                    loadTrack(nextIndex);
-                } else if (currentTrackIndex > index) {
-                    currentTrackIndex--;
-                }
+            if (playlist.length === 0) clearAllAudio();
+            else {
+                if (currentTrackIndex === index) { let nextIndex = index >= playlist.length ? playlist.length - 1 : index; loadTrack(nextIndex); }
+                else if (currentTrackIndex > index) { currentTrackIndex--; }
                 renderPlaylist();
             }
         }
 
         function clearAllAudio() {
             audioElement.pause();
-            
-            // --- PERBAIKAN MEMORY LEAK: Bebaskan URL object saat dihapus ---
-            if (audioElement.src && audioElement.src.startsWith('blob:')) {
-                URL.revokeObjectURL(audioElement.src);
-            }
-            // ---------------------------------------------------------------
-            
-            audioElement.src = "";
-            playlist = [];
-            currentTrackIndex = -1;
+            if (audioElement.src && audioElement.src.startsWith('blob:')) URL.revokeObjectURL(audioElement.src);
+            audioElement.src = ""; playlist = []; currentTrackIndex = -1;
             document.getElementById('player-title').textContent = "Belum ada audio";
             document.getElementById('track-name-display').textContent = "Belum ada audio";
             document.getElementById('no-audio-text').style.display = 'block';
-            isPlaying = false;
-            updatePlayBtn();
-            renderPlaylist();
+            isPlaying = false; updatePlayBtn(); renderPlaylist();
             if(ctx) { ctx.fillStyle = state.bg.color || '#0f1115'; ctx.fillRect(0,0,canvas.width,canvas.height); }
         }
 
         document.getElementById('audioInput').addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
-
-            files.forEach(file => {
-                playlist.push({ file: file });
-            });
-
-            if (currentTrackIndex === -1 && playlist.length > 0) {
-                loadTrack(0);
-            } else {
-                renderPlaylist();
-            }
+            files.forEach(file => playlist.push({ file: file }));
+            if (currentTrackIndex === -1 && playlist.length > 0) loadTrack(0); else renderPlaylist();
             e.target.value = '';
         });
-
         document.getElementById('btnHapusAudio').addEventListener('click', clearAllAudio);
 
         document.getElementById('bgInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const url = URL.createObjectURL(file);
-            const img = new Image();
-            img.onload = () => {
-                state.bg.image = url;
-                state.bg.imgElement = img;
-            };
-            img.src = url;
+            const file = e.target.files[0]; if (!file) return;
+            const url = URL.createObjectURL(file); const img = new Image();
+            img.onload = () => { state.bg.image = url; state.bg.imgElement = img; }; img.src = url;
         });
-
-        document.getElementById('btnHapusBg').addEventListener('click', () => {
-            state.bg.image = null;
-            state.bg.imgElement = null;
-        });
+        document.getElementById('btnHapusBg').addEventListener('click', () => { state.bg.image = null; state.bg.imgElement = null; });
 
         const playBtn = document.getElementById('playPauseBtn');
         const timeDisplay = document.getElementById('time-display');
@@ -1138,26 +979,16 @@
 
         function formatTime(s) {
             if(isNaN(s)) return "0:00";
-            const min = Math.floor(s / 60);
-            const sec = Math.floor(s % 60);
+            const min = Math.floor(s / 60); const sec = Math.floor(s % 60);
             return `${min}:${sec.toString().padStart(2, '0')}`;
         }
 
         audioElement.addEventListener('timeupdate', () => {
-            if (!audioElement.duration) return;
-            const current = audioElement.currentTime;
-            const duration = audioElement.duration;
-            
+            if (!audioElement.duration || isOfflineRendering) return;
+            const current = audioElement.currentTime; const duration = audioElement.duration;
             timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
             const percent = (current / duration) * 100;
-            progressBar.style.width = `${percent}%`;
-            progressHandle.style.left = `${percent}%`;
-        });
-
-        audioElement.addEventListener('loadedmetadata', () => {
-            timeDisplay.textContent = `0:00 / ${formatTime(audioElement.duration)}`;
-            progressBar.style.width = `0%`;
-            progressHandle.style.left = `0%`;
+            progressBar.style.width = `${percent}%`; progressHandle.style.left = `${percent}%`;
         });
 
         function updatePlayBtn() {
@@ -1165,517 +996,377 @@
         }
 
         function playAudio(forcePlay = false) {
-            if(!audioElement.src) return;
+            if(!audioElement.src || isOfflineRendering) return;
             if(audioContext && audioContext.state === 'suspended') audioContext.resume();
-            
-            if(isPlaying && !forcePlay) {
-                audioElement.pause();
-                isPlaying = false;
-            } else {
-                audioElement.play().catch(e => console.error("Playback failed:", e));
-                isPlaying = true;
-            }
+            if(isPlaying && !forcePlay) { audioElement.pause(); isPlaying = false; } 
+            else { audioElement.play().catch(e => console.error(e)); isPlaying = true; }
             updatePlayBtn();
         }
 
         playBtn.addEventListener('click', () => playAudio());
         
         audioElement.addEventListener('ended', () => {
-            if (isRecording) {
-                if (currentTrackIndex < playlist.length - 1) {
-                    autoNextTrackIndex = currentTrackIndex + 1;
-                    stopRecording(false);
-                } else {
-                    stopRecording(false);
-                }
-            } else {
-                if (currentTrackIndex < playlist.length - 1) {
-                    loadTrack(currentTrackIndex + 1);
-                    playAudio(true);
-                } else {
-                    isPlaying = false;
-                    updatePlayBtn();
-                }
-            }
+            if (isRecording) return;
+            if (currentTrackIndex < playlist.length - 1) { loadTrack(currentTrackIndex + 1); playAudio(true); } 
+            else { isPlaying = false; updatePlayBtn(); }
         });
 
         document.getElementById('progress-container').addEventListener('click', (e) => {
-            if(!audioElement.duration) return;
-            // MENGUNCI DURASI saat Merekam (Mencegah video rusak/tidak sinkron karena di click-skip)
-            if(isRecording) return; 
+            if(!audioElement.duration || isRecording) return;
             const rect = e.currentTarget.getBoundingClientRect();
             audioElement.currentTime = ((e.clientX - rect.left) / rect.width) * audioElement.duration;
         });
 
-        let mediaRecorder;
-        let recordedChunks = [];
         let isRecording = false;
-        let autoNextTrackIndex = -1;
+        let abortOfflineRender = false;
         let exportDirectoryHandle = null;
-
-        // --- WebCodecs Variables ---
-        let useWebCodecs = false;
         let muxer = null;
         let videoEncoder = null;
         let audioEncoder = null;
-        let trackProcessorReader = null;
-        let frameCount = 0;
-        window.lastEncodedTimestamp = -1; 
-        // ---------------------------
+        let isTurboMode = true;
 
-        // --- FUNGSI MEMBERSIHKAN MEMORI (GARBAGE COLLECTION MANUAL) ---
-        function forceGarbageCollection() {
-            // Mengosongkan buffer array memori
-            if (recordedChunks.length > 0) recordedChunks = [];
-            
-            // Mereset variabel-variabel particles & cuaca yang memakan memori seiring waktu
-            snowflakes = [];
-            raindrops = [];
-            goldDrops = [];
-            lightnings = [];
-            smokes = [];
-            particles = [];
-            
-            // Membersihkan variabel efek modern
-            window.plexusNodes = null;
-            window.cyberCaps = null;
-
-            // Membersihkan WebCodecs Muxer Cache (Jika ada yang tersangkut)
-            if (muxer && muxer.target && muxer.target.buffer) {
-                muxer = null; 
-            }
-            
-            // Hard reset canvas buffer di GPU untuk mencegah fragmentasi VRAM
-            if (canvas) {
-                canvas.width = 1280;
-                canvas.height = 720;
-            }
-        }
-        // --------------------------------------------------------------
-
-        async function finishRecordingProcess(blob, actualMimeType) {
-            isBackgroundRender = false;
-            if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('stop');
-            requestAnimationFrame(() => renderLoop(false));
-
-            let downloadName = 'viz_export';
-            if (currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
-                let audioName = playlist[currentTrackIndex].file.name;
-                downloadName = audioName.substring(0, audioName.lastIndexOf('.')) || audioName;
-            }
-            
-            let ext = actualMimeType.includes('webm') ? '.webm' : '.mp4';
-            downloadName += ext;
-            
-            let saveSuccess = false;
-            
-            if (exportDirectoryHandle) {
-                try {
-                    const fileHandle = await exportDirectoryHandle.getFileHandle(downloadName, { create: true });
-                    const writable = await fileHandle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    saveSuccess = true;
-                    showNotification("Video " + downloadName + " berhasil disimpan ke folder!");
-                } catch (err) {
-                    console.error("Gagal menyimpan ke folder:", err);
-                }
-            }
-            
-            if (!saveSuccess && blob && blob.size > 0) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = downloadName;
-                
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                }, 100);
-                showNotification("Video " + downloadName + " berhasil diunduh!");
-            }
-            
-            // --- EKSEKUSI PEMBERSIHAN MEMORI SETELAH FILE DI-SAVE ---
-            forceGarbageCollection();
-            blob = null; // [MUTLAK] Menghancurkan Blob (file besar) dari RAM seketika setelah selesai
-            // --------------------------------------------------------
-
-            if (autoNextTrackIndex !== -1 && autoNextTrackIndex < playlist.length) {
-                let nextIdx = autoNextTrackIndex;
-                autoNextTrackIndex = -1;
-                
-                setTimeout(() => {
-                    isPlaying = false;
-                    isRecording = false;
-                    
-                    loadTrack(nextIdx);
-                    
-                    // Jeda lebih lama (2 detik) sebelum mulai lagu berikutnya 
-                    // memberi waktu browser untuk membersihkan memori (GC)
-                    setTimeout(() => {
-                       startRecording();
-                    }, 2000); 
-                    
-                }, 1500);
-            } else {
-                isRecording = false;
-                if (window.playbackGain) window.playbackGain.gain.value = 1; 
-
-                const btn = document.getElementById('btnRekam');
-                btn.textContent = 'Rekam';
-                btn.classList.add('btn-danger');
-                btn.classList.remove('bg-red-600', 'text-white', 'border-red-500');
-                document.getElementById('recording-indicator').classList.add('hidden');
-            }
-        }
-
-        async function startRecording() {
-            setupAudio();
-            
-            if (window.playbackGain) window.playbackGain.gain.value = 0;
-
-            useWebCodecs = false;
-            window.lastEncodedTimestamp = -1; // Reset tracker waktu tiap mulai rekam
-
-            // --- SPESIFIKASI RENDER ABSOLUT ---
-            const TARGET_WIDTH = 1280;      // 720p HD mutlak
-            const TARGET_HEIGHT = 720;      // 720p HD mutlak
-            const TARGET_FPS = 30;          // Stabil 30 FPS mutlak
-            const TARGET_BITRATE = 2500000; // CBR 2.5 Mbps mutlak secara konstan
-            // ----------------------------------
-
-            // MESIN UTAMA: Pengecekan WebCodecs API
-            if (window.VideoEncoder && window.AudioEncoder && window.MediaStreamTrackProcessor && typeof Mp4Muxer !== 'undefined') {
-                const sampleR = audioContext.sampleRate || 48000;
-                
-                const videoConfig = {
-                    codec: 'avc1.4D001F', // H.264 Main Profile
-                    width: TARGET_WIDTH,
-                    height: TARGET_HEIGHT,
-                    hardwareAcceleration: "prefer-hardware", // Memaksa menggunakan Hardware GPU
-                    bitrate: TARGET_BITRATE,
-                    framerate: TARGET_FPS,
-                    bitrateMode: "constant" // CBR (Sesuai permintaan untuk kestabilan)
-                };
-                
-                const audioConfig = {
-                    codec: 'mp4a.40.2',
-                    sampleRate: sampleR,
-                    numberOfChannels: 2,
-                    bitrate: 128000
-                };
-
-                try {
-                    const vSupport = await VideoEncoder.isConfigSupported(videoConfig);
-                    const aSupport = await AudioEncoder.isConfigSupported(audioConfig);
-                    
-                    // Gunakan Mesin Utama JIKA PC mendukung sepenuhnya (Anti-Crash)
-                    if (vSupport.supported && aSupport.supported) {
-                        useWebCodecs = true;
-                    } else {
-                        console.warn("GPU H.264/AAC tidak support penuh, fallback ke Mesin Cadangan.");
-                    }
-                } catch (e) {
-                    console.warn("Gagal mengecek dukungan WebCodecs:", e);
-                }
-            }
-
-            // Eksekusi Mesin Utama (WebCodecs - Ultra Sync)
-            if (useWebCodecs) {
-                try {
-                    frameCount = 0;
-                    const audioTrack = window.audioDest.stream.getAudioTracks()[0];
-                    const sampleR = audioContext.sampleRate || 48000;
-                    
-                    muxer = new Mp4Muxer.Muxer({
-                        target: new Mp4Muxer.ArrayBufferTarget(),
-                        video: { codec: 'avc', width: TARGET_WIDTH, height: TARGET_HEIGHT, frameRate: TARGET_FPS },
-                        audio: { codec: 'aac', sampleRate: sampleR, numberOfChannels: 2 },
-                        fastStart: "in-memory"
-                    });
-
-                    let encodeErrorOccurred = false;
-
-                    videoEncoder = new VideoEncoder({
-                        output: (chunk, meta) => {
-                            if (isRecording && muxer) muxer.addVideoChunk(chunk, meta);
-                        },
-                        error: (e) => {
-                            console.error("VideoEncoder Error (GPU Crash/Memory Full):", e);
-                            encodeErrorOccurred = true;
-                        }
-                    });
-                    
-                    videoEncoder.configure({
-                        codec: 'avc1.4D001F', 
-                        width: TARGET_WIDTH,
-                        height: TARGET_HEIGHT,
-                        hardwareAcceleration: "prefer-hardware",
-                        bitrate: TARGET_BITRATE,
-                        framerate: TARGET_FPS,
-                        bitrateMode: "constant",
-                        latencyMode: "realtime" // Optimasi memori agar tidak menahan frame di memori terlalu lama
-                    });
-
-                    audioEncoder = new AudioEncoder({
-                        output: (chunk, meta) => {
-                            if (isRecording && muxer) muxer.addAudioChunk(chunk, meta);
-                        },
-                        error: (e) => {
-                            console.error("AudioEncoder Error:", e);
-                            encodeErrorOccurred = true;
-                        }
-                    });
-                    
-                    audioEncoder.configure({
-                        codec: 'mp4a.40.2',
-                        sampleRate: sampleR,
-                        numberOfChannels: 2,
-                        bitrate: 128000
-                    });
-
-                    if (encodeErrorOccurred) {
-                        throw new Error("Mesin Utama gagal start. Auto-Fallback.");
-                    }
-
-                    const trackProcessor = new MediaStreamTrackProcessor({ track: audioTrack });
-                    trackProcessorReader = trackProcessor.readable.getReader();
-
-                    const readAudio = async () => {
-                        try {
-                            while (isRecording && useWebCodecs && !encodeErrorOccurred) {
-                                const { done, value } = await trackProcessorReader.read();
-                                if (done) break;
-                                if (value) {
-                                    try {
-                                        if (audioEncoder && audioEncoder.state === 'configured') {
-                                            audioEncoder.encode(value);
-                                        }
-                                    } finally {
-                                        value.close(); // [MUTLAK] PENTING UNTUK MEMORY LEAK: Pastikan frame audio ditutup meski error
-                                    }
-                                }
-                            }
-                        } catch (e) {
-                            console.error("Audio read err:", e);
-                        } finally {
-                            // Memastikan Reader dilepas jika loop berhenti
-                            if (trackProcessorReader) {
-                                trackProcessorReader.releaseLock();
-                            }
-                        }
-                    };
-                    readAudio();
-
-                    isBackgroundRender = true;
-                    if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('start');
-                } catch (err) {
-                    console.error("Mesin Utama (WebCodecs) Error! Menggunakan Mesin Cadangan Pintar...", err);
-                    useWebCodecs = false;
-                    // Bersihkan memory mesin yang rusak agar siap fallback
-                    if(videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
-                    if(audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
-                    if (trackProcessorReader) trackProcessorReader.releaseLock();
-                }
-            }
-            
-            // --- MESIN CADANGAN PINTAR (MediaRecorder) ---
-            if (!useWebCodecs) {
-                console.log("Menjalankan Mesin Cadangan (MediaRecorder) untuk menjamin MP4 tidak 0 KB...");
-                const canvasStream = canvas.captureStream(TARGET_FPS); // Murni 30 FPS
-                const combinedStream = new MediaStream([
-                    ...canvasStream.getVideoTracks(),
-                    ...window.audioDest.stream.getAudioTracks()
-                ]);
-                
-                let options = { videoBitsPerSecond: TARGET_BITRATE, audioBitsPerSecond: 128000 };
-                
-                if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.4D401F, mp4a.40.2"')) options.mimeType = 'video/mp4; codecs="avc1.4D401F, mp4a.40.2"';
-                else if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) options.mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-                else if (MediaRecorder.isTypeSupported('video/mp4')) options.mimeType = 'video/mp4';
-                else options.mimeType = 'video/webm; codecs=vp8,opus'; // Pilihan terakhir jika perangkat jadul
-
-                mediaRecorder = new MediaRecorder(combinedStream, options);
-                
-                isBackgroundRender = true;
-                if (typeof backgroundWorker !== 'undefined') backgroundWorker.postMessage('start');
-                
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                };
-                
-                mediaRecorder.onstop = () => {
-                    let actualMimeType = mediaRecorder.mimeType || 'video/mp4';
-                    const blob = new Blob(recordedChunks, { type: actualMimeType });
-                    recordedChunks = [];
-                    finishRecordingProcess(blob, actualMimeType);
-                    
-                    // PERBAIKAN MEMORI LEAK MESIN CADANGAN
-                    canvasStream.getTracks().forEach(track => track.stop());
-                };
-                
-                mediaRecorder.start(1000);
-            }
-            
-            isRecording = true;
-            
-            const btn = document.getElementById('btnRekam');
-            btn.textContent = 'Stop Rekam';
-            btn.classList.remove('btn-danger');
-            btn.classList.add('bg-red-600', 'text-white', 'border-red-500');
-            document.getElementById('recording-indicator').classList.remove('hidden');
-            
-            if(!isPlaying && audioElement.src) playAudio(true);
-        }
-
-        async function stopRecording(manual = false) {
-            if (manual) autoNextTrackIndex = -1;
-            
-            if (useWebCodecs && isRecording) {
-                isRecording = false;
-                
-                const btn = document.getElementById('btnRekam');
-                btn.textContent = 'Memproses...';
-                
-                try {
-                    if (trackProcessorReader) {
-                        try { await trackProcessorReader.cancel(); } catch (e) {}
-                    }
-                    
-                    // Pencegah file 0 KB: Cek status encoder sebelum di flush
-                    if (videoEncoder && videoEncoder.state === 'configured') await videoEncoder.flush();
-                    if (audioEncoder && audioEncoder.state === 'configured') await audioEncoder.flush();
-                    
-                    if (muxer) {
-                        muxer.finalize();
-                        const buffer = muxer.target.buffer;
-                        const blob = new Blob([buffer], { type: 'video/mp4' });
-                        
-                        if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
-                        if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
-                        
-                        // Kosongkan variabel encoder sepenuhnya agar Memory GC Browser bisa bekerja
-                        videoEncoder = null;
-                        audioEncoder = null;
-                        muxer = null; // Kosongkan muxer agar VRAM dibebaskan
-                        
-                        finishRecordingProcess(blob, 'video/mp4');
-                    } else {
-                         finishRecordingProcess(new Blob([], {type: 'video/mp4'}), 'video/mp4');
-                    }
-                    
-                } catch (err) {
-                    console.error("Gagal Memproses MP4 WebCodecs:", err);
-                    finishRecordingProcess(new Blob([], {type: 'video/mp4'}), 'video/mp4');
-                }
-            } else if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-        }
-        
         document.getElementById('btnRekam').addEventListener('click', async function() {
             if(!isRecording) {
-                autoNextTrackIndex = -1;
+                if (playlist.length === 0) {
+                    showNotification("Harap tambahkan Audio terlebih dahulu!");
+                    return;
+                }
                 
-                if (playlist.length > 0 && window.showDirectoryPicker) {
-                    try {
-                        exportDirectoryHandle = await window.showDirectoryPicker({
-                            mode: 'readwrite',
-                            id: 'tnc7_export_folder'
-                        });
-                    } catch (err) {
-                        console.warn("Pemilihan folder dibatalkan.", err);
+                if (window.showDirectoryPicker) {
+                    try { 
+                        exportDirectoryHandle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'tnc7_export_folder' }); 
+                    } 
+                    catch (err) { 
+                        console.warn("Pemilihan folder dibatalkan, akan menggunakan metode unduh per file."); 
                     }
                 }
-
-                if (playlist.length > 0) {
-                    isPlaying = false;
-                    isRecording = false;
-                    
-                    loadTrack(0);
-                    if (audioElement) audioElement.currentTime = 0;
-                    
-                    setTimeout(() => {
-                        startRecording();
-                    }, 500);
-                } else {
-                    startRecording();
-                }
+                
+                isPlaying = false;
+                if(audioElement) audioElement.pause();
+                updatePlayBtn();
+                
+                startBatchRenderProcess();
             } else {
-                stopRecording(true);
+                abortOfflineRender = true;
+                isRenderingPlaylist = false;
             }
         });
 
-        const workerCode = `
-            let timer = null;
-            self.onmessage = function(e) {
-                if (e.data === 'start') {
-                    if (timer) clearInterval(timer);
-                    timer = setInterval(() => self.postMessage('tick'), 1000 / 30);
-                } else if (e.data === 'stop') {
-                    clearInterval(timer);
-                    timer = null;
+        function generateLightning(startX, startY, h) {
+            let segments = [{x: startX, y: startY}]; let curX = startX; let curY = startY;
+            while (curY < h) {
+                curX += (Math.random() - 0.5) * 80; curY += Math.random() * 50 + 20; let branch = null;
+                if (Math.random() > 0.75) {
+                    branch = []; let bx = curX; let by = curY;
+                    for (let b = 0; b < 3; b++) { bx += (Math.random() - 0.5) * 60; by += Math.random() * 40 + 10; branch.push({x: bx, y: by}); }
                 }
-            };
-        `;
-        const workerBlob = new Blob([workerCode], {type: 'application/javascript'});
-        const backgroundWorker = new Worker(URL.createObjectURL(workerBlob));
-        let isBackgroundRender = false;
+                segments.push({x: curX, y: curY, branch: branch});
+            }
+            return segments;
+        }
 
-        backgroundWorker.onmessage = function() {
-            if (isBackgroundRender) {
-                renderLoop(true);
+        function forceGarbageCollection() {
+            snowflakes = []; raindrops = []; goldDrops = []; lightnings = []; smokes = []; particles = [];
+            window.plexusNodes = null; window.cyberCaps = null;
+            if (canvas) { canvas.width = 1280; canvas.height = 720; }
+        }
+
+        async function startBatchRenderProcess() {
+            isRenderingPlaylist = true;
+            renderQueueIndex = 0;
+            abortOfflineRender = false;
+
+            const btn = document.getElementById('btnRekam');
+            btn.textContent = 'Batal Semua Render';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('bg-red-600', 'text-white', 'border-red-500');
+            
+            const indicator = document.getElementById('recording-indicator');
+            indicator.classList.remove('hidden');
+
+            while (renderQueueIndex < playlist.length && !abortOfflineRender && isRenderingPlaylist) {
+                await renderSingleTrack(renderQueueIndex);
+                renderQueueIndex++;
+            }
+
+            cleanupRecordingState();
+            if (!abortOfflineRender && isRenderingPlaylist) {
+                showNotification("Semua lagu berhasil dirender!");
+            }
+            isRenderingPlaylist = false;
+        }
+
+        async function renderSingleTrack(trackIndex) {
+            isOfflineRendering = true;
+            isRecording = true;
+            abortOfflineRender = false;
+
+            const indicator = document.getElementById('recording-status');
+            const playlistIndicator = document.getElementById('recording-playlist-status');
+            
+            playlistIndicator.textContent = `Lagu ${trackIndex + 1} dari ${playlist.length}: ${playlist[trackIndex].file.name}`;
+            
+            currentTrackIndex = trackIndex;
+            lastTrackForText = ""; 
+            
+            renderPlaylist();
+            document.getElementById('player-title').textContent = playlist[trackIndex].file.name;
+            document.getElementById('track-name-display').textContent = playlist[trackIndex].file.name;
+            
+            try {
+                const file = playlist[trackIndex].file;
+                const arrayBuffer = await file.arrayBuffer();
+
+                indicator.textContent = 'DEKODE AUDIO...';
+                const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const originalAudioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+                decodeCtx.close();
+
+                const duration = originalAudioBuffer.duration;
+                const sampleRate = originalAudioBuffer.sampleRate;
+
+                indicator.textContent = 'SETUP MESIN RENDER...';
+                muxer = new Mp4Muxer.Muxer({
+                    target: new Mp4Muxer.ArrayBufferTarget(),
+                    video: { codec: 'avc', width: 1280, height: 720, frameRate: 30 },
+                    audio: { codec: 'aac', sampleRate: sampleRate, numberOfChannels: originalAudioBuffer.numberOfChannels },
+                    fastStart: "in-memory"
+                });
+
+                videoEncoder = new VideoEncoder({
+                    output: (chunk, meta) => {
+                        try { muxer.addVideoChunk(chunk, meta); } 
+                        catch (chunkErr) { console.warn("Muxer skip chunk (Aman):", chunkErr); }
+                    },
+                    error: (e) => { 
+                        console.error("VideoEncoder Error:", e.message);
+                        abortOfflineRender = true;
+                    }
+                });
                 
-                // --- ULTRA-SYNC PADA MESIN UTAMA ---
-                // Menyinkronkan frame 100% akurat dengan waktu audio
-                if (useWebCodecs && isRecording && videoEncoder && videoEncoder.state === 'configured') {
-                    // Kunci waktu mutlak di 30 FPS untuk CBR yang stabil sempurna
-                    // Mengonversi detik ke mikrodetik dengan interval mutlak 1000000 / 30
-                    const frameDurationMicros = 1000000 / TARGET_FPS;
-                    const expectedFrameIndex = Math.floor(audioElement.currentTime * TARGET_FPS);
-                    const timestamp = Math.round(expectedFrameIndex * frameDurationMicros); 
+                // Konfigurasi H.264 720p 30FPS VBR 1.2 Mbps untuk keseimbangan ukuran & kualitas terbaik
+                videoEncoder.configure({
+                    codec: 'avc1.4D0028', 
+                    width: 1280, 
+                    height: 720,
+                    bitrate: 1200000,
+                    framerate: 30,
+                    bitrateMode: 'variable' 
+                });
 
-                    // Pastikan timestamp frame selalu berjalan maju untuk encoder MP4
-                    if (timestamp > window.lastEncodedTimestamp) {
-                        window.lastEncodedTimestamp = timestamp;
+                audioEncoder = new AudioEncoder({
+                    output: (chunk, meta) => {
+                        try { muxer.addAudioChunk(chunk, meta); } catch(e) {}
+                    },
+                    error: (e) => { 
+                        console.error("AudioEncoder Error:", e); 
+                        abortOfflineRender = true; 
+                    }
+                });
+                
+                audioEncoder.configure({
+                    codec: 'mp4a.40.2',
+                    sampleRate: sampleRate,
+                    numberOfChannels: originalAudioBuffer.numberOfChannels,
+                    bitrate: 128000
+                });
+                
+                // Perbaikan Zero-Padding Audio Chunk (1 KB Bug Fix)
+                async function processAudio(audioBuf, enc) {
+                    const totalFrames = audioBuf.length;
+                    const numChannels = audioBuf.numberOfChannels;
+                    const framesPerChunk = 4096; 
+                    
+                    for (let offset = 0; offset < totalFrames; offset += framesPerChunk) {
+                        if (abortOfflineRender) break;
                         
-                        let frame = null;
+                        const data = new Float32Array(framesPerChunk * numChannels);
+                        for (let c = 0; c < numChannels; c++) {
+                            const endIdx = Math.min(offset + framesPerChunk, totalFrames);
+                            const srcData = audioBuf.getChannelData(c).subarray(offset, endIdx);
+                            data.set(srcData, c * framesPerChunk);
+                        }
+                        
                         try {
-                            frame = new VideoFrame(canvas, { timestamp }); 
-                            
-                            // Toleransi antrian frame GPU dinaikkan ke 15 agar kualitas tidak drop meski PC agak sibuk
-                            if (videoEncoder.encodeQueueSize <= 15) {
-                                // Paksa KeyFrame setiap 1 detik (sesuai FPS) agar CBR benar-benar stabil mutlak
-                                videoEncoder.encode(frame, { keyFrame: frameCount % TARGET_FPS === 0 });
-                                frameCount++;
-                            } else {
-                                console.warn("GPU Lag terdeteksi. Skip 1 frame untuk mencegah Memory Leak/Crash.");
-                            }
-                        } catch(e) {
-                            console.error("VideoFrame encode error", e);
-                        } finally {
-                            if (frame) frame.close(); // [MUTLAK] Sangat vital: Hapus frame dari VRAM GPU apapun yang terjadi
+                            const audioData = new AudioData({ 
+                                format: 'f32-planar', sampleRate, numberOfFrames: framesPerChunk, 
+                                numberOfChannels: numChannels, timestamp: Math.round((offset / sampleRate) * 1e6), data: data 
+                            });
+                            enc.encode(audioData); 
+                            audioData.close();
+                        } catch(e) { console.error("Format audio chunk error:", e); }
+                        
+                        while (enc.encodeQueueSize >= 30) { await new Promise(r => setTimeout(r, 1)); }
+                        if (offset % (framesPerChunk * 20) === 0) {
+                            indicator.textContent = `PROSES AUDIO... ${Math.round((offset/totalFrames)*100)}%`;
+                            await new Promise(r => setTimeout(r, 0));
                         }
                     }
                 }
-            }
-        };
+                
+                await processAudio(originalAudioBuffer, audioEncoder);
 
-        requestAnimationFrame(() => renderLoop(false));
+                indicator.textContent = 'RENDER VIDEO... 0%';
+                const offlineCtx = new OfflineAudioContext(originalAudioBuffer.numberOfChannels, Math.ceil(sampleRate * duration), sampleRate);
+                const source = offlineCtx.createBufferSource();
+                source.buffer = originalAudioBuffer;
 
-        function renderLoop(fromWorker = false) {
-            if (!isBackgroundRender && !fromWorker) {
-                requestAnimationFrame(() => renderLoop(false));
+                analyser = offlineCtx.createAnalyser();
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                source.connect(analyser);
+                analyser.connect(offlineCtx.destination);
+                source.start(0);
+
+                const fps = 30;
+                const interval = 1 / fps; 
+                
+                forceGarbageCollection();
+                window.offlineCurrentTime = 0;
+                let frameIdx = 0;
+                
+                // Event-Driven Synchronized Loop (Deadlock Fix)
+                let processFrameResolve;
+                let processFramePromise = new Promise(resolve => { processFrameResolve = resolve; });
+
+                const handleSuspend = async () => {
+                    if (abortOfflineRender) { processFrameResolve(); return; }
+                    
+                    let currentTime = frameIdx * interval;
+                    window.offlineCurrentTime = currentTime;
+                    
+                    analyser.getByteFrequencyData(dataArray);
+
+                    if (state.overlay.type === 'video' && state.overlay.element) {
+                        state.overlay.element.currentTime = window.offlineCurrentTime % state.overlay.element.duration;
+                    }
+
+                    if (frameIdx % 15 === 0) {
+                        const progress = Math.min(100, Math.round((currentTime / duration) * 100));
+                        indicator.textContent = `RENDER VIDEO... ${progress}%`;
+                        const percent = (currentTime / duration) * 100;
+                        progressBar.style.width = `${percent}%`; progressHandle.style.left = `${percent}%`;
+                        timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                        await new Promise(r => setTimeout(r, 0));
+                    }
+
+                    drawCanvas();
+                    
+                    if (videoEncoder.state === 'configured') {
+                        const vframe = new VideoFrame(canvas, { timestamp: Math.round(currentTime * 1e6) });
+                        try { videoEncoder.encode(vframe, { keyFrame: (frameIdx % fps === 0) }); } catch (e) { }
+                        vframe.close();
+                    }
+
+                    while (videoEncoder.encodeQueueSize >= 3) {
+                        if (abortOfflineRender) break;
+                        await new Promise(r => setTimeout(r, 2)); 
+                    }
+
+                    frameIdx++;
+                    let nextTime = frameIdx * interval;
+                    
+                    if (nextTime < duration && !abortOfflineRender) {
+                        offlineCtx.suspend(nextTime).then(handleSuspend);
+                    }
+                    
+                    try { offlineCtx.resume(); } catch(e) {}
+                };
+
+                offlineCtx.suspend(0).then(handleSuspend);
+                
+                offlineCtx.startRendering().then(() => {
+                    processFrameResolve();
+                }).catch(err => {
+                    console.error("AudioRendering Error:", err);
+                    processFrameResolve();
+                });
+
+                await processFramePromise;
+
+                if (abortOfflineRender) return;
+                indicator.textContent = 'FINISHING...';
+                
+                try { await videoEncoder.flush(); } catch (flushErr) {}
+                try { await audioEncoder.flush(); } catch (flushErr) {}
+
+                if (videoEncoder.state !== 'closed') videoEncoder.close();
+                if (audioEncoder.state !== 'closed') audioEncoder.close();
+                
+                try { muxer.finalize(); } catch (finalizeErr) {}
+                
+                const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+                muxer = null;
+
+                let downloadName = playlist[trackIndex].file.name.replace(/\.[^/.]+$/, "") + '.mp4';
+                let saveSuccess = false;
+                
+                if (exportDirectoryHandle) {
+                    try {
+                        const fileHandle = await exportDirectoryHandle.getFileHandle(downloadName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        saveSuccess = true;
+                        indicator.textContent = `Tersimpan: ${downloadName}`;
+                        await new Promise(r => setTimeout(r, 800));
+                    } catch (err) {}
+                }
+                
+                if (!saveSuccess && blob && blob.size > 1024) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none'; a.href = url; a.download = downloadName;
+                    document.body.appendChild(a); a.click();
+                    setTimeout(() => { window.URL.revokeObjectURL(url); document.body.removeChild(a); }, 100);
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+                forceGarbageCollection();
+
+            } catch (err) {
+                if (err.message !== "Render dibatalkan pengguna") {
+                    showNotification(`Gagal merender lagu ${trackIndex+1}: ${err.message}`);
+                }
+                abortOfflineRender = true;
+            } finally {
+                if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
+                if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
+                muxer = null;
             }
+        }
+
+        function cleanupRecordingState() {
+            isRecording = false;
+            isOfflineRendering = false;
+            isRenderingPlaylist = false;
+            abortOfflineRender = false;
+            const btn = document.getElementById('btnRekam');
+            btn.textContent = 'Mulai Render';
+            btn.classList.add('btn-danger');
+            btn.classList.remove('bg-red-600', 'text-white', 'border-red-500');
+            document.getElementById('recording-indicator').classList.add('hidden');
+            if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
+            if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
+            muxer = null;
             
-            if ((isPlaying || isRecording) && analyser) {
+            if (playlist.length > 0) {
+                currentTrackIndex = Math.min(renderQueueIndex, playlist.length - 1);
+                if(currentTrackIndex < 0) currentTrackIndex = 0;
+                document.getElementById('player-title').textContent = playlist[currentTrackIndex].file.name;
+                document.getElementById('track-name-display').textContent = playlist[currentTrackIndex].file.name;
+            }
+            renderPlaylist();
+        }
+
+        requestAnimationFrame(renderLoop);
+
+        function renderLoop() {
+            requestAnimationFrame(renderLoop);
+            if (isOfflineRendering) return; 
+            if (isPlaying && analyser) {
                 analyser.getByteFrequencyData(dataArray);
             }
-            
             drawCanvas();
         }
 
@@ -1689,12 +1380,10 @@
             ctx.fillStyle = state.bg.color || '#0f1115';
             ctx.fillRect(0, 0, w, h);
             
-            bboxes.viz = null;
-            bboxes.overlay = null;
-            bboxes.text = null;
+            bboxes.viz = null; bboxes.overlay = null; bboxes.text = null;
             
-            let audioReactivity = 0;
-            let bgAudioReactivity = 0;
+            let audioReactivity = 0; let bgAudioReactivity = 0;
+            let kickBassReactivity = 0; 
             
             if(dataArray) {
                 let sum = dataArray[0] + dataArray[1] + dataArray[2]; 
@@ -1706,6 +1395,11 @@
                             dataArray[10] + dataArray[11] + dataArray[12] + dataArray[13] + dataArray[14]; 
                 let bgAvg = bgSum * 0.0002614379; 
                 bgAudioReactivity = Math.pow(bgAvg, 1.2);
+
+                let kickBassAvg = (dataArray[0] * 1.5 + dataArray[1]) / (2.5 * 255); 
+                if (kickBassAvg > 0.35) { 
+                    kickBassReactivity = Math.pow(kickBassAvg, 3.5) * 2.8; 
+                }
             }
 
             if (state.bg.imgElement) {
@@ -1714,51 +1408,24 @@
 
                 const imgRatio = state.bg.imgElement.width / state.bg.imgElement.height;
                 const canvasRatio = w / h;
-                let drawW = w;
-                let drawH = h;
-                let drawX = 0;
-                let drawY = 0;
+                let drawW = w; let drawH = h; let drawX = 0; let drawY = 0;
 
-                if (canvasRatio > imgRatio) {
-                    drawH = w / imgRatio;
-                    drawY = (h - drawH) / 2;
-                } else {
-                    drawW = h * imgRatio;
-                    drawX = (w - drawW) / 2;
-                }
+                if (canvasRatio > imgRatio) { drawH = w / imgRatio; drawY = (h - drawH) / 2; } 
+                else { drawW = h * imgRatio; drawX = (w - drawW) / 2; }
                 
-                let timeBG = Date.now() / 1000;
-                let scaleBG = 1;
-                let xOffBG = 0;
-                let yOffBG = 0;
-                let rotBG = 0;
-                let alphaBG = 1;
-                let filterBG = 'none';
-                let flashAlpha = 0;
-
-                let kickBassReactivity = 0;
-                if (dataArray) {
-                    let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) * 0.00130718954; 
-                    if (kickBassAvg > 0.45) {
-                        kickBassReactivity = Math.pow(kickBassAvg, 4.0) * 2.2; 
-                    }
-                }
+                let timeBG = getRenderTime(); 
+                let scaleBG = 1; let xOffBG = 0; let yOffBG = 0; let rotBG = 0; let alphaBG = 1;
+                let filterBG = 'none'; let flashAlpha = 0;
 
                 if (state.bg.effect === 'denyut') {
-                    let targetScale = 1 + (kickBassReactivity * state.bg.pulseIntensity);
-                    if (targetScale > currentBeatScale) {
-                        currentBeatScale = targetScale;
-                    } else {
-                        currentBeatScale += (targetScale - currentBeatScale) * 0.25;
-                    }
-                    scaleBG = currentBeatScale;
+                    scaleBG = 1 + (kickBassReactivity * state.bg.pulseIntensity);
                 } else if (state.bg.effect === 'zoom') {
-                    scaleBG = 1 + (Math.sin(timeBG * 0.2) * 0.2 * state.bg.pulseIntensity + (0.1 * state.bg.pulseIntensity)) + (bgAudioReactivity * 0.15 * state.bg.pulseIntensity); 
+                    scaleBG = 1 + (Math.sin(timeBG * 0.2) * 0.2 * state.bg.pulseIntensity + (0.1 * state.bg.pulseIntensity)) + (kickBassReactivity * 0.2 * state.bg.pulseIntensity); 
                 } else if (state.bg.effect === 'shake') {
-                    if (bgAudioReactivity > 0.2) {
-                        let shakeAmt = bgAudioReactivity * 80 * state.bg.pulseIntensity;
-                        xOffBG = (Math.random() - 0.5) * shakeAmt;
-                        yOffBG = (Math.random() - 0.5) * shakeAmt;
+                    let shakeReactivity = Math.max(bgAudioReactivity, kickBassReactivity);
+                    if (shakeReactivity > 0.2) {
+                        let shakeAmt = shakeReactivity * 80 * state.bg.pulseIntensity;
+                        xOffBG = (Math.random() - 0.5) * shakeAmt; yOffBG = (Math.random() - 0.5) * shakeAmt;
                     }
                 } else if (state.bg.effect === 'pan') {
                     scaleBG = 1.2 + (0.1 * state.bg.pulseIntensity); 
@@ -1773,36 +1440,19 @@
                 }
 
                 ctx.save();
-                ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG);
-                ctx.rotate(rotBG);
-                ctx.scale(scaleBG, scaleBG);
-                ctx.globalAlpha = alphaBG;
-                ctx.filter = filterBG;
-                
+                ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG); ctx.rotate(rotBG); ctx.scale(scaleBG, scaleBG);
+                ctx.globalAlpha = alphaBG; ctx.filter = filterBG;
                 ctx.drawImage(state.bg.imgElement, -drawW / 2, -drawH / 2, drawW, drawH);
                 ctx.restore();
                 
-                if (state.bg.darkness > 0) {
-                    ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
-                    ctx.fillRect(0, 0, w, h);
-                }
-                
-                if (flashAlpha > 0) {
-                    ctx.fillStyle = `rgba(255,255,255,${Math.min(flashAlpha, 1)})`;
-                    ctx.fillRect(0, 0, w, h);
-                }
+                if (state.bg.darkness > 0) { ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`; ctx.fillRect(0, 0, w, h); }
+                if (flashAlpha > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(flashAlpha, 1)})`; ctx.fillRect(0, 0, w, h); }
             } else if (state.bg.color !== '#0f1115' && state.bg.color !== 'transparent' && state.bg.color !== '') {
-                if (state.bg.darkness > 0) {
-                    ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`;
-                    ctx.fillRect(0,0,w,h);
-                } else if (state.bg.darkness < 0) {
-                    ctx.fillStyle = `rgba(255,255,255,${-state.bg.darkness})`;
-                    ctx.fillRect(0,0,w,h);
-                }
+                if (state.bg.darkness > 0) { ctx.fillStyle = `rgba(0,0,0,${state.bg.darkness})`; ctx.fillRect(0,0,w,h); } 
+                else if (state.bg.darkness < 0) { ctx.fillStyle = `rgba(255,255,255,${-state.bg.darkness})`; ctx.fillRect(0,0,w,h); }
             }
 
             ctx.imageSmoothingEnabled = false;
-
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
 
             if (state.bg.weather.includes('salju')) {
@@ -1813,25 +1463,14 @@
                     let spawnCount = Math.ceil(state.bg.snowIntensity / 20);
                     for(let k=0; k<spawnCount; k++) {
                         if (snowflakes.length >= currentMaxSnow) break;
-                        snowflakes.push({
-                            x: Math.random() * w,
-                            y: -10,
-                            r: Math.random() * 2 + 0.5,
-                            s: Math.random() * 1.5 + 0.5,
-                            vx: (Math.random() - 0.5) * 0.5,
-                            o: Math.random() * 0.5 + 0.2
-                        });
+                        snowflakes.push({ x: Math.random() * w, y: -10, r: Math.random() * 2 + 0.5, s: Math.random() * 1.5 + 0.5, vx: (Math.random() - 0.5) * 0.5, o: Math.random() * 0.5 + 0.2 });
                     }
                 }
                 ctx.fillStyle = '#ffffff';
                 for (let i = snowflakes.length - 1; i >= 0; i--) {
                     let p = snowflakes[i];
-                    p.y += p.s * weatherSpeedMult;
-                    p.x += p.vx * weatherSpeedMult;
-                    ctx.globalAlpha = p.o;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.r, 0, PI2);
-                    ctx.fill();
+                    p.y += p.s * weatherSpeedMult; p.x += p.vx * weatherSpeedMult;
+                    ctx.globalAlpha = p.o; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, PI2); ctx.fill();
                     if (p.y > h || p.x < 0 || p.x > w) snowflakes.splice(i, 1);
                 }
                 ctx.globalAlpha = 1.0;
@@ -1845,26 +1484,14 @@
                     let spawnCount = Math.ceil(state.bg.snowIntensity / 10);
                     for(let k=0; k<spawnCount; k++) {
                         if (raindrops.length >= currentMaxRain) break;
-                        raindrops.push({
-                            x: Math.random() * w,
-                            y: -20,
-                            len: Math.random() * 20 + 10,
-                            s: Math.random() * 10 + 15,
-                            o: Math.random() * 0.3 + 0.2
-                        });
+                        raindrops.push({ x: Math.random() * w, y: -20, len: Math.random() * 20 + 10, s: Math.random() * 10 + 15, o: Math.random() * 0.3 + 0.2 });
                     }
                 }
-                ctx.strokeStyle = '#a0aec0';
-                ctx.lineWidth = 1.5;
-                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#a0aec0'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
                 for (let i = raindrops.length - 1; i >= 0; i--) {
                     let p = raindrops[i];
-                    p.y += p.s * weatherSpeedMult;
-                    ctx.globalAlpha = p.o;
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len);
-                    ctx.stroke();
+                    p.y += p.s * weatherSpeedMult; ctx.globalAlpha = p.o;
+                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - (p.s * 0.1), p.y + p.len); ctx.stroke();
                     if (p.y > h) raindrops.splice(i, 1);
                 }
                 ctx.globalAlpha = 1.0;
@@ -1878,27 +1505,14 @@
                     let spawnCount = Math.ceil(state.bg.snowIntensity / 15);
                     for(let k=0; k<spawnCount; k++) {
                         if (goldDrops.length >= currentMaxGold) break;
-                        goldDrops.push({
-                            x: Math.random() * w,
-                            y: -20,
-                            len: Math.random() * 15 + 5,
-                            s: Math.random() * 5 + 8,
-                            o: Math.random() * 0.5 + 0.5,
-                            w: Math.random() * 2 + 1
-                        });
+                        goldDrops.push({ x: Math.random() * w, y: -20, len: Math.random() * 15 + 5, s: Math.random() * 5 + 8, o: Math.random() * 0.5 + 0.5, w: Math.random() * 2 + 1 });
                     }
                 }
-                ctx.strokeStyle = '#fbbf24';
-                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#fbbf24'; ctx.lineCap = 'round';
                 for (let i = goldDrops.length - 1; i >= 0; i--) {
                     let p = goldDrops[i];
-                    p.y += p.s * weatherSpeedMult;
-                    ctx.globalAlpha = p.o;
-                    ctx.lineWidth = p.w;
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x, p.y + p.len);
-                    ctx.stroke();
+                    p.y += p.s * weatherSpeedMult; ctx.globalAlpha = p.o; ctx.lineWidth = p.w;
+                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.len); ctx.stroke();
                     if (p.y > h) goldDrops.splice(i, 1);
                 }
                 ctx.globalAlpha = 1.0;
@@ -1908,34 +1522,19 @@
                 let strikeChance = 0.99 - (state.bg.snowIntensity / 1000) - (audioReactivity * 0.05); 
                 if (Math.random() > strikeChance) {
                     let x = Math.random() * w;
-                    lightnings.push({
-                        x: x, y: 0,
-                        segments: generateLightning(x, 0, h),
-                        life: 1.0,
-                        flash: Math.random() > 0.4
-                    });
+                    lightnings.push({ x: x, y: 0, segments: generateLightning(x, 0, h), life: 1.0, flash: Math.random() > 0.4 });
                 }
 
                 for (let i = lightnings.length - 1; i >= 0; i--) {
-                    let l = lightnings[i];
-                    l.life -= 0.06 * weatherSpeedMult;
+                    let l = lightnings[i]; l.life -= 0.06 * weatherSpeedMult;
                     
-                    if (l.flash && l.life > 0.7) {
-                        ctx.fillStyle = `rgba(255, 255, 255, ${l.life * 0.2})`;
-                        ctx.fillRect(0, 0, w, h);
-                    }
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = `rgba(220, 230, 255, ${l.life})`;
-                    ctx.lineWidth = 2 + (l.life * 2);
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = "rgba(150, 180, 255, 0.8)";
+                    if (l.flash && l.life > 0.7) { ctx.fillStyle = `rgba(255, 255, 255, ${l.life * 0.2})`; ctx.fillRect(0, 0, w, h); }
+                    ctx.beginPath(); ctx.strokeStyle = `rgba(220, 230, 255, ${l.life})`; ctx.lineWidth = 2 + (l.life * 2);
+                    ctx.shadowBlur = 10; ctx.shadowColor = "rgba(150, 180, 255, 0.8)";
                     
                     if (l.segments.length > 0) {
                         ctx.moveTo(l.segments[0].x, l.segments[0].y);
-                        for (let j = 1; j < l.segments.length; j++) {
-                            ctx.lineTo(l.segments[j].x, l.segments[j].y);
-                        }
+                        for (let j = 1; j < l.segments.length; j++) { ctx.lineTo(l.segments[j].x, l.segments[j].y); }
                     }
                     ctx.stroke();
 
@@ -1943,16 +1542,12 @@
                     for (let j = 0; j < l.segments.length; j++) {
                         let seg = l.segments[j];
                         if (seg.branch) {
-                            ctx.beginPath();
-                            ctx.moveTo(seg.x, seg.y);
-                            for (let k = 0; k < seg.branch.length; k++) {
-                                ctx.lineTo(seg.branch[k].x, seg.branch[k].y);
-                            }
+                            ctx.beginPath(); ctx.moveTo(seg.x, seg.y);
+                            for (let k = 0; k < seg.branch.length; k++) { ctx.lineTo(seg.branch[k].x, seg.branch[k].y); }
                             ctx.stroke();
                         }
                     }
                     ctx.shadowBlur = 0;
-
                     if (l.life <= 0) lightnings.splice(i, 1);
                 }
             }
@@ -1965,49 +1560,30 @@
                     let spawnCount = Math.ceil(state.bg.snowIntensity / 20);
                     for(let k=0; k<spawnCount; k++) {
                         if (smokes.length >= maxSmokes) break;
-                        
                         let hue = 0;
-                        if (state.bg.weather.includes('asap_warna')) {
-                            hue = (Date.now() / 20 + Math.random() * 50) % 360; 
-                        }
+                        if (state.bg.weather.includes('asap_warna')) { hue = (getRenderTime() * 1000 / 20 + Math.random() * 50) % 360; }
 
                         smokes.push({
-                            x: Math.random() * w,
-                            y: h + 50,
-                            r: Math.random() * 30 + 20,
-                            vx: (Math.random() - 0.5) * 1.5,
-                            vy: -(Math.random() * 2 + 1),
-                            life: 1.0,
-                            decay: Math.random() * 0.006 + 0.003,
-                            hue: hue
+                            x: Math.random() * w, y: h + 50, r: Math.random() * 30 + 20, vx: (Math.random() - 0.5) * 1.5, vy: -(Math.random() * 2 + 1),
+                            life: 1.0, decay: Math.random() * 0.006 + 0.003, hue: hue
                         });
                     }
                 }
                 
                 for (let i = smokes.length - 1; i >= 0; i--) {
                     let s = smokes[i];
-                    
-                    s.x += s.vx * weatherSpeedMult * (1 + audioReactivity * 0.5);
-                    s.y += s.vy * weatherSpeedMult * (1 + audioReactivity * 0.5);
-                    s.r += 0.4 * weatherSpeedMult;
-                    s.life -= s.decay * weatherSpeedMult;
+                    s.x += s.vx * weatherSpeedMult * (1 + audioReactivity * 0.5); s.y += s.vy * weatherSpeedMult * (1 + audioReactivity * 0.5);
+                    s.r += 0.4 * weatherSpeedMult; s.life -= s.decay * weatherSpeedMult;
                     
                     if (s.life > 0) {
                         let grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
                         if (state.bg.weather.includes('asap_warna')) {
-                            grad.addColorStop(0, `hsla(${s.hue}, 80%, 60%, ${s.life * 0.2})`);
-                            grad.addColorStop(1, `hsla(${s.hue}, 80%, 60%, 0)`);
+                            grad.addColorStop(0, `hsla(${s.hue}, 80%, 60%, ${s.life * 0.2})`); grad.addColorStop(1, `hsla(${s.hue}, 80%, 60%, 0)`);
                         } else {
-                            grad.addColorStop(0, `rgba(180, 190, 200, ${s.life * 0.15})`);
-                            grad.addColorStop(1, `rgba(180, 190, 200, 0)`);
+                            grad.addColorStop(0, `rgba(180, 190, 200, ${s.life * 0.15})`); grad.addColorStop(1, `rgba(180, 190, 200, 0)`);
                         }
-                        
-                        ctx.fillStyle = grad;
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.r, 0, PI2);
-                        ctx.fill();
+                        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, PI2); ctx.fill();
                     }
-                    
                     if (s.life <= 0 || s.y < -s.r) smokes.splice(i, 1);
                 }
             }
@@ -2016,37 +1592,26 @@
                 if (!state.overlay.element) return;
                 
                 ctx.save();
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-                
+                ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
                 ctx.globalAlpha = state.overlay.opacity;
-                
                 if (state.overlay.blend === 'screen') ctx.globalCompositeOperation = 'screen';
                 
                 let ow = state.overlay.type === 'video' ? state.overlay.element.videoWidth : state.overlay.element.width;
                 let oh = state.overlay.type === 'video' ? state.overlay.element.videoHeight : state.overlay.element.height;
-                
-                if(!ow || !oh) {
-                    ctx.restore();
-                    return;
-                }
+                if(!ow || !oh) { ctx.restore(); return; }
 
                 let baseScale = Math.min(w / ow, h / oh) * (state.overlay.size * 2); 
-                let animScale = 1;
-                let animX = 0;
-                let animY = 0;
-                let animRot = 0;
+                let animScale = 1; let animX = 0; let animY = 0; let animRot = 0;
                 
-                let currentNow = Date.now();
+                let currentNow = getRenderTime() * 1000;
                 let delta = 0;
                 if (state.overlay.lastDrawTime) {
                     delta = (currentNow - state.overlay.lastDrawTime) / 1000;
-                    if (delta > 0.1) delta = 0.016; 
+                    if (delta > 0.1 || isOfflineRendering) delta = 0.016; 
                 }
                 state.overlay.lastDrawTime = currentNow;
 
                 let speedMult = state.overlay.speed * 5;
-                
                 if (state.overlay.anim !== 'none') {
                     state.overlay.animTime = (state.overlay.animTime || 0) + (delta * speedMult);
                     switch(state.overlay.anim) {
@@ -2061,36 +1626,23 @@
                 }
 
                 let finalScale = baseScale * animScale;
-                let drawW = ow * finalScale;
-                let drawH = oh * finalScale;
+                let drawW = ow * finalScale; let drawH = oh * finalScale;
+                let finalOverlayX = cx + animX + (state.overlay.offsetX || 0); let finalOverlayY = cy + animY + (state.overlay.offsetY || 0);
 
-                let finalOverlayX = cx + animX + (state.overlay.offsetX || 0);
-                let finalOverlayY = cy + animY + (state.overlay.offsetY || 0);
+                bboxes.overlay = { x: finalOverlayX - drawW/2, y: finalOverlayY - drawH/2, w: drawW, h: drawH };
 
-                bboxes.overlay = {
-                    x: finalOverlayX - drawW/2,
-                    y: finalOverlayY - drawH/2,
-                    w: drawW,
-                    h: drawH
-                };
-
-                ctx.translate(finalOverlayX, finalOverlayY);
-                ctx.rotate(animRot);
+                ctx.translate(finalOverlayX, finalOverlayY); ctx.rotate(animRot);
                 ctx.drawImage(state.overlay.element, -drawW/2, -drawH/2, drawW, drawH);
                 ctx.restore();
             };
 
             if (state.overlay.lapisan === 'belakang') drawOverlayObj();
 
-            if(state.viz.enabled && dataArray && audioElement.src) {
-                let time = Date.now() / 1000;
-                
+            if(state.viz.enabled && dataArray && (audioElement.src || isOfflineRendering)) {
+                let time = getRenderTime();
                 let baseHue = 0;
-                if (state.viz.colorMode === 'auto') {
-                    baseHue = (time * state.viz.argbSpeed) % 360; 
-                } else {
-                    baseHue = state.viz.hue;
-                }
+                if (state.viz.colorMode === 'auto') { baseHue = (time * state.viz.argbSpeed) % 360; } 
+                else { baseHue = state.viz.hue; }
                 
                 let vizY = cy;
                 if(state.viz.align === 'bawah') vizY = h - (h * 0.1);
@@ -2103,12 +1655,9 @@
                 const solidColor = `hsl(${baseHue}, 100%, 60%)`;
                 
                 ctx.globalAlpha = state.viz.opacity !== undefined ? state.viz.opacity : 1.0;
-                ctx.fillStyle = solidColor;
-                ctx.strokeStyle = solidColor;
-                ctx.lineCap = 'round'; 
-                ctx.lineJoin = 'round';
-                ctx.shadowBlur = 0;
-                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = solidColor; ctx.strokeStyle = solidColor;
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
 
                 let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30);
 
@@ -2117,7 +1666,6 @@
                     const spacing = 4 * widthFactor; 
                     const totalW = barCount * spacing;
                     let startX = currentCx - (totalW / 2);
-                    
                     bboxes.viz = { x: startX, y: currentVizY - maxH, w: totalW, h: maxH };
 
                     for (let i = 0; i < barCount; i++) {
@@ -2135,28 +1683,24 @@
                             case 'bars':
                             default:
                                 if(state.viz.align === 'tengah') yPos = currentVizY - (barH/2);
-                                ctx.roundRect(xPos, yPos, barThickness, barH, barThickness/2);
-                                break;
+                                ctx.roundRect(xPos, yPos, barThickness, barH, barThickness/2); break;
                             case 'bars_mirror':
                                 ctx.roundRect(xPos, currentVizY - barH, barThickness, barH, barThickness/2);
-                                ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
-                                break;
+                                ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2); break;
                             case 'bars_split':
                                 if (i < barCount/2) ctx.roundRect(xPos, currentVizY - barH, barThickness, barH, barThickness/2);
-                                else ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2);
-                                break;
+                                else ctx.roundRect(xPos, currentVizY, barThickness, barH, barThickness/2); break;
                             case 'bars_stair':
                                 let stairH = ((i/barCount) * maxH * (val/255));
-                                ctx.roundRect(xPos, currentVizY - stairH, barThickness, Math.max(4, stairH), barThickness/2);
-                                break;
+                                ctx.roundRect(xPos, currentVizY - stairH, barThickness, Math.max(4, stairH), barThickness/2); break;
                         }
                         ctx.fill();
                     }
                 } 
                 else if (state.viz.type.startsWith('wave')) {
-                    analyser.getByteTimeDomainData(dataArray);
-                    ctx.lineWidth = Math.max(2, 6 - (widthFactor * 0.1)); 
+                    if (!isOfflineRendering) analyser.getByteTimeDomainData(dataArray);
                     
+                    ctx.lineWidth = Math.max(2, 6 - (widthFactor * 0.1)); 
                     const totalWaveWidth = w * widthFactor;
                     const sliceW = totalWaveWidth / dataArray.length;
                     let startWaveX = currentCx - (totalWaveWidth / 2);
@@ -2174,318 +1718,182 @@
                     for (let i = 1; i < dataArray.length; i++) {
                         let v = dataArray[i] / 128.0; 
                         let x = startWaveX + (i * sliceW);
-                        
                         if(state.viz.type === 'wave_glitch' && Math.random() > 0.95) v += (Math.random()-0.5)*0.8;
-
                         let y = currentVizY + ((v - 1) * (h / 2) * amp);
 
-                        if (state.viz.type === 'wave_glitch') {
-                            ctx.lineTo(x, y);
-                        } else {
-                            let xc = (prevX + x) / 2;
-                            let yc = (prevY + y) / 2;
+                        if (state.viz.type === 'wave_glitch') { ctx.lineTo(x, y); } 
+                        else {
+                            let xc = (prevX + x) / 2; let yc = (prevY + y) / 2;
                             ctx.quadraticCurveTo(prevX, prevY, xc, yc);
                         }
-                        
                         prevX = x; prevY = y;
                     }
                     
-                    if (!state.viz.type.includes('glitch')) {
-                        ctx.lineTo(prevX, prevY); 
-                    }
+                    if (!state.viz.type.includes('glitch')) { ctx.lineTo(prevX, prevY);  }
 
                     if(state.viz.type === 'wave_double') {
-                        ctx.stroke();
-                        ctx.beginPath();
+                        ctx.stroke(); ctx.beginPath();
                         ctx.strokeStyle = `hsl(${(baseHue + 180) % 360}, 100%, 60%)`; 
                         let dpX = startWaveX;
                         let dpY = currentVizY - (((dataArray[0] / 128.0) - 1) * (h / 2) * amp);
                         ctx.moveTo(dpX, dpY);
                         for (let i = 1; i < dataArray.length; i++) {
-                            let v = dataArray[i] / 128.0; 
-                            let x = startWaveX + (i * sliceW);
-                            let y = currentVizY - ((v - 1) * (h / 2) * amp);
-                            ctx.quadraticCurveTo(dpX, dpY, (dpX+x)/2, (dpY+y)/2);
-                            dpX = x; dpY = y;
+                            let v = dataArray[i] / 128.0; let x = startWaveX + (i * sliceW); let y = currentVizY - ((v - 1) * (h / 2) * amp);
+                            ctx.quadraticCurveTo(dpX, dpY, (dpX+x)/2, (dpY+y)/2); dpX = x; dpY = y;
                         }
                         ctx.lineTo(dpX, dpY);
                     }
                     
                     if(state.viz.type.includes('fill')) {
-                         ctx.lineTo(startWaveX + totalWaveWidth, currentVizY);
-                         ctx.closePath();
-                         ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.4)`; 
-                         ctx.fill();
-                         ctx.stroke();
-                    } else if (!state.viz.type.includes('dots')) {
-                         ctx.stroke();
-                    }
+                         ctx.lineTo(startWaveX + totalWaveWidth, currentVizY); ctx.closePath();
+                         ctx.fillStyle = `hsla(${baseHue}, 100%, 50%, 0.4)`; ctx.fill(); ctx.stroke();
+                    } else if (!state.viz.type.includes('dots')) { ctx.stroke(); }
                     
-                    analyser.getByteFrequencyData(dataArray); 
+                    if (!isOfflineRendering) analyser.getByteFrequencyData(dataArray); 
                 }
                 else if (state.viz.type.startsWith('modern')) {
                     if (state.viz.type === 'modern_plexus') {
                         if (!window.plexusNodes || window.plexusNodes.length !== 40) {
-                            window.plexusNodes = Array.from({length: 40}, () => ({
-                                x: (Math.random()-0.5)*w*0.5, y: (Math.random()-0.5)*h*0.5,
-                                vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2
-                            }));
+                            window.plexusNodes = Array.from({length: 40}, () => ({ x: (Math.random()-0.5)*w*0.5, y: (Math.random()-0.5)*h*0.5, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2 }));
                         }
                         let radiusScale = state.viz.size * h * 0.4;
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        ctx.lineWidth = 1;
+                        ctx.save(); ctx.translate(currentCx, currentVizY); ctx.lineWidth = 1;
                         for(let i=0; i<window.plexusNodes.length; i++) {
-                            let n = window.plexusNodes[i];
-                            let val = (dataArray[i * 2] || 0) / 255;
-                            n.x += n.vx * (1 + audioReactivity*2);
-                            n.y += n.vy * (1 + audioReactivity*2);
-                            
+                            let n = window.plexusNodes[i]; let val = (dataArray[i * 2] || 0) / 255;
+                            n.x += n.vx * (1 + audioReactivity*2); n.y += n.vy * (1 + audioReactivity*2);
                             let limit = radiusScale * 1.5;
-                            if(n.x > limit || n.x < -limit) n.vx *= -1;
-                            if(n.y > limit || n.y < -limit) n.vy *= -1;
+                            if(n.x > limit || n.x < -limit) n.vx *= -1; if(n.y > limit || n.y < -limit) n.vy *= -1;
 
                             ctx.globalAlpha = state.viz.opacity !== undefined ? state.viz.opacity : 1.0;
-                            ctx.fillStyle = `hsl(${baseHue}, 100%, 60%)`;
-                            ctx.beginPath();
-                            ctx.arc(n.x, n.y, 2 + (val * 5), 0, PI2);
-                            ctx.fill();
+                            ctx.fillStyle = `hsl(${baseHue}, 100%, 60%)`; ctx.beginPath(); ctx.arc(n.x, n.y, 2 + (val * 5), 0, PI2); ctx.fill();
 
                             for(let j=i+1; j<window.plexusNodes.length; j++) {
-                                let n2 = window.plexusNodes[j];
-                                let dist = Math.hypot(n.x-n2.x, n.y-n2.y);
+                                let n2 = window.plexusNodes[j]; let dist = Math.hypot(n.x-n2.x, n.y-n2.y);
                                 let connectDist = radiusScale * 0.8;
                                 if(dist < connectDist) {
                                     ctx.globalAlpha = (1 - (dist / connectDist)) * (state.viz.opacity !== undefined ? state.viz.opacity : 1.0);
-                                    ctx.strokeStyle = `hsl(${(baseHue + 30)%360}, 100%, 60%)`;
-                                    ctx.beginPath();
-                                    ctx.moveTo(n.x, n.y);
-                                    ctx.lineTo(n2.x, n2.y);
-                                    ctx.stroke();
+                                    ctx.strokeStyle = `hsl(${(baseHue + 30)%360}, 100%, 60%)`; ctx.beginPath();
+                                    ctx.moveTo(n.x, n.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
                                 }
                             }
                         }
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - radiusScale*1.5, y: currentVizY - radiusScale*1.5, w: radiusScale*3, h: radiusScale*3 };
+                        ctx.restore(); bboxes.viz = { x: currentCx - radiusScale*1.5, y: currentVizY - radiusScale*1.5, w: radiusScale*3, h: radiusScale*3 };
                     } 
                     else if (state.viz.type === 'modern_cyber_bars') {
-                        const barCount = 48;
-                        const spacing = 8 * widthFactor; 
-                        const totalW = barCount * spacing;
-                        let startX = currentCx - (totalW / 2);
-                        const maxH = h * state.viz.size;
+                        const barCount = 48; const spacing = 8 * widthFactor; const totalW = barCount * spacing;
+                        let startX = currentCx - (totalW / 2); const maxH = h * state.viz.size;
                         
-                        if (!window.cyberCaps || window.cyberCaps.length !== barCount) {
-                            window.cyberCaps = new Array(barCount).fill(0);
-                        }
-                        
+                        if (!window.cyberCaps || window.cyberCaps.length !== barCount) { window.cyberCaps = new Array(barCount).fill(0); }
                         ctx.shadowBlur = 10;
                         for (let i = 0; i < barCount; i++) {
-                            const dataIndex = ~~(i * (dataArray.length / barCount) * 0.7);
-                            let val = dataArray[dataIndex] || 0;
-                            let barH = Math.max(2, (val / 255) * maxH); 
-                            let barThickness = Math.max(3, spacing - (3 * widthFactor));
+                            const dataIndex = ~~(i * (dataArray.length / barCount) * 0.7); let val = dataArray[dataIndex] || 0;
+                            let barH = Math.max(2, (val / 255) * maxH); let barThickness = Math.max(3, spacing - (3 * widthFactor));
                             let xPos = startX + (i * spacing);
-                            
                             let barColor = `hsl(${(baseHue + i*(90/barCount))%360}, 100%, 50%)`;
-                            ctx.shadowColor = barColor;
-                            ctx.fillStyle = barColor;
+                            ctx.shadowColor = barColor; ctx.fillStyle = barColor;
                             
                             if (state.viz.align === 'tengah') {
                                 ctx.fillRect(xPos, currentVizY - (barH/2), barThickness, barH);
-                                
-                                if (barH/2 > window.cyberCaps[i]) window.cyberCaps[i] = barH/2; 
-                                else window.cyberCaps[i] -= 2;
-                                
+                                if (barH/2 > window.cyberCaps[i]) window.cyberCaps[i] = barH/2; else window.cyberCaps[i] -= 2;
                                 let capOffset = Math.max(barH/2, window.cyberCaps[i]) + 5;
-                                ctx.fillStyle = '#ffffff';
-                                ctx.shadowColor = '#ffffff';
+                                ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffffff';
                                 ctx.fillRect(xPos, currentVizY - capOffset - 3, barThickness, 3);
                                 ctx.fillRect(xPos, currentVizY + capOffset, barThickness, 3);
                             } else {
                                 ctx.fillRect(xPos, currentVizY - barH, barThickness, barH);
-                                
-                                if (barH > window.cyberCaps[i]) window.cyberCaps[i] = barH; 
-                                else window.cyberCaps[i] -= 2;
-                                
+                                if (barH > window.cyberCaps[i]) window.cyberCaps[i] = barH; else window.cyberCaps[i] -= 2;
                                 let capY = currentVizY - Math.max(barH, window.cyberCaps[i]) - 5;
-                                ctx.fillStyle = '#ffffff';
-                                ctx.shadowColor = '#ffffff';
+                                ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffffff';
                                 ctx.fillRect(xPos, capY - 3, barThickness, 3);
                             }
                         }
-                        ctx.shadowBlur = 0;
-                        bboxes.viz = { x: startX, y: currentVizY - maxH - 20, w: totalW, h: maxH * 2 + 40 };
+                        ctx.shadowBlur = 0; bboxes.viz = { x: startX, y: currentVizY - maxH - 20, w: totalW, h: maxH * 2 + 40 };
                     }
                     else if (state.viz.type === 'modern_dna_helix') {
-                        let helixHeight = h * state.viz.size * 1.5;
-                        let helixWidth = w * 0.15 * widthFactor;
-                        let strands = 30;
-                        
-                        ctx.save();
-                        ctx.translate(currentCx, currentVizY);
-                        
+                        let helixHeight = h * state.viz.size * 1.5; let helixWidth = w * 0.15 * widthFactor; let strands = 30;
+                        ctx.save(); ctx.translate(currentCx, currentVizY);
                         for (let i = 0; i < strands; i++) {
-                            let yProgress = (i / strands) - 0.5;
-                            let yPos = yProgress * helixHeight;
-                            
-                            let dataIdx = Math.floor(Math.abs(yProgress) * 2 * dataArray.length * 0.4);
-                            let val = (dataArray[dataIdx] || 0) / 255;
-                            
+                            let yProgress = (i / strands) - 0.5; let yPos = yProgress * helixHeight;
+                            let dataIdx = Math.floor(Math.abs(yProgress) * 2 * dataArray.length * 0.4); let val = (dataArray[dataIdx] || 0) / 255;
                             let phase = (yProgress * Math.PI * 6) + (time * 2);
-                            
-                            let xPos1 = Math.sin(phase) * helixWidth;
-                            let zPos1 = Math.cos(phase) * helixWidth;
-                            
-                            let xPos2 = Math.sin(phase + Math.PI) * helixWidth;
-                            let zPos2 = Math.cos(phase + Math.PI) * helixWidth;
-                            
+                            let xPos1 = Math.sin(phase) * helixWidth; let zPos1 = Math.cos(phase) * helixWidth;
+                            let xPos2 = Math.sin(phase + Math.PI) * helixWidth; let zPos2 = Math.cos(phase + Math.PI) * helixWidth;
                             let depthRef = helixWidth * 1.5;
-                            let scale1 = (zPos1 + depthRef) / (depthRef * 2);
-                            let scale2 = (zPos2 + depthRef) / (depthRef * 2);
+                            let scale1 = (zPos1 + depthRef) / (depthRef * 2); let scale2 = (zPos2 + depthRef) / (depthRef * 2);
                             
                             if (val > 0.1) {
-                                ctx.beginPath();
-                                ctx.moveTo(xPos1 * scale1, yPos);
-                                ctx.lineTo(xPos2 * scale2, yPos);
-                                ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, ${val * 0.5})`;
-                                ctx.lineWidth = 1 + val * 2;
-                                ctx.stroke();
+                                ctx.beginPath(); ctx.moveTo(xPos1 * scale1, yPos); ctx.lineTo(xPos2 * scale2, yPos);
+                                ctx.strokeStyle = `hsla(${baseHue}, 100%, 60%, ${val * 0.5})`; ctx.lineWidth = 1 + val * 2; ctx.stroke();
                             }
-                            
                             let drawNode = (x, y, s, z, isFront) => {
-                                ctx.beginPath();
-                                let r = 3 + (val * 8) * s;
-                                ctx.arc(x, y, Math.max(1, r), 0, PI2);
-                                
+                                ctx.beginPath(); let r = 3 + (val * 8) * s; ctx.arc(x, y, Math.max(1, r), 0, PI2);
                                 let nodeHue = (baseHue + (isFront ? 0 : 180) + (yProgress*120)) % 360;
                                 ctx.fillStyle = `hsla(${nodeHue}, 100%, 60%, ${0.4 + s * 0.6})`;
-                                ctx.shadowBlur = s * 10 * val;
-                                ctx.shadowColor = ctx.fillStyle;
-                                ctx.fill();
+                                ctx.shadowBlur = s * 10 * val; ctx.shadowColor = ctx.fillStyle; ctx.fill();
                             };
-                            
-                            if (zPos1 < zPos2) {
-                                drawNode(xPos1 * scale1, yPos, scale1, zPos1, true);
-                                drawNode(xPos2 * scale2, yPos, scale2, zPos2, false);
-                            } else {
-                                drawNode(xPos2 * scale2, yPos, scale2, zPos2, false);
-                                drawNode(xPos1 * scale1, yPos, scale1, zPos1, true);
-                            }
+                            if (zPos1 < zPos2) { drawNode(xPos1 * scale1, yPos, scale1, zPos1, true); drawNode(xPos2 * scale2, yPos, scale2, zPos2, false); } 
+                            else { drawNode(xPos2 * scale2, yPos, scale2, zPos2, false); drawNode(xPos1 * scale1, yPos, scale1, zPos1, true); }
                         }
-                        
-                        ctx.shadowBlur = 0;
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - helixWidth, y: currentVizY - helixHeight/2, w: helixWidth*2, h: helixHeight };
+                        ctx.shadowBlur = 0; ctx.restore(); bboxes.viz = { x: currentCx - helixWidth, y: currentVizY - helixHeight/2, w: helixWidth*2, h: helixHeight };
                     }
                     else if (state.viz.type === 'modern_cityscape') {
-                        let cityWidth = w * 0.8 * widthFactor;
-                        let maxBldgHeight = h * state.viz.size;
-                        let numBuildings = 40;
-                        let bldgWidth = cityWidth / numBuildings;
-                        
-                        ctx.save();
-                        ctx.translate(currentCx - cityWidth/2, currentVizY + (maxBldgHeight*0.4)); 
+                        let cityWidth = w * 0.8 * widthFactor; let maxBldgHeight = h * state.viz.size;
+                        let numBuildings = 40; let bldgWidth = cityWidth / numBuildings;
+                        ctx.save(); ctx.translate(currentCx - cityWidth/2, currentVizY + (maxBldgHeight*0.4)); 
                         
                         for (let i = 0; i < numBuildings; i++) {
-                            let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2;
-                            let dataIdx = ~~(distFromCenter * dataArray.length * 0.4);
-                            
-                            let val1 = (dataArray[dataIdx] || 0) / 255;
-                            let val2 = (dataArray[Math.min(dataArray.length-1, dataIdx+1)] || 0) / 255;
-                            let val = (val1 + val2) / 2;
-                            
-                            let targetHeight = val * maxBldgHeight;
-                            let seed = (i * 137.5) % 1;
-                            let baseHeight = maxBldgHeight * 0.1 * (seed + 0.5);
-                            let finalHeight = baseHeight + targetHeight;
-                            
+                            let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2; let dataIdx = ~~(distFromCenter * dataArray.length * 0.4);
+                            let val1 = (dataArray[dataIdx] || 0) / 255; let val2 = (dataArray[Math.min(dataArray.length-1, dataIdx+1)] || 0) / 255;
+                            let val = (val1 + val2) / 2; let targetHeight = val * maxBldgHeight;
+                            let seed = (i * 137.5) % 1; let baseHeight = maxBldgHeight * 0.1 * (seed + 0.5); let finalHeight = baseHeight + targetHeight;
                             let x = i * bldgWidth;
                             
                             let bColor = `hsl(${(baseHue + distFromCenter*120)%360}, 80%, ${10 + val*40}%)`;
-                            ctx.fillStyle = bColor;
-                            ctx.fillRect(x + 1, -finalHeight, bldgWidth - 2, finalHeight);
-                            
-                            ctx.fillStyle = `hsl(${(baseHue + distFromCenter*120)%360}, 100%, 60%)`;
-                            ctx.fillRect(x + 1, -finalHeight, bldgWidth - 2, Math.max(2, val * 8));
+                            ctx.fillStyle = bColor; ctx.fillRect(x + 1, -finalHeight, bldgWidth - 2, finalHeight);
+                            ctx.fillStyle = `hsl(${(baseHue + distFromCenter*120)%360}, 100%, 60%)`; ctx.fillRect(x + 1, -finalHeight, bldgWidth - 2, Math.max(2, val * 8));
                             
                             if (val > 0.3 && bldgWidth > 10) {
                                 ctx.fillStyle = `rgba(255, 255, 255, ${val})`;
                                 for (let wy = -finalHeight + 10; wy < -10; wy += 15) {
-                                    if ((i + wy) % 3 === 0) {
-                                        ctx.fillRect(x + bldgWidth*0.3, wy, bldgWidth*0.4, 4);
-                                    }
+                                    if ((i + wy) % 3 === 0) { ctx.fillRect(x + bldgWidth*0.3, wy, bldgWidth*0.4, 4); }
                                 }
                             }
                         }
                         
-                        ctx.globalAlpha = 0.3 * (state.viz.opacity !== undefined ? state.viz.opacity : 1.0);
-                        ctx.scale(1, -0.4);
+                        ctx.globalAlpha = 0.3 * (state.viz.opacity !== undefined ? state.viz.opacity : 1.0); ctx.scale(1, -0.4);
                         for (let i = 0; i < numBuildings; i++) {
-                            let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2;
-                            let dataIdx = ~~(distFromCenter * dataArray.length * 0.4);
-                            let val = (dataArray[dataIdx] || 0) / 255;
-                            let seed = (i * 137.5) % 1;
+                            let distFromCenter = Math.abs((i / numBuildings) - 0.5) * 2; let dataIdx = ~~(distFromCenter * dataArray.length * 0.4);
+                            let val = (dataArray[dataIdx] || 0) / 255; let seed = (i * 137.5) % 1;
                             let finalHeight = (maxBldgHeight * 0.1 * (seed + 0.5)) + (val * maxBldgHeight);
-                            
                             let x = i * bldgWidth;
-                            ctx.fillStyle = `hsl(${(baseHue + distFromCenter*120)%360}, 100%, 50%)`;
-                            ctx.fillRect(x + 1, 0, bldgWidth - 2, -finalHeight);
+                            ctx.fillStyle = `hsl(${(baseHue + distFromCenter*120)%360}, 100%, 50%)`; ctx.fillRect(x + 1, 0, bldgWidth - 2, -finalHeight);
                         }
-                        
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - cityWidth/2, y: currentVizY - maxBldgHeight*0.6, w: cityWidth, h: maxBldgHeight*1.2 };
+                        ctx.restore(); bboxes.viz = { x: currentCx - cityWidth/2, y: currentVizY - maxBldgHeight*0.6, w: cityWidth, h: maxBldgHeight*1.2 };
                     }
                     else if (state.viz.type === 'modern_digital_pixel') {
-                        let totalW = w * 0.6 * widthFactor;
-                        let maxH = h * state.viz.size;
-                        let cols = 32;
-                        let rows = 16;
-                        let pixelW = totalW / cols;
-                        let pixelH = maxH / rows;
-                        let gap = 2;
-                        
-                        ctx.save();
-                        ctx.translate(currentCx - totalW/2, currentVizY - maxH/2);
-                        
+                        let totalW = w * 0.6 * widthFactor; let maxH = h * state.viz.size; let cols = 32; let rows = 16;
+                        let pixelW = totalW / cols; let pixelH = maxH / rows; let gap = 2;
+                        ctx.save(); ctx.translate(currentCx - totalW/2, currentVizY - maxH/2);
                         for (let c = 0; c < cols; c++) {
-                            let dataIdx = ~~(Math.abs((c/cols)-0.5)*2 * dataArray.length * 0.5);
-                            let val = (dataArray[dataIdx] || 0) / 255;
+                            let dataIdx = ~~(Math.abs((c/cols)-0.5)*2 * dataArray.length * 0.5); let val = (dataArray[dataIdx] || 0) / 255;
                             let activeRows = ~~(val * rows);
-                            
                             for (let r = 0; r < rows; r++) {
-                                let x = c * pixelW;
-                                let y = maxH - ((r + 1) * pixelH);
-                                
-                                ctx.beginPath();
-                                ctx.rect(x + gap/2, y + gap/2, pixelW - gap, pixelH - gap);
-                                
+                                let x = c * pixelW; let y = maxH - ((r + 1) * pixelH);
+                                ctx.beginPath(); ctx.rect(x + gap/2, y + gap/2, pixelW - gap, pixelH - gap);
                                 if (r < activeRows) {
                                     let pColor = `hsl(${(baseHue + (r/rows)*120)%360}, 100%, ${50 + (val*20)}%)`;
-                                    ctx.fillStyle = pColor;
-                                    ctx.shadowBlur = 10;
-                                    ctx.shadowColor = pColor;
-                                    ctx.fill();
-                                } else {
-                                    ctx.fillStyle = `hsla(${baseHue}, 20%, 20%, 0.2)`;
-                                    ctx.shadowBlur = 0;
-                                    ctx.fill();
-                                }
+                                    ctx.fillStyle = pColor; ctx.shadowBlur = 10; ctx.shadowColor = pColor; ctx.fill();
+                                } else { ctx.fillStyle = `hsla(${baseHue}, 20%, 20%, 0.2)`; ctx.shadowBlur = 0; ctx.fill(); }
                             }
                         }
-                        
-                        ctx.shadowBlur = 0;
-                        ctx.restore();
-                        bboxes.viz = { x: currentCx - totalW/2, y: currentVizY - maxH/2, w: totalW, h: maxH };
+                        ctx.shadowBlur = 0; ctx.restore(); bboxes.viz = { x: currentCx - totalW/2, y: currentVizY - maxH/2, w: totalW, h: maxH };
                     }
                 }
-                
                 ctx.globalAlpha = 1.0;
             }
 
             if (state.textFx.enabled) {
                 ctx.save();
-                
                 let displayText = state.textFx.customText;
                 if (!displayText && currentTrackIndex >= 0 && currentTrackIndex < playlist.length) {
                     let trackName = playlist[currentTrackIndex].file.name;
@@ -2493,23 +1901,16 @@
                 }
                 if (!displayText) displayText = "TNC7 Visualizer";
                 
-                let time = Date.now() / 1000;
+                let time = getRenderTime();
 
                 if (displayText !== lastTrackForText) {
-                    typewriterProgress = 0;
-                    lastTrackForText = displayText;
-                    textTransitionStart = time;
+                    typewriterProgress = 0; lastTrackForText = displayText; textTransitionStart = time;
                 }
 
-                let fontSize = state.textFx.size;
-                let speedMult = (state.textFx.animSpeed !== undefined ? state.textFx.animSpeed : 50) / 50;
+                let fontSize = state.textFx.size; let speedMult = (state.textFx.animSpeed !== undefined ? state.textFx.animSpeed : 50) / 50;
+                let textX = cx + (state.textFx.offsetX || 0); let textY = (h * 0.15) + (state.textFx.offsetY || 0);
                 
-                let textX = cx + (state.textFx.offsetX || 0);
-                let textY = (h * 0.15) + (state.textFx.offsetY || 0);
-                
-                let alpha = 1;
-                let scale = 1;
-                let finalDisplayText = displayText;
+                let alpha = 1; let scale = 1; let finalDisplayText = displayText;
 
                 if (state.textFx.anim === 'blink') {
                     alpha = (Math.sin(time * 5 * speedMult) * 0.4) + 0.6;
@@ -2520,49 +1921,27 @@
                     textY += Math.sin(time * 3 * speedMult) * 15;
                 } else if (state.textFx.anim === 'glitch') {
                     if (Math.random() > (0.95 - (speedMult * 0.02))) {
-                        textX += (Math.random() - 0.5) * 20 * speedMult;
-                        alpha = Math.random();
-                        ctx.fillStyle = Math.random() > 0.5 ? 'red' : 'cyan';
-                        ctx.fillText(displayText, textX + 5, textY);
+                        textX += (Math.random() - 0.5) * 20 * speedMult; alpha = Math.random();
+                        ctx.fillStyle = Math.random() > 0.5 ? 'red' : 'cyan'; ctx.fillText(displayText, textX + 5, textY);
                     }
                 } else if (state.textFx.anim === 'typewriter') {
-                    let len = displayText.length;
-                    let pauseFrames = 60;
-                    let fadeFrames = 30;
-                    let emptyFrames = 20;
+                    let len = displayText.length; let pauseFrames = 60; let fadeFrames = 30; let emptyFrames = 20;
                     let totalCycle = len + pauseFrames + fadeFrames + emptyFrames;
                     
                     typewriterProgress += 0.25 * speedMult;
+                    if (typewriterProgress >= totalCycle) { typewriterProgress = 0; }
                     
-                    if (typewriterProgress >= totalCycle) {
-                        typewriterProgress = 0;
-                    }
+                    let charsToShow = 0; let showCursor = false;
                     
-                    let charsToShow = 0;
-                    let showCursor = false;
-                    
-                    if (typewriterProgress < len) {
-                        charsToShow = Math.floor(typewriterProgress);
-                        showCursor = true;
-                    } else if (typewriterProgress < len + pauseFrames) {
-                        charsToShow = len;
-                        showCursor = Math.floor(time * 3 * speedMult) % 2 === 0;
-                    } else if (typewriterProgress < len + pauseFrames + fadeFrames) {
-                        charsToShow = len;
-                        let fadeProgress = typewriterProgress - (len + pauseFrames);
-                        alpha *= Math.max(0, 1 - (fadeProgress / fadeFrames)); 
-                        showCursor = false;
-                    } else {
-                        charsToShow = 0;
-                        alpha = 0;
-                        showCursor = false;
-                    }
+                    if (typewriterProgress < len) { charsToShow = Math.floor(typewriterProgress); showCursor = true; } 
+                    else if (typewriterProgress < len + pauseFrames) { charsToShow = len; showCursor = Math.floor(time * 3 * speedMult) % 2 === 0; } 
+                    else if (typewriterProgress < len + pauseFrames + fadeFrames) {
+                        charsToShow = len; let fadeProgress = typewriterProgress - (len + pauseFrames);
+                        alpha *= Math.max(0, 1 - (fadeProgress / fadeFrames)); showCursor = false;
+                    } else { charsToShow = 0; alpha = 0; showCursor = false; }
                     
                     finalDisplayText = displayText.substring(0, charsToShow);
-                    
-                    if (showCursor) {
-                        finalDisplayText += "|";
-                    }
+                    if (showCursor) { finalDisplayText += "|"; }
                 }
 
                 let timeSinceChange = time - textTransitionStart;
@@ -2570,127 +1949,69 @@
                 alpha *= transitionFade;
 
                 ctx.font = `bold ${fontSize}px ${state.textFx.font}, sans-serif`;
-                ctx.textAlign = state.textFx.align || 'center';
-                ctx.textBaseline = 'middle';
-                ctx.globalAlpha = alpha;
-
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+                ctx.textAlign = state.textFx.align || 'center'; ctx.textBaseline = 'middle'; ctx.globalAlpha = alpha;
+                ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
                 
                 let fxLevel = state.textFx.intensity;
 
                 if (state.textFx.effect === 'shadow') {
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                    ctx.shadowBlur = fxLevel * 0.2;
-                    ctx.shadowOffsetX = fxLevel * 0.1;
-                    ctx.shadowOffsetY = fxLevel * 0.1;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'; ctx.shadowBlur = fxLevel * 0.2; ctx.shadowOffsetX = fxLevel * 0.1; ctx.shadowOffsetY = fxLevel * 0.1;
                 } else if (state.textFx.effect === 'glow') {
-                    ctx.shadowColor = state.textFx.color;
-                    ctx.shadowBlur = fxLevel * 0.5;
+                    ctx.shadowColor = state.textFx.color; ctx.shadowBlur = fxLevel * 0.5;
                 }
 
-                ctx.translate(textX, textY);
-                ctx.scale(scale, scale);
+                ctx.translate(textX, textY); ctx.scale(scale, scale);
 
                 if (state.textFx.effect === 'outline') {
                     ctx.lineWidth = Math.max(1, (fontSize * 0.05) * (fxLevel / 50));
-                    ctx.strokeStyle = 'black';
-                    ctx.strokeText(finalDisplayText, 0, 0);
-                    ctx.fillStyle = state.textFx.color;
-                    ctx.fillText(finalDisplayText, 0, 0);
+                    ctx.strokeStyle = 'black'; ctx.strokeText(finalDisplayText, 0, 0);
+                    ctx.fillStyle = state.textFx.color; ctx.fillText(finalDisplayText, 0, 0);
                 } else {
-                    ctx.fillStyle = state.textFx.color;
-                    ctx.fillText(finalDisplayText, 0, 0);
+                    ctx.fillStyle = state.textFx.color; ctx.fillText(finalDisplayText, 0, 0);
                 }
                 
                 let metrics = ctx.measureText(finalDisplayText);
-                let textW = metrics.width * scale;
-                let textH = fontSize * scale;
-                
+                let textW = metrics.width * scale; let textH = fontSize * scale;
                 let bboxX = textX;
-                if ((state.textFx.align || 'center') === 'center') {
-                    bboxX = textX - (textW / 2);
-                } else if (state.textFx.align === 'right') {
-                    bboxX = textX - textW;
-                }
+                if ((state.textFx.align || 'center') === 'center') { bboxX = textX - (textW / 2); } 
+                else if (state.textFx.align === 'right') { bboxX = textX - textW; }
 
-                bboxes.text = {
-                    x: bboxX,
-                    y: textY - (textH / 2),
-                    w: textW,
-                    h: textH
-                };
-
+                bboxes.text = { x: bboxX, y: textY - (textH / 2), w: textW, h: textH };
                 ctx.restore();
             }
 
             if (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci') drawOverlayObj();
         }
 
-        let draggingElement = null;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let initialOffsetX = 0;
-        let initialOffsetY = 0;
+        let draggingElement = null; let dragStartX = 0; let dragStartY = 0; let initialOffsetX = 0; let initialOffsetY = 0;
 
         function getCanvasMousePos(evt) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
-            };
+            const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX; const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
         }
 
         function handleDragStart(e) {
-            const pos = getCanvasMousePos(e);
-            let clicked = null;
-            
+            const pos = getCanvasMousePos(e); let clicked = null;
             if (state.textFx.enabled && bboxes.text) {
                 const padding = 10;
-                if (pos.x >= bboxes.text.x - padding && pos.x <= bboxes.text.x + bboxes.text.w + padding && 
-                    pos.y >= bboxes.text.y - padding && pos.y <= bboxes.text.y + bboxes.text.h + padding) {
-                    clicked = 'text';
-                }
+                if (pos.x >= bboxes.text.x - padding && pos.x <= bboxes.text.x + bboxes.text.w + padding && pos.y >= bboxes.text.y - padding && pos.y <= bboxes.text.y + bboxes.text.h + padding) { clicked = 'text'; }
             }
-            
             if (!clicked && state.overlay.element && (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci')) {
-                if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) {
-                    clicked = 'overlay';
-                }
+                if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) { clicked = 'overlay'; }
             }
-            
             if (!clicked && bboxes.viz) {
-                if (pos.x >= bboxes.viz.x && pos.x <= bboxes.viz.x + bboxes.viz.w && pos.y >= bboxes.viz.y && pos.y <= bboxes.viz.y + bboxes.viz.h) {
-                    clicked = 'viz';
-                }
+                if (pos.x >= bboxes.viz.x && pos.x <= bboxes.viz.x + bboxes.viz.w && pos.y >= bboxes.viz.y && pos.y <= bboxes.viz.y + bboxes.viz.h) { clicked = 'viz'; }
             }
-            
             if (!clicked && state.overlay.element && state.overlay.lapisan === 'belakang') {
-                if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) {
-                    clicked = 'overlay';
-                }
+                if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) { clicked = 'overlay'; }
             }
 
             if (clicked) {
-                draggingElement = clicked;
-                dragStartX = pos.x;
-                dragStartY = pos.y;
-                if (clicked === 'viz') {
-                    initialOffsetX = state.viz.offsetX || 0;
-                    initialOffsetY = state.viz.offsetY || 0;
-                } else if (clicked === 'overlay') {
-                    initialOffsetX = state.overlay.offsetX || 0;
-                    initialOffsetY = state.overlay.offsetY || 0;
-                } else if (clicked === 'text') {
-                    initialOffsetX = state.textFx.offsetX || 0;
-                    initialOffsetY = state.textFx.offsetY || 0;
-                }
+                draggingElement = clicked; dragStartX = pos.x; dragStartY = pos.y;
+                if (clicked === 'viz') { initialOffsetX = state.viz.offsetX || 0; initialOffsetY = state.viz.offsetY || 0; } 
+                else if (clicked === 'overlay') { initialOffsetX = state.overlay.offsetX || 0; initialOffsetY = state.overlay.offsetY || 0; } 
+                else if (clicked === 'text') { initialOffsetX = state.textFx.offsetX || 0; initialOffsetY = state.textFx.offsetY || 0; }
                 canvas.style.cursor = 'grabbing';
             }
         }
@@ -2698,47 +2019,16 @@
         function handleDragMove(e) {
             if (!draggingElement) return;
             if (e.cancelable) e.preventDefault(); 
-            
-            const pos = getCanvasMousePos(e);
-            const dx = pos.x - dragStartX;
-            const dy = pos.y - dragStartY;
-            
-            if (draggingElement === 'viz') {
-                state.viz.offsetX = initialOffsetX + dx;
-                state.viz.offsetY = initialOffsetY + dy;
-            } else if (draggingElement === 'overlay') {
-                state.overlay.offsetX = initialOffsetX + dx;
-                state.overlay.offsetY = initialOffsetY + dy;
-            } else if (draggingElement === 'text') {
-                state.textFx.offsetX = initialOffsetX + dx;
-                state.textFx.offsetY = initialOffsetY + dy;
-            }
+            const pos = getCanvasMousePos(e); const dx = pos.x - dragStartX; const dy = pos.y - dragStartY;
+            if (draggingElement === 'viz') { state.viz.offsetX = initialOffsetX + dx; state.viz.offsetY = initialOffsetY + dy; } 
+            else if (draggingElement === 'overlay') { state.overlay.offsetX = initialOffsetX + dx; state.overlay.offsetY = initialOffsetY + dy; } 
+            else if (draggingElement === 'text') { state.textFx.offsetX = initialOffsetX + dx; state.textFx.offsetY = initialOffsetY + dy; }
         }
 
-        function handleDragEnd() {
-            if (draggingElement) {
-                draggingElement = null;
-                canvas.style.cursor = 'default';
-            }
-        }
+        function handleDragEnd() { if (draggingElement) { draggingElement = null; canvas.style.cursor = 'default'; } }
 
-        canvas.addEventListener('mousedown', handleDragStart);
-        window.addEventListener('mousemove', handleDragMove, { passive: false });
-        window.addEventListener('mouseup', handleDragEnd);
-        
-        canvas.addEventListener('touchstart', handleDragStart, { passive: true });
-        window.addEventListener('touchmove', handleDragMove, { passive: false });
-        window.addEventListener('touchend', handleDragEnd);
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }).catch(error => {
-                    console.log('ServiceWorker registration failed: ', error);
-                });
-            });
-        }
+        canvas.addEventListener('mousedown', handleDragStart); window.addEventListener('mousemove', handleDragMove, { passive: false }); window.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('touchstart', handleDragStart, { passive: true }); window.addEventListener('touchmove', handleDragMove, { passive: false }); window.addEventListener('touchend', handleDragEnd);
 
     </script>
 </body>
