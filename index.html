@@ -7,7 +7,7 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#10b981">
+    <meta name="theme-color" content="#facc15">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/0f1115/f59e0b.png?text=TNC7">
     
@@ -83,7 +83,7 @@
         }
 
         .btn-custom:hover { background-color: var(--btn-hover); }
-        .btn-active { background-color: #10b981; border-color: #10b981; color: #ffffff; }
+        .btn-active { background-color: #facc15; border-color: #facc15; color: #0f1115; font-weight: 600; }
         .btn-danger { border-color: rgba(239, 68, 68, 0.5); color: var(--accent-red); }
         .btn-danger:hover { background-color: rgba(239, 68, 68, 0.1); }
 
@@ -228,12 +228,12 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background-color: #0d9488;
+            background-color: #facc15;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: white;
+            color: #0f1115;
             flex-shrink: 0;
         }
         
@@ -244,8 +244,8 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: #10b981;
-            color: white;
+            background: #facc15;
+            color: #0f1115;
             padding: 10px 20px;
             border-radius: 8px;
             font-size: 14px;
@@ -290,7 +290,7 @@
             left: 0;
             right: 0;
             height: 12px;
-            background-color: #10b981; 
+            background-color: #facc15; 
             z-index: 10000;
             -webkit-app-region: drag; 
         }
@@ -336,7 +336,7 @@
                 <div class="panel-header flex justify-between">
                     <span>VISUALIZER</span>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="vizEnable" checked class="rounded border-gray-600 bg-gray-700 text-teal-500 focus:ring-teal-500">
+                        <input type="checkbox" id="vizEnable" checked class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
                         <span class="text-xs text-gray-300">Tampilkan</span>
                     </label>
                 </div>
@@ -510,7 +510,7 @@
                 <div class="panel-header flex justify-between">
                     <span>TEXT OVERLAY</span>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="textEnable" class="rounded border-gray-600 bg-gray-700 text-teal-500 focus:ring-teal-500">
+                        <input type="checkbox" id="textEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
                         <span class="text-xs text-gray-300">Tampilkan</span>
                     </label>
                 </div>
@@ -652,7 +652,7 @@
                             <span id="time-display" class="whitespace-nowrap">0:00 / 0:00</span>
                         </div>
                         <div id="progress-container" class="h-2 bg-[#2a3142] rounded-full cursor-pointer relative mt-1">
-                            <div id="progress-bar" class="h-full bg-[#0d9488] rounded-full w-0 pointer-events-none"></div>
+                            <div id="progress-bar" class="h-full bg-[#facc15] rounded-full w-0 pointer-events-none"></div>
                             <div id="progress-handle" class="w-3 h-3 bg-white rounded-full absolute top-1/2 -translate-y-1/2 -ml-1.5 left-0 pointer-events-none shadow-md"></div>
                         </div>
                     </div>
