@@ -1,66 +1,53 @@
-const CACHE_NAME = 'tnc7-visualizer-v2.0-super-stable';
+// Ganti angka versi ini (misal: v3, v4, dst) SETIAP KALI Anda mengupdate index.html
+const CACHE_NAME = 'tnc7-visualizer-v2'; 
 
-const URLS_TO_CACHE = [
-    './',
-    './index.html',
-    './manifest.json',
-    // Kita juga bisa meng-cache library dari luar agar bisa dibuka tanpa internet
-    'https://unpkg.com/mp4-muxer/build/mp4-muxer.js',
-    'https://cdn.tailwindcss.com',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js'
+const urlsToCache = [
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('Opened cache v2.0');
-                // Gunakan try-catch atau abaikan jika ada file CDN yang gagal di-cache
-                return cache.addAll(URLS_TO_CACHE).catch(err => console.warn('Beberapa asset luar mungkin gagal di-cache', err));
-            })
-    );
-    // Memaksa service worker baru untuk langsung aktif (tidak menunggu tab ditutup)
-    self.skipWaiting();
+// Tahap Install: Menyimpan file utama ke dalam Cache
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Cache berhasil dibuka');
+        return cache.addAll(urlsToCache);
+      })
+  );
+  self.skipWaiting(); // Memaksa service worker baru untuk langsung aktif
 });
 
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Menghapus cache versi lama:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+// Tahap Activate: Menghapus Cache versi lama agar pengunjung mendapat update terbaru
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Menghapus cache lama:', cacheName);
+            return caches.delete(cacheName);
+          }
         })
-    );
-    // Langsung mengambil kendali atas semua halaman terbuka
-    self.clients.claim();
+      );
+    })
+  );
+  self.clients.claim(); // Langsung mengontrol semua halaman yang terbuka
 });
 
-self.addEventListener('fetch', (event) => {
-    // Abaikan request dari ekstensi Chrome atau file blob
-    if (event.request.url.startsWith('chrome-extension') || event.request.url.includes('extension') || event.request.url.startsWith('blob:')) {
-        return;
-    }
-
-    event.respondWith(
-        fetch(event.request)
-            .then((networkResponse) => {
-                // Jika sukses ambil dari internet, simpan ke cache untuk backup offline
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
-                }
-                return networkResponse;
-            })
-            .catch(() => {
-                // Jika internet mati (offline), ambil dari Cache
-                return caches.match(event.request);
-            })
-    );
+// Tahap Fetch: Mengambil data dari Cache jika offline, atau dari internet jika online
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        // Jika ada di cache, kembalikan response cache
+        if (response) {
+          return response;
+        }
+        // Jika tidak ada di cache, ambil dari internet
+        return fetch(event.request);
+      })
+  );
 });
