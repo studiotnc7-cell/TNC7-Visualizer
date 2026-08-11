@@ -2159,6 +2159,41 @@
         canvas.addEventListener('mousedown', handleDragStart); window.addEventListener('mousemove', handleDragMove, { passive: false }); window.addEventListener('mouseup', handleDragEnd);
         canvas.addEventListener('touchstart', handleDragStart, { passive: true }); window.addEventListener('touchmove', handleDragMove, { passive: false }); window.addEventListener('touchend', handleDragEnd);
 
+        // --- SISTEM PROTEKSI DASAR (ANTI CLONE AWAM) ---
+        
+        // 1. Matikan Klik Kanan
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // 2. Matikan shortcut keyboard untuk Developer Tools
+        document.addEventListener('keydown', function(e) {
+            // Cegah F12
+            if(e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            // Cegah Ctrl+Shift+I (Inspect)
+            if(e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+                e.preventDefault();
+                return false;
+            }
+            // Cegah Ctrl+Shift+J (Console)
+            if(e.ctrlKey && e.shiftKey && e.keyCode === 74) {
+                e.preventDefault();
+                return false;
+            }
+            // Cegah Ctrl+U (View Source)
+            if(e.ctrlKey && e.keyCode === 85) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // 3. Peringatan di Console
+        console.log("%cBERHENTI!", "color: red; font-size: 50px; font-weight: bold; text-shadow: 2px 2px 0 #000;");
+        console.log("%cIni adalah area untuk developer. Dilarang meng-copy script aplikasi ini.", "font-size: 16px;");
+
     </script>
 </body>
 </html>
