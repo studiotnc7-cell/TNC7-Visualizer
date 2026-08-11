@@ -112,7 +112,8 @@
             border-radius: 2px;
         }
 
-        #vizHueSlider::-webkit-slider-runnable-track {
+        #vizHueSlider::-webkit-slider-runnable-track,
+        #textHueSlider::-webkit-slider-runnable-track {
             background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
         }
         
@@ -294,6 +295,10 @@
             z-index: 10000;
             -webkit-app-region: drag; 
         }
+        
+        input[type=range].hidden + .val-indicator {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -341,13 +346,13 @@
                     </label>
                 </div>
                 
-                <div class="control-row" id="vizAlignGroup">
-                    <button class="btn-custom btn-active" data-val="tengah">Tengah</button>
+                <div class="control-row hidden" id="vizAlignGroup">
+                    <button class="btn-custom" data-val="tengah">Tengah</button>
                     <button class="btn-custom" data-val="bawah">Bawah</button>
-                    <button class="btn-custom" data-val="full">Full (Wave)</button>
+                    <button class="btn-custom btn-active" data-val="full">Full (Wave)</button>
                 </div>
                 
-                <div class="control-row">
+                <div class="control-row mt-1">
                     <span class="control-label">Ukuran</span>
                     <div class="flex-1">
                         <input type="range" min="1" max="100" value="50" id="vizSizeSlider">
@@ -438,7 +443,13 @@
 
             <!-- Background Panel -->
             <div class="panel">
-                <div class="panel-header">BACKGROUND</div>
+                <div class="panel-header flex justify-between">
+                    <span>BACKGROUND</span>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" id="bgMirrorEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
+                        <span class="text-xs text-gray-300">Mirror</span>
+                    </label>
+                </div>
 
                 <div class="flex items-center gap-2">
                     <span class="text-[10px] font-bold text-gray-500 w-8">FX</span>
@@ -539,44 +550,54 @@
                     </div>
                 </div>
 
-                <div class="flex items-center text-[10px] justify-between w-full mt-1">
-                    <div class="flex items-center gap-1 w-1/2 pr-1">
-                        <span class="text-gray-400">Ukr</span>
-                        <input type="range" id="textSizeSlider" min="10" max="200" value="40" class="w-full">
+                <div class="flex items-start gap-2 mt-1">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider mt-1">WARNA</span>
+                    <div class="flex flex-col gap-1 flex-1">
+                        <div class="flex gap-1 flex-wrap" id="textColorModeGroup">
+                            <button class="btn-custom" data-val="statis">Statis</button>
+                            <button class="btn-custom btn-active" data-val="auto">ARGB</button>
+                        </div>
+                        <div class="flex items-center gap-2 w-full mt-1" id="textStaticColorGroup" style="display: none;">
+                            <span class="text-[10px] text-gray-400 w-8">Pilih</span>
+                            <div class="flex-1">
+                                <input type="color" id="textColorPicker" value="#ffffff" class="w-full h-5 rounded cursor-pointer border-0 p-0 bg-transparent">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 w-full mt-1" id="textHueColorGroup" style="display: none;">
+                            <span class="text-[10px] text-gray-400 w-8">Hue</span>
+                            <div class="flex-1">
+                                <input type="range" min="0" max="360" value="0" id="textHueSlider">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 w-full mt-1" id="textArgbSpeedGroup">
+                            <span class="text-[10px] text-gray-400 w-8">Speed</span>
+                            <div class="flex-1">
+                                <input type="range" min="1" max="100" value="15" id="textArgbSpeedSlider">
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-1 w-1/2 pl-1">
-                        <span class="text-gray-400">Warna</span>
-                        <input type="color" id="textColorPicker" value="#ffffff" class="w-full h-5 rounded cursor-pointer border-0 p-0 bg-transparent">
+                </div>
+
+                <div class="flex items-center text-[10px] justify-between w-full mt-1">
+                    <div class="flex items-center gap-1 w-full pr-1">
+                        <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">UKURAN</span>
+                        <input type="range" id="textSizeSlider" min="10" max="200" value="40" class="flex-1">
                     </div>
                 </div>
 
                 <div class="flex items-start gap-2 mt-1 hidden">
                     <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">ALIGN</span>
                     <div class="flex flex-wrap gap-1 flex-1" id="textAlignGroup">
-                        <button class="btn-custom" data-val="left"><i class="fa-solid fa-align-left"></i></button>
-                        <button class="btn-custom btn-active" data-val="center"><i class="fa-solid fa-align-center"></i></button>
+                        <button class="btn-custom btn-active" data-val="left"><i class="fa-solid fa-align-left"></i></button>
+                        <button class="btn-custom" data-val="center"><i class="fa-solid fa-align-center"></i></button>
                         <button class="btn-custom" data-val="right"><i class="fa-solid fa-align-right"></i></button>
                     </div>
                 </div>
 
-                <div class="flex items-start gap-2 mt-1">
+                <div class="flex items-center gap-2 mt-1 hidden">
                     <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">POSISI</span>
-                    <div class="flex flex-col gap-1 flex-1" id="textPosGroup">
-                        <div class="grid grid-cols-3 gap-1">
-                            <button class="btn-custom !px-1 text-[10px]" data-pos="top-left">↖ Kiri</button>
-                            <button class="btn-custom btn-active !px-1 text-[10px]" data-pos="top-center">⬆ Tengah</button>
-                            <button class="btn-custom !px-1 text-[10px]" data-pos="top-right">↗ Kanan</button>
-                        </div>
-                        <div class="grid grid-cols-3 gap-1">
-                            <div></div>
-                            <button class="btn-custom !px-1 text-[10px]" data-pos="middle-center">⏺ Presisi</button>
-                            <div></div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-1">
-                            <button class="btn-custom !px-1 text-[10px]" data-pos="bottom-left">↙ Kiri</button>
-                            <button class="btn-custom !px-1 text-[10px]" data-pos="bottom-center">⬇ Tengah</button>
-                            <button class="btn-custom !px-1 text-[10px]" data-pos="bottom-right">↘ Kanan</button>
-                        </div>
+                    <div class="flex-1">
+                        <button class="btn-custom w-full text-[10px]" id="btnPosisiPresisi" title="Klik dan geser teks langsung di preview">⏺ Presisi (Geser Manual)</button>
                     </div>
                 </div>
 
@@ -677,10 +698,10 @@
 
     <script>
         const state = {
-            viz: { enabled: true, align: 'tengah', size: 0.5, width: 0.5, opacity: 1.0, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
-            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50 },
+            viz: { enabled: true, align: 'full', size: 0.5, width: 0.5, opacity: 1.0, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
+            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50, mirror: false },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
-            textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'center', animSpeed: 50 }
+            textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', colorMode: 'auto', hue: 0, argbSpeed: 15, effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'left', animSpeed: 50 }
         };
 
         let bboxes = { viz: null, overlay: null, text: null };
@@ -690,6 +711,25 @@
         const wrapper = document.getElementById('canvas-wrapper');
         const audioElement = new Audio();
         
+        document.querySelectorAll('input[type=range]').forEach(slider => {
+            const span = document.createElement('span');
+            span.className = 'val-indicator text-[9px] text-gray-400 font-medium ml-1 w-6 text-right shrink-0 pointer-events-none';
+            span.textContent = slider.value;
+            
+            if (slider.id.startsWith('overlay')) span.classList.replace('w-6', 'w-4');
+
+            const parent = slider.parentElement;
+            if (parent.classList.contains('flex-1') && !parent.classList.contains('flex')) {
+                parent.classList.add('flex', 'items-center');
+            }
+            
+            slider.parentNode.insertBefore(span, slider.nextSibling);
+
+            slider.addEventListener('input', (e) => {
+                span.textContent = e.target.value;
+            });
+        });
+
         let audioObjectURLs = []; 
         let isOfflineRendering = false;
         let isRenderingPlaylist = false;
@@ -760,25 +800,43 @@
         bindButtonGroup('textEffectGroup', 'textFx', 'effect');
         bindButtonGroup('textAnimGroup', 'textFx', 'anim');
         bindButtonGroup('textAlignGroup', 'textFx', 'align');
+        bindButtonGroup('textColorModeGroup', 'textFx', 'colorMode');
 
-        const textPosBtns = document.querySelectorAll('#textPosGroup button');
-        textPosBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                textPosBtns.forEach(b => b.classList.remove('btn-active'));
-                btn.classList.add('btn-active');
-                const pos = btn.getAttribute('data-pos');
-                const w = canvas.width || 1280;
-                const h = canvas.height || 720;
-                const cx = w / 2;
-                if (pos === 'top-left') { state.textFx.offsetX = -cx + (w * 0.05); state.textFx.offsetY = -(h * 0.15) + (h * 0.05); document.querySelector('#textAlignGroup button[data-val="left"]').click(); } 
-                else if (pos === 'top-right') { state.textFx.offsetX = cx - (w * 0.05); state.textFx.offsetY = -(h * 0.15) + (h * 0.05); document.querySelector('#textAlignGroup button[data-val="right"]').click(); } 
-                else if (pos === 'top-center') { state.textFx.offsetX = 0; state.textFx.offsetY = -(h * 0.15) + (h * 0.05); document.querySelector('#textAlignGroup button[data-val="center"]').click(); } 
-                else if (pos === 'middle-center') { state.textFx.offsetX = 0; state.textFx.offsetY = (h / 2) - (h * 0.15); document.querySelector('#textAlignGroup button[data-val="center"]').click(); } 
-                else if (pos === 'bottom-left') { state.textFx.offsetX = -cx + (w * 0.05); state.textFx.offsetY = h - (h * 0.15) - (h * 0.05); document.querySelector('#textAlignGroup button[data-val="left"]').click(); } 
-                else if (pos === 'bottom-center') { state.textFx.offsetX = 0; state.textFx.offsetY = h - (h * 0.15) - (h * 0.05); document.querySelector('#textAlignGroup button[data-val="center"]').click(); } 
-                else if (pos === 'bottom-right') { state.textFx.offsetX = cx - (w * 0.05); state.textFx.offsetY = h - (h * 0.15) - (h * 0.05); document.querySelector('#textAlignGroup button[data-val="right"]').click(); }
+        const textColorModeGroup = document.getElementById('textColorModeGroup');
+        const textStaticColorGroup = document.getElementById('textStaticColorGroup');
+        const textHueColorGroup = document.getElementById('textHueColorGroup');
+        const textArgbSpeedGroup = document.getElementById('textArgbSpeedGroup');
+
+        if (textColorModeGroup) {
+            textColorModeGroup.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.getAttribute('data-val');
+                    if (mode === 'auto') {
+                        textStaticColorGroup.style.display = 'none';
+                        textHueColorGroup.style.display = 'none';
+                        textArgbSpeedGroup.style.display = 'flex';
+                    } else if (mode === 'statis') {
+                        textStaticColorGroup.style.display = 'flex';
+                        textHueColorGroup.style.display = 'flex';
+                        textArgbSpeedGroup.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
+        
+        document.getElementById('textArgbSpeedSlider').addEventListener('input', (e) => { state.textFx.argbSpeed = parseFloat(e.target.value); });
+        document.getElementById('textHueSlider').addEventListener('input', (e) => { state.textFx.hue = parseFloat(e.target.value); });
+
+        const btnPosisiPresisi = document.getElementById('btnPosisiPresisi');
+        if(btnPosisiPresisi) {
+            btnPosisiPresisi.addEventListener('click', () => {
+                const h = canvas.height || 720;
+                state.textFx.offsetX = 0; 
+                state.textFx.offsetY = (h / 2) - (h * 0.15); 
+                document.querySelector('#textAlignGroup button[data-val="center"]').click();
+                showNotification("Geser teks langsung di layar preview");
+            });
+        }
 
         document.getElementById('vizEnable').addEventListener('change', (e) => { state.viz.enabled = e.target.checked; });
         document.getElementById('textEnable').addEventListener('change', (e) => { state.textFx.enabled = e.target.checked; });
@@ -812,6 +870,7 @@
                 state.overlay.element = img; state.overlay.type = 'image';
             }
         });
+        
         document.getElementById('btnHapusOverlay').addEventListener('click', () => { state.overlay.element = null; document.getElementById('overlayNameDisplay').textContent = "Belum ada"; });
 
         document.getElementById('vizSizeSlider').addEventListener('input', (e) => { state.viz.size = e.target.value / 100; });
@@ -836,13 +895,15 @@
                 });
             });
         }
+        
         document.getElementById('vizArgbSpeedSlider').addEventListener('input', (e) => { state.viz.argbSpeed = parseFloat(e.target.value); });
         document.getElementById('vizHueSlider').addEventListener('input', (e) => { state.viz.hue = parseFloat(e.target.value); });
+        
         const vizTypeSelect = document.getElementById('vizTypeSelect');
         vizTypeSelect.addEventListener('change', (e) => { state.viz.type = e.target.value; });
         
         vizTypeSelect.addEventListener('wheel', (e) => {
-            e.preventDefault(); // Mencegah scroll pada panel utama
+            e.preventDefault(); 
             const delta = Math.sign(e.deltaY);
             let currentIndex = vizTypeSelect.selectedIndex;
             let nextIndex = currentIndex + delta;
@@ -853,13 +914,15 @@
             }
         });
 
+        document.getElementById('bgMirrorEnable').addEventListener('change', (e) => { state.bg.mirror = e.target.checked; });
         document.getElementById('bgColorPicker').addEventListener('input', (e) => { state.bg.color = e.target.value; });
         document.getElementById('bgDarknessSlider').addEventListener('input', (e) => { state.bg.darkness = e.target.value / 100; });
         document.getElementById('bgPulseIntensitySlider').addEventListener('input', (e) => { state.bg.pulseIntensity = e.target.value / 100; });
 
         let audioContext;
         let audioSource;
-        let analyser;
+        let realtimeAnalyser; // Explicitly separate realtime analyser
+        let analyser;         // The currently active analyser
         let dataArray;
         let isPlaying = false;
         
@@ -870,14 +933,12 @@
         let smokes = [];
         
         const PI2 = Math.PI * 2;
-        let particles = [];
         let playlist = [];
         let currentTrackIndex = -1;
         
         let typewriterProgress = 0;
         let lastTrackForText = "";
         let textTransitionStart = 0;
-        let currentBeatScale = 1;
 
         function resizeCanvas() {
             canvas.width = 1280;
@@ -887,13 +948,23 @@
         setTimeout(resizeCanvas, 100);
 
         function setupAudio() {
-            if (audioContext) return;
+            if (audioContext) {
+                // Pastikan analyser menunjuk kembali ke mode realtime saat file baru dimuat
+                if (realtimeAnalyser) {
+                    analyser = realtimeAnalyser;
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+                }
+                return;
+            }
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
+            realtimeAnalyser = audioContext.createAnalyser();
+            realtimeAnalyser.fftSize = 256;
+            
             audioSource = audioContext.createMediaElementSource(audioElement);
-            audioSource.connect(analyser); 
-            analyser.connect(audioContext.destination);
-            analyser.fftSize = 256;
+            audioSource.connect(realtimeAnalyser); 
+            realtimeAnalyser.connect(audioContext.destination);
+            
+            analyser = realtimeAnalyser;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
         }
 
@@ -902,7 +973,9 @@
             setupAudio();
             currentTrackIndex = index;
             const file = playlist[index].file;
-            if (audioElement.src && audioElement.src.startsWith('blob:')) URL.revokeObjectURL(audioElement.src);
+            if (audioElement.src && audioElement.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audioElement.src);
+            }
             const url = URL.createObjectURL(file);
             audioElement.src = url;
             document.getElementById('player-title').textContent = file.name;
@@ -963,6 +1036,7 @@
             if (currentTrackIndex === -1 && playlist.length > 0) loadTrack(0); else renderPlaylist();
             e.target.value = '';
         });
+        
         document.getElementById('btnHapusAudio').addEventListener('click', clearAllAudio);
 
         document.getElementById('bgInput').addEventListener('change', (e) => {
@@ -1023,7 +1097,6 @@
         let muxer = null;
         let videoEncoder = null;
         let audioEncoder = null;
-        let isTurboMode = true;
 
         document.getElementById('btnRekam').addEventListener('click', async function() {
             if(!isRecording) {
@@ -1066,7 +1139,7 @@
         }
 
         function forceGarbageCollection() {
-            snowflakes = []; raindrops = []; goldDrops = []; lightnings = []; smokes = []; particles = [];
+            snowflakes = []; raindrops = []; goldDrops = []; lightnings = []; smokes = [];
             window.plexusNodes = null; window.cyberCaps = null;
             if (canvas) { canvas.width = 1280; canvas.height = 720; }
         }
@@ -1144,7 +1217,6 @@
                     }
                 });
                 
-                // Konfigurasi H.264 720p 30FPS VBR 1.2 Mbps untuk keseimbangan ukuran & kualitas terbaik
                 videoEncoder.configure({
                     codec: 'avc1.4D0028', 
                     width: 1280, 
@@ -1171,7 +1243,6 @@
                     bitrate: 128000
                 });
                 
-                // Perbaikan Zero-Padding Audio Chunk (1 KB Bug Fix)
                 async function processAudio(audioBuf, enc) {
                     const totalFrames = audioBuf.length;
                     const numChannels = audioBuf.numberOfChannels;
@@ -1226,7 +1297,6 @@
                 window.offlineCurrentTime = 0;
                 let frameIdx = 0;
                 
-                // Event-Driven Synchronized Loop (Deadlock Fix)
                 let processFrameResolve;
                 let processFramePromise = new Promise(resolve => { processFrameResolve = resolve; });
 
@@ -1341,33 +1411,63 @@
             isOfflineRendering = false;
             isRenderingPlaylist = false;
             abortOfflineRender = false;
+            
             const btn = document.getElementById('btnRekam');
             btn.textContent = 'Mulai Render';
             btn.classList.add('btn-danger');
             btn.classList.remove('bg-red-600', 'text-white', 'border-red-500');
             document.getElementById('recording-indicator').classList.add('hidden');
+            
             if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
             if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
             muxer = null;
             
-            if (playlist.length > 0) {
-                currentTrackIndex = Math.min(renderQueueIndex, playlist.length - 1);
-                if(currentTrackIndex < 0) currentTrackIndex = 0;
-                document.getElementById('player-title').textContent = playlist[currentTrackIndex].file.name;
-                document.getElementById('track-name-display').textContent = playlist[currentTrackIndex].file.name;
+            // Perbaikan Mutlak: Kembalikan analyser ke realtime & reset element audio
+            if (realtimeAnalyser) {
+                analyser = realtimeAnalyser;
+                if (analyser) dataArray = new Uint8Array(analyser.frequencyBinCount);
             }
-            renderPlaylist();
+            
+            if (playlist.length > 0) {
+                let nextTrack = Math.min(renderQueueIndex, playlist.length - 1);
+                if (nextTrack < 0) nextTrack = 0;
+                
+                isPlaying = false;
+                updatePlayBtn();
+                
+                // Pemuatan ulang secara "Clean" memastikan context dan src tidak korup pasca render
+                loadTrack(nextTrack); 
+            } else {
+                renderPlaylist();
+            }
+            
+            // Visual reset UI progress
+            timeDisplay.textContent = "0:00 / 0:00";
+            progressBar.style.width = `0%`;
+            progressHandle.style.left = `0%`;
         }
+
+        let lastPreviewTime = 0;
+        const PREVIEW_FPS = 30;
+        const PREVIEW_INTERVAL = 1000 / PREVIEW_FPS;
 
         requestAnimationFrame(renderLoop);
 
-        function renderLoop() {
+        function renderLoop(timestamp) {
             requestAnimationFrame(renderLoop);
             if (isOfflineRendering) return; 
-            if (isPlaying && analyser) {
-                analyser.getByteFrequencyData(dataArray);
+            
+            if (!lastPreviewTime) lastPreviewTime = timestamp;
+            const elapsed = timestamp - lastPreviewTime;
+            
+            if (elapsed > PREVIEW_INTERVAL) {
+                lastPreviewTime = timestamp - (elapsed % PREVIEW_INTERVAL);
+                
+                if (isPlaying && analyser) {
+                    analyser.getByteFrequencyData(dataArray);
+                }
+                drawCanvas();
             }
-            drawCanvas();
         }
 
         function drawCanvas() {
@@ -1440,7 +1540,9 @@
                 }
 
                 ctx.save();
-                ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG); ctx.rotate(rotBG); ctx.scale(scaleBG, scaleBG);
+                ctx.translate(w / 2 + xOffBG, h / 2 + yOffBG); ctx.rotate(rotBG); 
+                let actualScaleX = scaleBG * (state.bg.mirror ? -1 : 1);
+                ctx.scale(actualScaleX, scaleBG);
                 ctx.globalAlpha = alphaBG; ctx.filter = filterBG;
                 ctx.drawImage(state.bg.imgElement, -drawW / 2, -drawH / 2, drawW, drawH);
                 ctx.restore();
@@ -1454,6 +1556,8 @@
 
             ctx.imageSmoothingEnabled = false;
             let weatherSpeedMult = state.bg.weatherSpeed / 50;
+
+            weatherSpeedMult *= 2;
 
             if (state.bg.weather.includes('salju')) {
                 let currentMaxSnow = state.bg.snowIntensity * 4;
@@ -1600,14 +1704,19 @@
                 let oh = state.overlay.type === 'video' ? state.overlay.element.videoHeight : state.overlay.element.height;
                 if(!ow || !oh) { ctx.restore(); return; }
 
-                let baseScale = Math.min(w / ow, h / oh) * (state.overlay.size * 2); 
+                let baseScale = Math.min(w / ow, h / oh) * 0.3 * (state.overlay.size * 2); 
                 let animScale = 1; let animX = 0; let animY = 0; let animRot = 0;
                 
                 let currentNow = getRenderTime() * 1000;
                 let delta = 0;
-                if (state.overlay.lastDrawTime) {
-                    delta = (currentNow - state.overlay.lastDrawTime) / 1000;
-                    if (delta > 0.1 || isOfflineRendering) delta = 0.016; 
+                
+                if (isOfflineRendering) {
+                    delta = 1 / 30;
+                } else {
+                    if (state.overlay.lastDrawTime) {
+                        delta = (currentNow - state.overlay.lastDrawTime) / 1000;
+                        if (delta > 0.1 || delta < 0) delta = 1 / 30; 
+                    }
                 }
                 state.overlay.lastDrawTime = currentNow;
 
@@ -1659,12 +1768,12 @@
                 ctx.lineCap = 'round'; ctx.lineJoin = 'round';
                 ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
 
-                let widthFactor = 0.1 + (Math.pow(state.viz.width, 2.5) * 30);
+                let screenWidthRatio = state.viz.width * 2;
 
                 if (state.viz.type.startsWith('bars')) {
                     const barCount = 64;
-                    const spacing = 4 * widthFactor; 
-                    const totalW = barCount * spacing;
+                    const totalW = w * screenWidthRatio;
+                    const spacing = totalW / barCount;
                     let startX = currentCx - (totalW / 2);
                     bboxes.viz = { x: startX, y: currentVizY - maxH, w: totalW, h: maxH };
 
@@ -1674,7 +1783,7 @@
                         if(i < 10) val = Math.min(255, val * 1.2); 
 
                         const barH = Math.max(4, (val / 255) * maxH); 
-                        let barThickness = Math.max(2, spacing - (1.5 * widthFactor));
+                        let barThickness = Math.max(2, spacing * 0.8);
                         let xPos = startX + (i * spacing);
                         let yPos = currentVizY - barH;
 
@@ -1700,8 +1809,8 @@
                 else if (state.viz.type.startsWith('wave')) {
                     if (!isOfflineRendering) analyser.getByteTimeDomainData(dataArray);
                     
-                    ctx.lineWidth = Math.max(2, 6 - (widthFactor * 0.1)); 
-                    const totalWaveWidth = w * widthFactor;
+                    ctx.lineWidth = Math.max(2, 6 - (screenWidthRatio)); 
+                    const totalWaveWidth = w * screenWidthRatio;
                     const sliceW = totalWaveWidth / dataArray.length;
                     let startWaveX = currentCx - (totalWaveWidth / 2);
                     const amp = state.viz.size * 2;
@@ -1780,14 +1889,17 @@
                         ctx.restore(); bboxes.viz = { x: currentCx - radiusScale*1.5, y: currentVizY - radiusScale*1.5, w: radiusScale*3, h: radiusScale*3 };
                     } 
                     else if (state.viz.type === 'modern_cyber_bars') {
-                        const barCount = 48; const spacing = 8 * widthFactor; const totalW = barCount * spacing;
+                        const barCount = 48; 
+                        const totalW = w * screenWidthRatio; 
+                        const spacing = totalW / barCount;
                         let startX = currentCx - (totalW / 2); const maxH = h * state.viz.size;
                         
                         if (!window.cyberCaps || window.cyberCaps.length !== barCount) { window.cyberCaps = new Array(barCount).fill(0); }
                         ctx.shadowBlur = 10;
                         for (let i = 0; i < barCount; i++) {
                             const dataIndex = ~~(i * (dataArray.length / barCount) * 0.7); let val = dataArray[dataIndex] || 0;
-                            let barH = Math.max(2, (val / 255) * maxH); let barThickness = Math.max(3, spacing - (3 * widthFactor));
+                            let barH = Math.max(2, (val / 255) * maxH); 
+                            let barThickness = Math.max(3, spacing * 0.7);
                             let xPos = startX + (i * spacing);
                             let barColor = `hsl(${(baseHue + i*(90/barCount))%360}, 100%, 50%)`;
                             ctx.shadowColor = barColor; ctx.fillStyle = barColor;
@@ -1810,7 +1922,7 @@
                         ctx.shadowBlur = 0; bboxes.viz = { x: startX, y: currentVizY - maxH - 20, w: totalW, h: maxH * 2 + 40 };
                     }
                     else if (state.viz.type === 'modern_dna_helix') {
-                        let helixHeight = h * state.viz.size * 1.5; let helixWidth = w * 0.15 * widthFactor; let strands = 30;
+                        let helixHeight = h * state.viz.size * 1.5; let helixWidth = w * 0.25 * screenWidthRatio; let strands = 30;
                         ctx.save(); ctx.translate(currentCx, currentVizY);
                         for (let i = 0; i < strands; i++) {
                             let yProgress = (i / strands) - 0.5; let yPos = yProgress * helixHeight;
@@ -1837,7 +1949,7 @@
                         ctx.shadowBlur = 0; ctx.restore(); bboxes.viz = { x: currentCx - helixWidth, y: currentVizY - helixHeight/2, w: helixWidth*2, h: helixHeight };
                     }
                     else if (state.viz.type === 'modern_cityscape') {
-                        let cityWidth = w * 0.8 * widthFactor; let maxBldgHeight = h * state.viz.size;
+                        let cityWidth = w * screenWidthRatio * 0.8; let maxBldgHeight = h * state.viz.size;
                         let numBuildings = 40; let bldgWidth = cityWidth / numBuildings;
                         ctx.save(); ctx.translate(currentCx - cityWidth/2, currentVizY + (maxBldgHeight*0.4)); 
                         
@@ -1871,7 +1983,7 @@
                         ctx.restore(); bboxes.viz = { x: currentCx - cityWidth/2, y: currentVizY - maxBldgHeight*0.6, w: cityWidth, h: maxBldgHeight*1.2 };
                     }
                     else if (state.viz.type === 'modern_digital_pixel') {
-                        let totalW = w * 0.6 * widthFactor; let maxH = h * state.viz.size; let cols = 32; let rows = 16;
+                        let totalW = w * screenWidthRatio * 0.8; let maxH = h * state.viz.size; let cols = 32; let rows = 16;
                         let pixelW = totalW / cols; let pixelH = maxH / rows; let gap = 2;
                         ctx.save(); ctx.translate(currentCx - totalW/2, currentVizY - maxH/2);
                         for (let c = 0; c < cols; c++) {
@@ -1909,6 +2021,14 @@
 
                 let fontSize = state.textFx.size; let speedMult = (state.textFx.animSpeed !== undefined ? state.textFx.animSpeed : 50) / 50;
                 let textX = cx + (state.textFx.offsetX || 0); let textY = (h * 0.15) + (state.textFx.offsetY || 0);
+                
+                let baseTextHue = 0;
+                if (state.textFx.colorMode === 'auto') { 
+                    baseTextHue = (time * (state.textFx.argbSpeed || 15)) % 360; 
+                    state.textFx.color = `hsl(${baseTextHue}, 100%, 60%)`;
+                } else if (state.textFx.colorMode === 'statis' && state.textFx.hue > 0) {
+                     state.textFx.color = `hsl(${state.textFx.hue}, 100%, 60%)`;
+                }
                 
                 let alpha = 1; let scale = 1; let finalDisplayText = displayText;
 
@@ -1949,7 +2069,9 @@
                 alpha *= transitionFade;
 
                 ctx.font = `bold ${fontSize}px ${state.textFx.font}, sans-serif`;
-                ctx.textAlign = state.textFx.align || 'center'; ctx.textBaseline = 'middle'; ctx.globalAlpha = alpha;
+                
+                ctx.textAlign = state.textFx.align || 'left'; 
+                ctx.textBaseline = 'middle'; ctx.globalAlpha = alpha;
                 ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
                 
                 let fxLevel = state.textFx.intensity;
@@ -1973,7 +2095,8 @@
                 let metrics = ctx.measureText(finalDisplayText);
                 let textW = metrics.width * scale; let textH = fontSize * scale;
                 let bboxX = textX;
-                if ((state.textFx.align || 'center') === 'center') { bboxX = textX - (textW / 2); } 
+                
+                if ((state.textFx.align || 'left') === 'center') { bboxX = textX - (textW / 2); } 
                 else if (state.textFx.align === 'right') { bboxX = textX - textW; }
 
                 bboxes.text = { x: bboxX, y: textY - (textH / 2), w: textW, h: textH };
