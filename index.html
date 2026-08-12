@@ -334,6 +334,17 @@
                 <span class="text-[10px] font-bold text-gray-500 tracking-wider mr-1">BITRATE:</span>
                 <button class="btn-custom btn-active" data-val="variable" title="Variable Bitrate (Ukuran file lebih kecil, kualitas dinamis)">VBR</button>
                 <button class="btn-custom" data-val="constant" title="Constant Bitrate (Kualitas konsisten, ukuran file berpotensi lebih besar)">CBR</button>
+                
+                <!-- Target Bitrate Dropdown -->
+                <select id="renderBitrateSelect" class="custom-select w-20 ml-1" title="Target Bitrate Video">
+                    <option value="1200000">1.2 Mbps</option>
+                    <option value="1500000">1.5 Mbps</option>
+                    <option value="2000000">2.0 Mbps</option>
+                    <option value="2500000">2.5 Mbps</option>
+                    <option value="3000000">3.0 Mbps</option>
+                    <option value="4000000">4.0 Mbps</option>
+                    <option value="5000000">5.0 Mbps</option>
+                </select>
             </div>
             
             <button class="btn-custom btn-danger ml-2" id="btnRekam">Mulai Render</button>
@@ -466,11 +477,16 @@
                     </div>
                 </div>
                 
-                <div class="control-row">
+                <div class="control-row mt-1">
                     <span class="control-label text-xs w-8" title="Kiri: Terang, Kanan: Gelap">Gelap</span>
-                    <div class="flex-1"><input type="range" id="bgDarknessSlider" min="-100" max="100" value="0" title="Geser ke kiri untuk membuat jauh lebih terang"></div>
-                    <span class="control-label ml-1 text-xs w-10">Denyut</span>
-                    <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="50"></div>
+                    <div class="flex-1"><input type="range" id="bgDarknessSlider" min="-100" max="100" value="0" title="Geser ke kiri untuk terang"></div>
+                    <span class="control-label ml-1 text-[10px] w-12">Intensitas</span>
+                    <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="25"></div>
+                </div>
+                
+                <div class="control-row mt-1">
+                    <span class="control-label text-xs w-8">Skala</span>
+                    <div class="flex-1"><input type="range" id="bgScaleSlider" min="10" max="300" value="100" title="Geser untuk perbesar/perkecil foto"></div>
                 </div>
                 
                 <div class="control-row hidden">
@@ -647,15 +663,12 @@
         <div class="main-content">
             <div class="preview-container" id="canvas-wrapper">
                 <div id="recording-indicator" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1115]/90 backdrop-blur-md text-white px-8 py-6 rounded-2xl z-50 shadow-[0_10px_40px_rgba(0,0,0,0.8),0_0_30px_rgba(239,68,68,0.2)] border border-gray-700 flex flex-col gap-2 items-center min-w-[340px] transform transition-all">
-                    <!-- Modern Spinner Icon -->
                     <div class="relative flex items-center justify-center w-12 h-12 mb-2">
                         <div class="absolute w-full h-full border-4 border-gray-600 border-t-red-500 rounded-full animate-spin"></div>
                         <div class="absolute w-6 h-6 bg-red-500/30 rounded-full animate-ping"></div>
                         <i class="fa-solid fa-compact-disc text-red-500 animate-pulse text-sm"></i>
                     </div>
-                    <!-- Status Text -->
                     <span id="recording-status" class="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-yellow-400 drop-shadow-sm uppercase text-center">SIAP...</span>
-                    <!-- Playlist Track Info Box -->
                     <div class="bg-gray-800/60 rounded-lg px-4 py-2 mt-2 border border-gray-700/50 w-full text-center shadow-inner">
                         <span id="recording-playlist-status" class="text-[11px] text-gray-300 font-medium tracking-wide"></span>
                     </div>
@@ -686,14 +699,12 @@
         </div>
 
         <div class="sidebar-right" id="sidebarRight">
-            <!-- Playlist Panel -->
             <div class="panel playlist-panel" id="playlistPanel">
                 <div class="panel-header flex justify-between items-center">
                     <span>PLAYLIST AUDIO</span>
                     <span id="playlistCount" class="text-xs font-normal">0 lagu</span>
                 </div>
                 <div id="playlistContainer" class="flex flex-col gap-1">
-                    <!-- Playlist items will be injected here -->
                 </div>
             </div>
         </div>
@@ -703,10 +714,10 @@
     <script>
         const state = {
             viz: { enabled: true, align: 'full', size: 0.5, width: 0.5, opacity: 1.0, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
-            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.5, snowIntensity: 50, weatherSpeed: 50, mirror: false },
+            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.25, scale: 1.0, snowIntensity: 50, weatherSpeed: 50, mirror: false },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', colorMode: 'auto', hue: 0, argbSpeed: 15, effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'left', animSpeed: 50 },
-            render: { bitrateMode: 'variable' }
+            render: { bitrateMode: 'variable', targetBitrate: 1200000 }
         };
 
         let bboxes = { viz: null, overlay: null, text: null };
@@ -769,6 +780,11 @@
         bindButtonGroup('vizAlignGroup', 'viz', 'align');
         bindButtonGroup('bgEffectGroup', 'bg', 'effect');
         bindButtonGroup('renderBitrateModeGroup', 'render', 'bitrateMode');
+        
+        const renderBitrateSelect = document.getElementById('renderBitrateSelect');
+        renderBitrateSelect.addEventListener('change', (e) => {
+            state.render.targetBitrate = parseInt(e.target.value);
+        });
         
         const weatherGroup = document.getElementById('bgWeatherGroup');
         if (weatherGroup) {
@@ -923,6 +939,7 @@
         document.getElementById('bgMirrorEnable').addEventListener('change', (e) => { state.bg.mirror = e.target.checked; });
         document.getElementById('bgColorPicker').addEventListener('input', (e) => { state.bg.color = e.target.value; });
         document.getElementById('bgDarknessSlider').addEventListener('input', (e) => { state.bg.darkness = e.target.value / 100; });
+        document.getElementById('bgScaleSlider').addEventListener('input', (e) => { state.bg.scale = e.target.value / 100; });
         document.getElementById('bgPulseIntensitySlider').addEventListener('input', (e) => { state.bg.pulseIntensity = e.target.value / 100; });
 
         let audioContext;
@@ -1222,12 +1239,11 @@
                     }
                 });
                 
-                // MENGGUNAKAN PILIHAN BITRATE DARI STATE (VBR / CBR)
                 videoEncoder.configure({
                     codec: 'avc1.4D0028', 
                     width: 1280, 
                     height: 720,
-                    bitrate: 1200000,
+                    bitrate: state.render.targetBitrate,
                     framerate: 30,
                     bitrateMode: state.render.bitrateMode 
                 });
@@ -1375,12 +1391,28 @@
                 const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
                 muxer = null;
 
-                let downloadName = playlist[trackIndex].file.name.replace(/\.[^/.]+$/, "") + '.mp4';
+                let downloadNameBase = playlist[trackIndex].file.name.replace(/\.[^/.]+$/, "");
+                let downloadName = downloadNameBase + '.mp4';
                 let saveSuccess = false;
                 
                 if (exportDirectoryHandle) {
                     try {
-                        const fileHandle = await exportDirectoryHandle.getFileHandle(downloadName, { create: true });
+                        let fileCounter = 1;
+                        let currentName = downloadName;
+                        let fileHandle = null;
+                        
+                        while (true) {
+                            try {
+                                await exportDirectoryHandle.getFileHandle(currentName);
+                                currentName = `${downloadNameBase} (${fileCounter}).mp4`;
+                                fileCounter++;
+                            } catch (e) {
+                                break;
+                            }
+                        }
+                        
+                        downloadName = currentName;
+                        fileHandle = await exportDirectoryHandle.getFileHandle(downloadName, { create: true });
                         const writable = await fileHandle.createWritable();
                         await writable.write(blob);
                         await writable.close();
@@ -1428,7 +1460,6 @@
             if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
             muxer = null;
             
-            // Perbaikan Mutlak: Kembalikan analyser ke realtime & reset element audio
             if (realtimeAnalyser) {
                 analyser = realtimeAnalyser;
                 if (analyser) dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -1441,13 +1472,11 @@
                 isPlaying = false;
                 updatePlayBtn();
                 
-                // Pemuatan ulang secara "Clean" memastikan context dan src tidak korup pasca render
                 loadTrack(nextTrack); 
             } else {
                 renderPlaylist();
             }
             
-            // Visual reset UI progress
             timeDisplay.textContent = "0:00 / 0:00";
             progressBar.style.width = `0%`;
             progressHandle.style.left = `0%`;
@@ -1520,13 +1549,22 @@
                 else { drawW = h * imgRatio; drawX = (w - drawW) / 2; }
                 
                 let timeBG = getRenderTime(); 
-                let scaleBG = 1; let xOffBG = 0; let yOffBG = 0; let rotBG = 0; let alphaBG = 1;
+                let scaleBG = state.bg.scale; 
+                let xOffBG = 0; let yOffBG = 0; let rotBG = 0; let alphaBG = 1;
                 let filterBG = 'none'; let flashAlpha = 0;
 
                 if (state.bg.effect === 'denyut') {
-                    scaleBG = 1 + (kickBassReactivity * state.bg.pulseIntensity);
+                    scaleBG = state.bg.scale + (kickBassReactivity * state.bg.pulseIntensity * 0.5);
                 } else if (state.bg.effect === 'zoom') {
-                    scaleBG = 1 + (Math.sin(timeBG * 0.2) * 0.2 * state.bg.pulseIntensity + (0.1 * state.bg.pulseIntensity)) + (kickBassReactivity * 0.2 * state.bg.pulseIntensity); 
+                    // Zoom effect is now independent of audio reactivity.
+                    // It uses a slow sine wave for a smooth cinematic zoom in/out.
+                    // timeBG * 0.05 controls the speed (lower is slower)
+                    // 0.08 is the maximum zoom level increase
+                    scaleBG = state.bg.scale * (1 + (Math.sin(timeBG * 0.1) * 0.15 * state.bg.pulseIntensity)); 
+                } else if (state.bg.effect === 'ayun') {
+                    xOffBG = Math.sin(timeBG * 1.0) * (w * 0.05 * state.bg.pulseIntensity);
+                    yOffBG = Math.cos(timeBG * 0.8) * (h * 0.03 * state.bg.pulseIntensity);
+                    rotBG = Math.sin(timeBG * 0.5) * 0.03 * state.bg.pulseIntensity;
                 } else if (state.bg.effect === 'shake') {
                     let shakeReactivity = Math.max(bgAudioReactivity, kickBassReactivity);
                     if (shakeReactivity > 0.2) {
@@ -1534,7 +1572,7 @@
                         xOffBG = (Math.random() - 0.5) * shakeAmt; yOffBG = (Math.random() - 0.5) * shakeAmt;
                     }
                 } else if (state.bg.effect === 'pan') {
-                    scaleBG = 1.2 + (0.1 * state.bg.pulseIntensity); 
+                    scaleBG = (state.bg.scale * 1.2) + (0.1 * state.bg.pulseIntensity); 
                     xOffBG = Math.sin(timeBG * 0.15) * (w * 0.1 * state.bg.pulseIntensity) + (Math.cos(timeBG * 1.5) * bgAudioReactivity * 30 * state.bg.pulseIntensity);
                     yOffBG = (Math.sin(timeBG * 1.5) * bgAudioReactivity * 30 * state.bg.pulseIntensity);
                 }
@@ -2159,41 +2197,15 @@
         canvas.addEventListener('mousedown', handleDragStart); window.addEventListener('mousemove', handleDragMove, { passive: false }); window.addEventListener('mouseup', handleDragEnd);
         canvas.addEventListener('touchstart', handleDragStart, { passive: true }); window.addEventListener('touchmove', handleDragMove, { passive: false }); window.addEventListener('touchend', handleDragEnd);
 
-        // --- SISTEM PROTEKSI DASAR (ANTI CLONE AWAM) ---
-        
-        // 1. Matikan Klik Kanan
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
-
-        // 2. Matikan shortcut keyboard untuk Developer Tools
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
         document.addEventListener('keydown', function(e) {
-            // Cegah F12
-            if(e.keyCode === 123) {
-                e.preventDefault();
-                return false;
-            }
-            // Cegah Ctrl+Shift+I (Inspect)
-            if(e.ctrlKey && e.shiftKey && e.keyCode === 73) {
-                e.preventDefault();
-                return false;
-            }
-            // Cegah Ctrl+Shift+J (Console)
-            if(e.ctrlKey && e.shiftKey && e.keyCode === 74) {
-                e.preventDefault();
-                return false;
-            }
-            // Cegah Ctrl+U (View Source)
-            if(e.ctrlKey && e.keyCode === 85) {
-                e.preventDefault();
-                return false;
-            }
+            if(e.keyCode === 123) { e.preventDefault(); return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode === 73) { e.preventDefault(); return false; }
+            if(e.ctrlKey && e.shiftKey && e.keyCode === 74) { e.preventDefault(); return false; }
+            if(e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
         });
-
-        // 3. Peringatan di Console
         console.log("%cBERHENTI!", "color: red; font-size: 50px; font-weight: bold; text-shadow: 2px 2px 0 #000;");
-        console.log("%cIni adalah area untuk developer. Dilarang meng-copy script aplikasi ini.", "font-size: 16px;");
-
+        console.log("%cIni adalah area untuk developer.", "font-size: 16px;");
     </script>
 </body>
 </html>
