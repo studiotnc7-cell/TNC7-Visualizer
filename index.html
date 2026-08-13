@@ -309,6 +309,19 @@
     </style>
 </head>
 <body>
+    <div id="password-screen" class="fixed inset-0 bg-[#0f1115] z-[999999] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="logo mb-8 text-4xl flex items-center gap-3">
+            <i class="fa-solid fa-circle-play text-yellow-400"></i>
+            <span class="text-white font-black tracking-wider">TNC7 Visualizer</span>
+        </div>
+        <div class="bg-[#161a22] p-8 rounded-xl border border-[#2a3142] flex flex-col items-center shadow-2xl w-80">
+            <h2 class="text-gray-400 text-xs tracking-widest font-bold mb-6 uppercase">Akses Aplikasi Terkunci</h2>
+            <input type="password" id="app-password" class="w-full bg-[#0f1115] border border-[#2a3142] text-white text-center text-2xl rounded-lg py-3 mb-4 focus:outline-none focus:border-yellow-400 transition-all duration-200" placeholder="***" autocomplete="off">
+            <button id="btn-login" class="w-full bg-yellow-400 hover:bg-yellow-500 text-[#0f1115] font-bold py-3 rounded-lg transition-colors">MASUK</button>
+            <p id="password-error" class="text-red-500 text-xs mt-4 opacity-0 transition-opacity duration-300 font-medium">Password salah, coba lagi!</p>
+        </div>
+    </div>
+
     <div id="yellow-top-bar"></div>
     
     <div id="notification-modal">Pesan Notifikasi</div>
@@ -2255,6 +2268,45 @@
         });
         console.log("%cBERHENTI!", "color: red; font-size: 50px; font-weight: bold; text-shadow: 2px 2px 0 #000;");
         console.log("%cIni adalah area untuk developer.", "font-size: 16px;");
+
+        const pwdScreen = document.getElementById('password-screen');
+        const pwdInput = document.getElementById('app-password');
+        const loginBtn = document.getElementById('btn-login');
+        const pwdError = document.getElementById('password-error');
+
+        function checkPassword() {
+            if (pwdInput.value === '0') {
+                pwdScreen.style.opacity = '0';
+                setTimeout(() => {
+                    pwdScreen.remove();
+                }, 500);
+            } else {
+                pwdError.style.opacity = '1';
+                pwdInput.classList.add('border-red-500');
+                pwdInput.value = '';
+                pwdInput.focus();
+                
+                // Efek getar (shake) saat salah
+                pwdInput.style.transform = 'translateX(-10px)';
+                setTimeout(() => pwdInput.style.transform = 'translateX(10px)', 50);
+                setTimeout(() => pwdInput.style.transform = 'translateX(-10px)', 100);
+                setTimeout(() => pwdInput.style.transform = 'translateX(10px)', 150);
+                setTimeout(() => {
+                    pwdInput.style.transform = 'translateX(0)';
+                    pwdInput.classList.remove('border-red-500');
+                }, 200);
+                
+                setTimeout(() => { pwdError.style.opacity = '0'; }, 2500);
+            }
+        }
+
+        loginBtn.addEventListener('click', checkPassword);
+        pwdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+        
+        // Auto-focus input password saat web dimuat
+        setTimeout(() => pwdInput.focus(), 300);
     </script>
 </body>
 </html>
