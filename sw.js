@@ -1,5 +1,5 @@
 // Ganti angka versi ini (misal: v3, v4, dst) SETIAP KALI Anda mengupdate index.html
-const CACHE_NAME = 'tnc7-visualizer-v14'; 
+const CACHE_NAME = 'tnc7-visualizer-v15'; 
 
 const urlsToCache = [
   './',
