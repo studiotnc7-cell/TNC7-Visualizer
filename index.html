@@ -52,34 +52,36 @@
             background-color: var(--bg-panel);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 4px 6px;
+            padding: 6px 8px; 
             display: flex;
             flex-direction: column;
             gap: 2px;
+            flex-grow: 1;
+            justify-content: space-evenly;
         }
 
         .panel-header {
-            font-size: 0.6rem;
+            font-size: 0.55rem; 
             font-weight: 700;
             color: var(--text-secondary);
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         .btn-custom {
             background-color: var(--btn-bg);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 2px 6px;
+            padding: 1px 4px;
             border-radius: 4px;
-            font-size: 0.65rem;
+            font-size: 0.6rem; 
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
         }
 
         .btn-custom:hover { background-color: var(--btn-hover); }
@@ -91,22 +93,22 @@
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
-            height: 4px;
+            height: 3px;
             border-radius: 2px;
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 10px;
-            width: 10px;
+            height: 8px;
+            width: 8px;
             border-radius: 50%;
             background: var(--accent-yellow);
             cursor: pointer;
-            margin-top: -3px;
-            box-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+            margin-top: -2.5px;
+            box-shadow: 0 0 4px rgba(245, 158, 11, 0.5);
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 4px;
+            height: 3px;
             cursor: pointer;
             background: var(--border-color);
             border-radius: 2px;
@@ -122,12 +124,12 @@
             background-color: var(--bg-main);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 1px 4px;
+            padding: 0px 3px;
             border-radius: 4px;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             width: 100%;
             outline: none;
-            height: 20px;
+            height: 16px; 
         }
         select.custom-select { cursor: pointer; }
         input[type=text].custom-input:focus { border-color: var(--text-secondary); }
@@ -159,9 +161,8 @@
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow-y: hidden;
             padding: 4px;
-            padding-bottom: 24px;
             gap: 4px;
             flex-shrink: 0;
         }
@@ -238,8 +239,8 @@
             flex-shrink: 0;
         }
         
-        .control-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-        .control-label { font-size: 0.65rem; color: var(--text-secondary); width: 40px; }
+        .control-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-top: 1px; } /* Gap dan margin lebih kecil */
+        .control-label { font-size: 0.6rem; color: var(--text-secondary); width: 40px; } /* Ukuran font label */
         
         #notification-modal {
             position: fixed;
@@ -269,6 +270,7 @@
             gap: 6px;
             flex: 1;
             overflow-y: auto;
+            justify-content: flex-start;
         }
         .playlist-item {
             display: flex;
@@ -359,7 +361,6 @@
                 
                 <!-- Target Bitrate Dropdown -->
                 <select id="renderBitrateSelect" class="custom-select w-20 ml-1" title="Target Bitrate Video">
-                    <option value="1200000">1.2 Mbps</option>
                     <option value="1500000">1.5 Mbps</option>
                     <option value="2000000">2.0 Mbps</option>
                     <option value="2500000">2.5 Mbps</option>
@@ -381,8 +382,8 @@
                 <div class="panel-header flex justify-between">
                     <span>VISUALIZER</span>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="vizEnable" checked class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
-                        <span class="text-xs text-gray-300">Tampilkan</span>
+                        <input type="checkbox" id="vizEnable" checked class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400 h-2 w-2">
+                        <span class="text-[9px] text-gray-300 font-bold uppercase">Tampilkan</span>
                     </label>
                 </div>
                 
@@ -392,7 +393,7 @@
                     <button class="btn-custom btn-active" data-val="full">Full (Wave)</button>
                 </div>
                 
-                <div class="control-row mt-1">
+                <div class="control-row">
                     <span class="control-label">Ukuran</span>
                     <div class="flex-1">
                         <input type="range" min="1" max="100" value="50" id="vizSizeSlider">
@@ -413,16 +414,16 @@
                     </div>
                 </div>
 
-                <div class="flex items-start gap-2 mt-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider mt-1">WARNA</span>
+                <div class="flex items-start gap-1 mt-0">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider mt-1 uppercase">Warna</span>
                     <div class="flex flex-col gap-1 flex-1">
                         <div class="flex gap-1 flex-wrap" id="vizColorModeGroup">
                             <button class="btn-custom btn-active" data-val="auto">ARGB (Auto)</button>
                             <button class="btn-custom" data-val="custom">Warna Statis</button>
                         </div>
-                        <div class="flex items-center gap-2 w-full mt-1">
-                            <span class="text-[10px] text-gray-400 w-8" id="vizColorLabel">Speed</span>
-                            <div class="flex-1">
+                        <div class="flex items-center gap-1 w-full mt-0">
+                            <span class="text-[9px] text-gray-400 w-8" id="vizColorLabel">Speed</span>
+                            <div class="flex-1 flex items-center">
                                 <input type="range" min="1" max="100" value="15" id="vizArgbSpeedSlider">
                                 <input type="range" min="0" max="360" value="0" id="vizHueSlider" class="hidden">
                             </div>
@@ -430,7 +431,7 @@
                     </div>
                 </div>
                 
-                <div class="relative mt-1">
+                <div class="relative mt-0">
                     <select class="custom-select" id="vizTypeSelect">
                         <optgroup label="Terbaru (Modern) ⭐">
                             <option value="modern_cyber_bars">Modern - Cyberpunk Bars</option>
@@ -456,7 +457,7 @@
             
             <div class="panel">
                 <div class="panel-header">CUACA</div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
                     <div class="flex flex-wrap gap-1 flex-1" id="bgWeatherGroup">
                         <button class="btn-custom btn-active" data-val="normal">Cerah</button>
                         <button class="btn-custom" data-val="salju">Salju</button>
@@ -467,13 +468,13 @@
                     </div>
                 </div>
                 <div class="control-row">
-                    <span class="control-label text-xs w-10">Lebat</span>
+                    <span class="control-label text-[9px] w-10 uppercase">Lebat</span>
                     <div class="flex-1">
                         <input type="range" id="snowIntensitySlider" min="1" max="100" value="50">
                     </div>
                 </div>
                 <div class="control-row">
-                    <span class="control-label text-xs w-10">Cepat</span>
+                    <span class="control-label text-[9px] w-10 uppercase">Cepat</span>
                     <div class="flex-1">
                         <input type="range" id="weatherSpeedSlider" min="1" max="200" value="50">
                     </div>
@@ -484,13 +485,13 @@
                 <div class="panel-header flex justify-between">
                     <span>BACKGROUND</span>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="bgMirrorEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
-                        <span class="text-xs text-gray-300">Mirror</span>
+                        <input type="checkbox" id="bgMirrorEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400 h-2 w-2">
+                        <span class="text-[9px] text-gray-300 font-bold uppercase">Mirror</span>
                     </label>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-gray-500 w-8">FX</span>
+                <div class="flex items-center gap-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-8">FX</span>
                     <div class="flex flex-wrap gap-1 flex-1" id="bgEffectGroup">
                         <button class="btn-custom btn-active" data-val="normal">Normal</button>
                         <button class="btn-custom" data-val="denyut">Denyut</button>
@@ -499,53 +500,53 @@
                     </div>
                 </div>
                 
-                <div class="control-row mt-1">
-                    <span class="control-label text-xs w-8" title="Kiri: Terang, Kanan: Gelap">Gelap</span>
+                <div class="control-row mt-0">
+                    <span class="control-label text-[9px] w-8" title="Kiri: Terang, Kanan: Gelap">Gelap</span>
                     <div class="flex-1"><input type="range" id="bgDarknessSlider" min="-100" max="100" value="0" title="Geser ke kiri untuk terang"></div>
-                    <span class="control-label ml-1 text-[10px] w-12">Intensitas</span>
+                    <span class="control-label ml-1 text-[9px] w-10 truncate">Intensitas</span>
                     <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="50"></div>
                 </div>
                 
-                <div class="control-row mt-1">
-                    <span class="control-label text-xs w-8">Skala</span>
+                <div class="control-row mt-0">
+                    <span class="control-label text-[9px] w-8 uppercase">Skala</span>
                     <div class="flex-1"><input type="range" id="bgScaleSlider" min="10" max="300" value="100" title="Geser untuk perbesar/perkecil foto"></div>
                 </div>
                 
                 <div class="control-row hidden">
-                    <span class="control-label text-xs w-8">Warna</span>
-                    <input type="color" id="bgColorPicker" value="#0f1115" class="w-7 h-7 rounded cursor-pointer border border-gray-600 p-0 flex-shrink-0">
-                    <span class="text-[10px] text-gray-500 ml-1">(Terlihat jika BG kosong)</span>
+                    <span class="control-label text-[9px] w-8">Warna</span>
+                    <input type="color" id="bgColorPicker" value="#0f1115" class="w-6 h-4 rounded cursor-pointer border border-gray-600 p-0 flex-shrink-0">
+                    <span class="text-[8px] text-gray-500 ml-1">(Terlihat jika BG kosong)</span>
                 </div>
             </div>
 
             <div class="panel">
                 <div class="panel-header">OVERLAY</div>
                 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
                     <input type="file" id="overlayInput" accept="image/*,video/*" class="hidden">
                     <button class="btn-custom" onclick="document.getElementById('overlayInput').click()">
                         <span class="text-white">+ Overlay</span>
                     </button>
                     <button class="btn-custom" id="btnHapusOverlay">Hapus</button>
-                    <span class="text-xs text-gray-300 ml-1 truncate flex-1" id="overlayNameDisplay">Belum ada</span>
+                    <span class="text-[9px] text-gray-300 ml-1 truncate flex-1" id="overlayNameDisplay">Belum ada</span>
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-gray-500 w-12 tracking-wider">BLEND</span>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider">BLEND</span>
                     <div class="flex gap-1 flex-wrap" id="overlayBlendGroup">
                         <button class="btn-custom btn-active" data-val="normal">Normal</button>
                         <button class="btn-custom" data-val="screen">Hapus hitam</button>
                     </div>
                 </div>
                 
-                <div class="flex items-center text-[10px] justify-between w-full">
+                <div class="flex items-center text-[9px] justify-between w-full mt-1">
                     <div class="flex items-center gap-1 w-1/3"><span class="text-gray-400">Ukr</span><input type="range" id="overlaySize" min="1" max="200" value="50" class="w-full"></div>
                     <div class="flex items-center gap-1 w-1/3 px-1"><span class="text-gray-400">Opc</span><input type="range" id="overlayOpacity" min="0" max="100" value="100" class="w-full"></div>
                     <div class="flex items-center gap-1 w-1/3"><span class="text-gray-400">Spd</span><input type="range" id="overlaySpeed" min="1" max="100" value="50" class="w-full"></div>
                 </div>
                 
-                <div class="flex items-start gap-2">
-                    <span class="text-[10px] font-bold text-gray-500 w-12 tracking-wider">ANIM</span>
+                <div class="flex items-start gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider">ANIM</span>
                     <div class="flex flex-wrap gap-1 flex-1" id="overlayAnimGroup">
                         <button class="btn-custom btn-active" data-val="none">Tanpa anim</button>
                         <button class="btn-custom" data-val="pan">Pan</button>
@@ -563,88 +564,88 @@
                 <div class="panel-header flex justify-between">
                     <span>TEXT OVERLAY</span>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="textEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
-                        <span class="text-xs text-gray-300">Tampilkan</span>
+                        <input type="checkbox" id="textEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400 h-2 w-2">
+                        <span class="text-[9px] text-gray-300 font-bold uppercase">Tampilkan</span>
                     </label>
                 </div>
                 
                 <div class="control-row">
-                    <span class="control-label text-xs w-10">Teks</span>
+                    <span class="control-label text-[9px] w-10">Teks</span>
                     <div class="flex-1">
                         <input type="text" id="textCustomInput" class="custom-input" placeholder="Otomatis (Nama Lagu)">
                     </div>
                 </div>
 
                 <div class="control-row">
-                    <span class="control-label text-xs w-10">Font</span>
+                    <span class="control-label text-[9px] w-10">Font</span>
                     <div class="flex-1">
                         <select class="custom-select" id="textFontSelect">
                             <option value="Inter">Inter (Modern)</option>
                             <option value="Montserrat">Montserrat (Elegan)</option>
                             <option value="Poppins">Poppins (Bulat)</option>
                             <option value="Oswald">Oswald (Tinggi)</option>
-                            <option value="Bebas Neue">Bebas Neue (Tebal/Sinematik)</option>
-                            <option value="Righteous">Righteous (Tekno/Masa Depan)</option>
-                            <option value="Courier New">Courier (Glitch/Mono)</option>
-                            <option value="Impact">Impact (Bold/Meme)</option>
+                            <option value="Bebas Neue">Bebas Neue (Tebal)</option>
+                            <option value="Righteous">Righteous (Tekno)</option>
+                            <option value="Courier New">Courier (Mono)</option>
+                            <option value="Impact">Impact (Bold)</option>
                             <option value="Arial">Arial (Basic)</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="flex items-start gap-2 mt-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider mt-1">WARNA</span>
+                <div class="flex items-start gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider mt-1 uppercase">Warna</span>
                     <div class="flex flex-col gap-1 flex-1">
                         <div class="flex gap-1 flex-wrap" id="textColorModeGroup">
                             <button class="btn-custom" data-val="statis">Statis</button>
                             <button class="btn-custom btn-active" data-val="auto">ARGB</button>
                         </div>
-                        <div class="flex items-center gap-2 w-full mt-1" id="textStaticColorGroup" style="display: none;">
-                            <span class="text-[10px] text-gray-400 w-8">Pilih</span>
+                        <div class="flex items-center gap-1 w-full mt-0" id="textStaticColorGroup" style="display: none;">
+                            <span class="text-[9px] text-gray-400 w-8">Pilih</span>
                             <div class="flex-1">
-                                <input type="color" id="textColorPicker" value="#ffffff" class="w-full h-5 rounded cursor-pointer border-0 p-0 bg-transparent">
+                                <input type="color" id="textColorPicker" value="#ffffff" class="w-full h-4 rounded cursor-pointer border-0 p-0 bg-transparent">
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 w-full mt-1" id="textHueColorGroup" style="display: none;">
-                            <span class="text-[10px] text-gray-400 w-8">Hue</span>
-                            <div class="flex-1">
+                        <div class="flex items-center gap-1 w-full mt-0" id="textHueColorGroup" style="display: none;">
+                            <span class="text-[9px] text-gray-400 w-8">Hue</span>
+                            <div class="flex-1 flex items-center">
                                 <input type="range" min="0" max="360" value="0" id="textHueSlider">
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 w-full mt-1" id="textArgbSpeedGroup">
-                            <span class="text-[10px] text-gray-400 w-8">Speed</span>
-                            <div class="flex-1">
+                        <div class="flex items-center gap-1 w-full mt-0" id="textArgbSpeedGroup">
+                            <span class="text-[9px] text-gray-400 w-8">Speed</span>
+                            <div class="flex-1 flex items-center">
                                 <input type="range" min="1" max="100" value="15" id="textArgbSpeedSlider">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex items-center text-[10px] justify-between w-full mt-1">
+                <div class="flex items-center text-[9px] justify-between w-full mt-1">
                     <div class="flex items-center gap-1 w-full pr-1">
-                        <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">UKURAN</span>
+                        <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Ukuran</span>
                         <input type="range" id="textSizeSlider" min="10" max="200" value="40" class="flex-1">
                     </div>
                 </div>
 
-                <div class="flex items-start gap-2 mt-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">ALIGN</span>
+                <div class="flex items-start gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Align</span>
                     <div class="flex flex-wrap gap-1 flex-1" id="textAlignGroup">
-                        <button class="btn-custom btn-active" data-val="left"><i class="fa-solid fa-align-left"></i></button>
-                        <button class="btn-custom" data-val="center"><i class="fa-solid fa-align-center"></i></button>
-                        <button class="btn-custom" data-val="right"><i class="fa-solid fa-align-right"></i></button>
+                        <button class="btn-custom btn-active" data-val="left"><i class="fa-solid fa-align-left text-[8px]"></i></button>
+                        <button class="btn-custom" data-val="center"><i class="fa-solid fa-align-center text-[8px]"></i></button>
+                        <button class="btn-custom" data-val="right"><i class="fa-solid fa-align-right text-[8px]"></i></button>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">POSISI</span>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Posisi</span>
                     <div class="flex-1">
-                        <button class="btn-custom w-full text-[10px]" id="btnPosisiPresisi" title="Klik dan geser teks langsung di preview">⏺ Presisi (Geser Manual)</button>
+                        <button class="btn-custom w-full text-[9px]" id="btnPosisiPresisi" title="Klik dan geser teks langsung di preview">⏺ Presisi</button>
                     </div>
                 </div>
 
-                <div class="flex items-start gap-2 mt-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">EFEK</span>
+                <div class="flex items-start gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Efek</span>
                     <div class="flex flex-wrap gap-1 flex-1" id="textEffectGroup">
                         <button class="btn-custom btn-active" data-val="none">Normal</button>
                         <button class="btn-custom" data-val="shadow">Shadow</button>
@@ -654,14 +655,14 @@
                 </div>
 
                 <div class="control-row">
-                    <span class="control-label text-[10px] w-10">Level</span>
+                    <span class="control-label text-[9px] w-10">Level</span>
                     <div class="flex-1">
                         <input type="range" id="textIntensitySlider" min="1" max="100" value="50">
                     </div>
                 </div>
 
-                <div class="flex items-start gap-2">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">ANIM</span>
+                <div class="flex items-start gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Anim</span>
                     <div class="flex flex-wrap gap-1 flex-1" id="textAnimGroup">
                         <button class="btn-custom btn-active" data-val="none">Diam</button>
                         <button class="btn-custom" data-val="blink">Blink</button>
@@ -672,8 +673,8 @@
                     </div>
                 </div>
 
-                <div class="control-row mt-1">
-                    <span class="control-label text-[10px] w-10">Cepat</span>
+                <div class="control-row mt-0">
+                    <span class="control-label text-[9px] w-10">Cepat</span>
                     <div class="flex-1">
                         <input type="range" id="textAnimSpeedSlider" min="1" max="200" value="50">
                     </div>
@@ -685,13 +686,13 @@
                 <div class="panel-header flex justify-between">
                     <span>WAKTU / TIME</span>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="timeEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
-                        <span class="text-xs text-gray-300">Tampilkan</span>
+                        <input type="checkbox" id="timeEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400 h-2 w-2">
+                        <span class="text-[9px] text-gray-300 font-bold uppercase">Tampilkan</span>
                     </label>
                 </div>
 
                 <div class="control-row">
-                    <span class="control-label text-xs w-10">Format</span>
+                    <span class="control-label text-[9px] w-10">Format</span>
                     <div class="flex-1 flex gap-1" id="timeFormatGroup">
                         <button class="btn-custom btn-active flex-1" data-val="duration">Durasi Audio</button>
                         <button class="btn-custom flex-1" data-val="countdown">Sisa Audio</button>
@@ -699,7 +700,7 @@
                 </div>
 
                 <div class="control-row">
-                    <span class="control-label text-xs w-10">Font</span>
+                    <span class="control-label text-[9px] w-10">Font</span>
                     <div class="flex-1">
                         <select class="custom-select" id="timeFontSelect">
                             <option value="'Share Tech Mono', monospace">Share Tech Mono (Digital)</option>
@@ -711,24 +712,24 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-2 mt-1 w-full">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">WARNA</span>
+                <div class="flex items-center gap-1 mt-1 w-full">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Warna</span>
                     <div class="flex-1">
-                        <input type="color" id="timeColorPicker" value="#ffffff" class="w-full h-5 rounded cursor-pointer border-0 p-0 bg-transparent">
+                        <input type="color" id="timeColorPicker" value="#ffffff" class="w-full h-4 rounded cursor-pointer border-0 p-0 bg-transparent">
                     </div>
                 </div>
 
-                <div class="flex items-center text-[10px] justify-between w-full mt-1">
+                <div class="flex items-center text-[9px] justify-between w-full mt-1">
                     <div class="flex items-center gap-1 w-full pr-1">
-                        <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">UKURAN</span>
+                        <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Ukuran</span>
                         <input type="range" id="timeSizeSlider" min="10" max="150" value="30" class="flex-1">
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">POSISI</span>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-[9px] font-bold text-gray-500 w-10 tracking-wider uppercase">Posisi</span>
                     <div class="flex-1">
-                        <button class="btn-custom w-full text-[10px]" id="btnPosisiWaktu" title="Klik dan geser teks waktu langsung di preview">⏺ Presisi (Geser Manual)</button>
+                        <button class="btn-custom w-full text-[9px]" id="btnPosisiWaktu" title="Klik dan geser teks waktu langsung di preview">⏺ Presisi</button>
                     </div>
                 </div>
             </div>
@@ -793,8 +794,7 @@
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', colorMode: 'auto', hue: 0, argbSpeed: 15, effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'left', animSpeed: 50 },
             timeFx: { enabled: false, format: 'duration', font: "'Share Tech Mono', monospace", size: 30, color: '#ffffff', offsetX: 0, offsetY: 0 },
-            render: { bitrateMode: 'variable', targetBitrate: 1200000 }
-        };
+            render: { bitrateMode: 'variable', targetBitrate: 1500000 }        };
 
         let bboxes = { viz: null, overlay: null, text: null, time: null };
 
