@@ -306,6 +306,9 @@
         input[type=range].hidden + .val-indicator {
             display: none !important;
         }
+
+        /* Font khusus angka (Monospaced/Digital) */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&family=Digital+Numbers&display=swap');
     </style>
 </head>
 <body>
@@ -677,6 +680,59 @@
                 </div>
             </div>
 
+            <!-- Panel Waktu/Time -->
+            <div class="panel">
+                <div class="panel-header flex justify-between">
+                    <span>WAKTU / TIME</span>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" id="timeEnable" class="rounded border-gray-600 bg-gray-700 text-yellow-400 focus:ring-yellow-400">
+                        <span class="text-xs text-gray-300">Tampilkan</span>
+                    </label>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label text-xs w-10">Format</span>
+                    <div class="flex-1 flex gap-1" id="timeFormatGroup">
+                        <button class="btn-custom btn-active flex-1" data-val="duration">Durasi Audio</button>
+                        <button class="btn-custom flex-1" data-val="countdown">Sisa Audio</button>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <span class="control-label text-xs w-10">Font</span>
+                    <div class="flex-1">
+                        <select class="custom-select" id="timeFontSelect">
+                            <option value="'Share Tech Mono', monospace">Share Tech Mono (Digital)</option>
+                            <option value="'Orbitron', sans-serif">Orbitron (Sci-Fi)</option>
+                            <option value="'Courier New', monospace">Courier New (Classic Mono)</option>
+                            <option value="Inter">Inter (Modern)</option>
+                            <option value="Bebas Neue">Bebas Neue (Tebal)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2 mt-1 w-full">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">WARNA</span>
+                    <div class="flex-1">
+                        <input type="color" id="timeColorPicker" value="#ffffff" class="w-full h-5 rounded cursor-pointer border-0 p-0 bg-transparent">
+                    </div>
+                </div>
+
+                <div class="flex items-center text-[10px] justify-between w-full mt-1">
+                    <div class="flex items-center gap-1 w-full pr-1">
+                        <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">UKURAN</span>
+                        <input type="range" id="timeSizeSlider" min="10" max="150" value="30" class="flex-1">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[10px] font-bold text-gray-500 w-10 tracking-wider">POSISI</span>
+                    <div class="flex-1">
+                        <button class="btn-custom w-full text-[10px]" id="btnPosisiWaktu" title="Klik dan geser teks waktu langsung di preview">⏺ Presisi (Geser Manual)</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div class="main-content">
@@ -706,7 +762,7 @@
                         <div class="flex justify-between text-xs text-gray-400">
                             <span id="player-title" class="hidden">Belum ada audio</span>
                             <span id="track-name-display" class="font-medium truncate flex-1 mr-4 text-white">Belum ada audio</span>
-                            <span id="time-display" class="whitespace-nowrap">0:00 / 0:00</span>
+                            <span id="time-display" class="whitespace-nowrap">00:00 / 00:00</span>
                         </div>
                         <div id="progress-container" class="h-2 bg-[#2a3142] rounded-full cursor-pointer relative mt-1">
                             <div id="progress-bar" class="h-full bg-[#facc15] rounded-full w-0 pointer-events-none"></div>
@@ -736,10 +792,11 @@
             bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.50, scale: 1.0, snowIntensity: 50, weatherSpeed: 50, mirror: false },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', colorMode: 'auto', hue: 0, argbSpeed: 15, effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'left', animSpeed: 50 },
+            timeFx: { enabled: false, format: 'duration', font: "'Share Tech Mono', monospace", size: 30, color: '#ffffff', offsetX: 0, offsetY: 0 },
             render: { bitrateMode: 'variable', targetBitrate: 1200000 }
         };
 
-        let bboxes = { viz: null, overlay: null, text: null };
+        let bboxes = { viz: null, overlay: null, text: null, time: null };
 
         const canvas = document.getElementById('previewCanvas');
         const ctx = canvas.getContext('2d');
@@ -842,6 +899,7 @@
         bindButtonGroup('textAnimGroup', 'textFx', 'anim');
         bindButtonGroup('textAlignGroup', 'textFx', 'align');
         bindButtonGroup('textColorModeGroup', 'textFx', 'colorMode');
+        bindButtonGroup('timeFormatGroup', 'timeFx', 'format');
 
         const textColorModeGroup = document.getElementById('textColorModeGroup');
         const textStaticColorGroup = document.getElementById('textStaticColorGroup');
@@ -881,13 +939,32 @@
 
         document.getElementById('vizEnable').addEventListener('change', (e) => { state.viz.enabled = e.target.checked; });
         document.getElementById('textEnable').addEventListener('change', (e) => { state.textFx.enabled = e.target.checked; });
+        document.getElementById('timeEnable').addEventListener('change', (e) => { state.timeFx.enabled = e.target.checked; });
         document.getElementById('textCustomInput').addEventListener('input', (e) => { state.textFx.customText = e.target.value; });
         
         const textFontSelect = document.getElementById('textFontSelect');
         textFontSelect.addEventListener('change', (e) => { state.textFx.font = e.target.value; });
         
+        const timeFontSelect = document.getElementById('timeFontSelect');
+        timeFontSelect.addEventListener('change', (e) => { state.timeFx.font = e.target.value; });
+        
         document.getElementById('textSizeSlider').addEventListener('input', (e) => { state.textFx.size = parseInt(e.target.value); });
         document.getElementById('textColorPicker').addEventListener('input', (e) => { state.textFx.color = e.target.value; });
+        
+        document.getElementById('timeSizeSlider').addEventListener('input', (e) => { state.timeFx.size = parseInt(e.target.value); });
+        document.getElementById('timeColorPicker').addEventListener('input', (e) => { state.timeFx.color = e.target.value; });
+        
+        const btnPosisiWaktu = document.getElementById('btnPosisiWaktu');
+        if(btnPosisiWaktu) {
+            btnPosisiWaktu.addEventListener('click', () => {
+                const w = canvas.width || 1280;
+                const h = canvas.height || 720;
+                state.timeFx.offsetX = (w / 2) - 100; // Pojok kanan atas default
+                state.timeFx.offsetY = -(h / 2) + 50; 
+                showNotification("Geser waktu langsung di layar preview");
+            });
+        }
+
         document.getElementById('textIntensitySlider').addEventListener('input', (e) => { state.textFx.intensity = parseInt(e.target.value); });
         document.getElementById('textAnimSpeedSlider').addEventListener('input', (e) => { state.textFx.animSpeed = parseInt(e.target.value); });
         document.getElementById('snowIntensitySlider').addEventListener('input', (e) => { state.bg.snowIntensity = parseInt(e.target.value); });
@@ -952,6 +1029,30 @@
             if (nextIndex >= 0 && nextIndex < vizTypeSelect.options.length) {
                 vizTypeSelect.selectedIndex = nextIndex;
                 vizTypeSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        textFontSelect.addEventListener('wheel', (e) => {
+            e.preventDefault(); 
+            const delta = Math.sign(e.deltaY);
+            let currentIndex = textFontSelect.selectedIndex;
+            let nextIndex = currentIndex + delta;
+            
+            if (nextIndex >= 0 && nextIndex < textFontSelect.options.length) {
+                textFontSelect.selectedIndex = nextIndex;
+                textFontSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        timeFontSelect.addEventListener('wheel', (e) => {
+            e.preventDefault(); 
+            const delta = Math.sign(e.deltaY);
+            let currentIndex = timeFontSelect.selectedIndex;
+            let nextIndex = currentIndex + delta;
+            
+            if (nextIndex >= 0 && nextIndex < timeFontSelect.options.length) {
+                timeFontSelect.selectedIndex = nextIndex;
+                timeFontSelect.dispatchEvent(new Event('change'));
             }
         });
 
@@ -1138,9 +1239,9 @@
         const progressHandle = document.getElementById('progress-handle');
 
         function formatTime(s) {
-            if(isNaN(s)) return "0:00";
+            if(isNaN(s)) return "00:00";
             const min = Math.floor(s / 60); const sec = Math.floor(s % 60);
-            return `${min}:${sec.toString().padStart(2, '0')}`;
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         }
 
         audioElement.addEventListener('timeupdate', () => {
@@ -1542,7 +1643,7 @@
                 renderPlaylist();
             }
             
-            timeDisplay.textContent = "0:00 / 0:00";
+            timeDisplay.textContent = "00:00 / 00:00";
             progressBar.style.width = `0%`;
             progressHandle.style.left = `0%`;
         }
@@ -1580,7 +1681,7 @@
             ctx.fillStyle = state.bg.color || '#0f1115';
             ctx.fillRect(0, 0, w, h);
             
-            bboxes.viz = null; bboxes.overlay = null; bboxes.text = null;
+            bboxes.viz = null; bboxes.overlay = null; bboxes.text = null; bboxes.time = null;
             
             let audioReactivity = 0; let bgAudioReactivity = 0;
             let kickBassReactivity = 0; 
@@ -2219,6 +2320,58 @@
                 bboxes.text = { x: bboxX, y: textY - (textH / 2), w: textW, h: textH };
                 ctx.restore();
             }
+            
+            // --- DRAW TIME OVERLAY ---
+            if (state.timeFx.enabled) {
+                ctx.save();
+                
+                let timeString = "00:00";
+                
+                if (state.timeFx.format === 'duration') {
+                    if (audioElement.duration && !isNaN(audioElement.duration)) {
+                        let curTime = isOfflineRendering ? window.offlineCurrentTime : audioElement.currentTime;
+                        timeString = formatTime(curTime);
+                    } else {
+                        timeString = "00:00";
+                    }
+                } else if (state.timeFx.format === 'countdown') {
+                    if (audioElement.duration && !isNaN(audioElement.duration)) {
+                        let curTime = isOfflineRendering ? window.offlineCurrentTime : audioElement.currentTime;
+                        let sisa = Math.max(0, audioElement.duration - curTime);
+                        timeString = formatTime(sisa);
+                    } else {
+                        timeString = "00:00";
+                    }
+                }
+
+                let fontSize = state.timeFx.size;
+                let textX = cx + (state.timeFx.offsetX || 0); 
+                let textY = cy + (state.timeFx.offsetY || 0);
+                
+                if (state.timeFx.offsetX === 0 && state.timeFx.offsetY === 0) {
+                    textX = w - 100;
+                    textY = 50;
+                }
+
+                ctx.font = `bold ${fontSize}px ${state.timeFx.font}`;
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle';
+                
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
+                ctx.fillStyle = state.timeFx.color;
+                ctx.fillText(timeString, textX, textY);
+                
+                let metrics = ctx.measureText(timeString);
+                let textW = metrics.width;
+                let textH = fontSize;
+                
+                bboxes.time = { x: textX - (textW / 2), y: textY - (textH / 2), w: textW, h: textH };
+                ctx.restore();
+            }
 
             if (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci') drawOverlayObj();
         }
@@ -2237,6 +2390,10 @@
                 const padding = 10;
                 if (pos.x >= bboxes.text.x - padding && pos.x <= bboxes.text.x + bboxes.text.w + padding && pos.y >= bboxes.text.y - padding && pos.y <= bboxes.text.y + bboxes.text.h + padding) { clicked = 'text'; }
             }
+            if (!clicked && state.timeFx.enabled && bboxes.time) {
+                const padding = 10;
+                if (pos.x >= bboxes.time.x - padding && pos.x <= bboxes.time.x + bboxes.time.w + padding && pos.y >= bboxes.time.y - padding && pos.y <= bboxes.time.y + bboxes.time.h + padding) { clicked = 'time'; }
+            }
             if (!clicked && state.overlay.element && (state.overlay.lapisan === 'depan' || state.overlay.lapisan === 'kunci')) {
                 if (bboxes.overlay && pos.x >= bboxes.overlay.x && pos.x <= bboxes.overlay.x + bboxes.overlay.w && pos.y >= bboxes.overlay.y && pos.y <= bboxes.overlay.y + bboxes.overlay.h) { clicked = 'overlay'; }
             }
@@ -2252,6 +2409,7 @@
                 if (clicked === 'viz') { initialOffsetX = state.viz.offsetX || 0; initialOffsetY = state.viz.offsetY || 0; } 
                 else if (clicked === 'overlay') { initialOffsetX = state.overlay.offsetX || 0; initialOffsetY = state.overlay.offsetY || 0; } 
                 else if (clicked === 'text') { initialOffsetX = state.textFx.offsetX || 0; initialOffsetY = state.textFx.offsetY || 0; }
+                else if (clicked === 'time') { initialOffsetX = state.timeFx.offsetX || 0; initialOffsetY = state.timeFx.offsetY || 0; }
                 canvas.style.cursor = 'grabbing';
             }
         }
@@ -2263,6 +2421,7 @@
             if (draggingElement === 'viz') { state.viz.offsetX = initialOffsetX + dx; state.viz.offsetY = initialOffsetY + dy; } 
             else if (draggingElement === 'overlay') { state.overlay.offsetX = initialOffsetX + dx; state.overlay.offsetY = initialOffsetY + dy; } 
             else if (draggingElement === 'text') { state.textFx.offsetX = initialOffsetX + dx; state.textFx.offsetY = initialOffsetY + dy; }
+            else if (draggingElement === 'time') { state.timeFx.offsetX = initialOffsetX + dx; state.timeFx.offsetY = initialOffsetY + dy; }
         }
 
         function handleDragEnd() { if (draggingElement) { draggingElement = null; canvas.style.cursor = 'default'; } }
