@@ -500,7 +500,7 @@
                     <span class="control-label text-xs w-8" title="Kiri: Terang, Kanan: Gelap">Gelap</span>
                     <div class="flex-1"><input type="range" id="bgDarknessSlider" min="-100" max="100" value="0" title="Geser ke kiri untuk terang"></div>
                     <span class="control-label ml-1 text-[10px] w-12">Intensitas</span>
-                    <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="25"></div>
+                    <div class="flex-1"><input type="range" id="bgPulseIntensitySlider" min="0" max="100" value="50"></div>
                 </div>
                 
                 <div class="control-row mt-1">
@@ -733,7 +733,7 @@
     <script>
         const state = {
             viz: { enabled: true, align: 'full', size: 0.5, width: 0.5, opacity: 1.0, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
-            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.25, scale: 1.0, snowIntensity: 50, weatherSpeed: 50, mirror: false },
+            bg: { color: '#0f1115', image: null, imgElement: null, effect: 'normal', weather: ['normal'], darkness: 0, pulseIntensity: 0.50, scale: 1.0, snowIntensity: 50, weatherSpeed: 50, mirror: false },
             overlay: { element: null, type: null, lapisan: 'depan', blend: 'normal', size: 0.5, opacity: 1, speed: 0.5, anim: 'none', offsetX: 0, offsetY: 0, animTime: 0, lastDrawTime: 0 },
             textFx: { enabled: false, customText: '', font: 'Inter', size: 40, color: '#ffffff', colorMode: 'auto', hue: 0, argbSpeed: 15, effect: 'none', intensity: 50, anim: 'none', offsetX: 0, offsetY: 0, align: 'left', animSpeed: 50 },
             render: { bitrateMode: 'variable', targetBitrate: 1200000 }
@@ -967,6 +967,8 @@
         let analyser;         
         let dataArray;
         let isPlaying = false;
+        
+        let smoothedKick = 0;
         
         let snowflakes = [];
         let raindrops = [];
@@ -1225,6 +1227,7 @@
         function forceGarbageCollection() {
             snowflakes = []; raindrops = []; goldDrops = []; lightnings = []; smokes = [];
             window.plexusNodes = null; window.cyberCaps = null;
+            smoothedKick = 0;
             if (canvas) { canvas.width = 1280; canvas.height = 720; }
         }
 
@@ -1593,10 +1596,17 @@
                 let bgAvg = bgSum * 0.0002614379; 
                 bgAudioReactivity = Math.pow(bgAvg, 1.2);
 
-                let kickBassAvg = (dataArray[0] * 1.5 + dataArray[1]) / (2.5 * 255); 
-                if (kickBassAvg > 0.35) { 
-                    kickBassReactivity = Math.pow(kickBassAvg, 3.5) * 2.8; 
-                }
+                // Algoritma Jedag Jedug - Fokus pada frekuensi kick bass (0-2)
+                let kickBassAvg = (dataArray[0] + dataArray[1] + dataArray[2]) / (3 * 255); 
+                // Pangkat diubah ke 3.0 agar pembacaan rentang kick lebih akurat tanpa menangkap frekuensi vokal
+                let rawKick = Math.pow(kickBassAvg, 3.0) * 1.5; 
+                
+                // Smoothing disesuaikan ke 0.5 agar denyutan memiliki 'bounce' / pegas yang mulus kembali ke awal (tidak kaku)
+                smoothedKick = Math.max(rawKick, smoothedKick * 0.5);
+                kickBassReactivity = smoothedKick;
+            } else {
+                smoothedKick *= 0.5;
+                kickBassReactivity = smoothedKick;
             }
 
             if (state.bg.imgElement) {
@@ -1616,12 +1626,13 @@
                 let filterBG = 'none'; let flashAlpha = 0;
 
                 if (state.bg.effect === 'denyut') {
-                    scaleBG = state.bg.scale + (kickBassReactivity * state.bg.pulseIntensity * 0.5);
+                    // Skala dasar sesuai gambar awal (state.bg.scale)
+                    // Ambang batas (threshold) diturunkan agar lebih mudah menangkap kick
+                    let zoomBoost = Math.max(0, kickBassReactivity - 0.15); 
+                    
+                    // Pengali intensitas dinaikkan drastis ke 0.15 agar gerakan denyut gambar mendominasi saat kick
+                    scaleBG = state.bg.scale + (zoomBoost * state.bg.pulseIntensity * 0.15); 
                 } else if (state.bg.effect === 'zoom') {
-                    // Zoom effect is now independent of audio reactivity.
-                    // It uses a slow sine wave for a smooth cinematic zoom in/out.
-                    // timeBG * 0.05 controls the speed (lower is slower)
-                    // 0.08 is the maximum zoom level increase
                     scaleBG = state.bg.scale * (1 + (Math.sin(timeBG * 0.1) * 0.15 * state.bg.pulseIntensity)); 
                 } else if (state.bg.effect === 'ayun') {
                     xOffBG = Math.sin(timeBG * 1.0) * (w * 0.05 * state.bg.pulseIntensity);
@@ -1629,8 +1640,8 @@
                     rotBG = Math.sin(timeBG * 0.5) * 0.03 * state.bg.pulseIntensity;
                 } else if (state.bg.effect === 'shake') {
                     let shakeReactivity = Math.max(bgAudioReactivity, kickBassReactivity);
-                    if (shakeReactivity > 0.2) {
-                        let shakeAmt = shakeReactivity * 80 * state.bg.pulseIntensity;
+                    if (shakeReactivity > 0.1) {
+                        let shakeAmt = shakeReactivity * 30 * state.bg.pulseIntensity;
                         xOffBG = (Math.random() - 0.5) * shakeAmt; yOffBG = (Math.random() - 0.5) * shakeAmt;
                     }
                 } else if (state.bg.effect === 'pan') {
@@ -1831,7 +1842,7 @@
                     state.overlay.animTime = (state.overlay.animTime || 0) + (delta * speedMult);
                     switch(state.overlay.anim) {
                         case 'pan': animX = Math.sin(state.overlay.animTime) * 100; break;
-                        case 'denyut': animScale = 1 + (audioReactivity * speedMult * 0.2); break;
+                        case 'denyut': animScale = 1 + (kickBassReactivity * speedMult * 0.05); break;
                         case 'float': animX = Math.sin(state.overlay.animTime * 0.5) * 50; animY = Math.cos(state.overlay.animTime * 0.7) * 50; break;
                         case 'shake': animX = (Math.random() - 0.5) * speedMult * 10; animY = (Math.random() - 0.5) * speedMult * 10; break;
                         case 'zoom': animScale = 1 + (Math.sin(state.overlay.animTime * 0.5) * 0.5 + 0.5); break;
