@@ -1337,10 +1337,34 @@
             if (canvas) { canvas.width = 1280; canvas.height = 720; }
         }
 
+        // --- FITUR ANTI-THROTTLING (WAKE LOCK) ---
+        let renderWakeLock = null;
+        async function enableAntiThrottling() {
+            try {
+                if ('wakeLock' in navigator) {
+                    renderWakeLock = await navigator.wakeLock.request('screen');
+                    console.log("Anti-Throttling Aktif: Mengabaikan Efficiency Mode");
+                }
+            } catch (err) {
+                console.log("Wake Lock ditolak browser, menggunakan mode standar.");
+            }
+        }
+        function disableAntiThrottling() {
+            if (renderWakeLock !== null) {
+                renderWakeLock.release().then(() => {
+                    renderWakeLock = null;
+                    console.log("Anti-Throttling Dimatikan");
+                });
+            }
+        }
+
         async function startBatchRenderProcess() {
             isRenderingPlaylist = true;
             renderQueueIndex = 0;
             abortOfflineRender = false;
+
+            // PANGGIL ANTI-THROTTLING SAAT RENDER DIMULAI
+            await enableAntiThrottling();
 
             const btn = document.getElementById('btnRekam');
             btn.textContent = 'Batal Semua Render';
@@ -1370,6 +1394,11 @@
             // Simpan kanvas asli untuk UI
             let originalCanvas = canvas;
             let originalCtx = ctx;
+
+            // Mematikan/menggelapkan visual di kanvas utama (DOM) 
+            // agar beban GPU/Compositor UI browser jauh lebih ringan saat render
+            originalCtx.fillStyle = '#050505';
+            originalCtx.fillRect(0, 0, originalCanvas.width, originalCanvas.height);
 
             const indicator = document.getElementById('recording-status');
             const playlistIndicator = document.getElementById('recording-playlist-status');
@@ -1672,6 +1701,9 @@
             isOfflineRendering = false;
             isRenderingPlaylist = false;
             abortOfflineRender = false;
+            
+            // MATIKAN ANTI-THROTTLING SAAT RENDER SELESAI/BATAL
+            disableAntiThrottling();
             
             const btn = document.getElementById('btnRekam');
             btn.textContent = 'Mulai Render';
