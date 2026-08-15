@@ -1514,7 +1514,16 @@
                         await new Promise(r => setTimeout(r, 0));
                     }
 
-                    drawCanvas();
+                    // Hanya gambar jika ini adalah frame pertama (untuk inisialisasi)
+                    // Jika tidak, kita bisa melewati drawCanvas() untuk mempercepat,
+                    // NAMUN VideoEncoder membutuhkan kanvas untuk memiliki konten.
+                    // Jika kita sama sekali tidak menggambar, video akan kosong/statis.
+                    // Solusi: Tetap gambar, tapi sembunyikan kanvas dari DOM untuk menghindari komposit browser
+                    if (frameIdx === 0) {
+                        canvas.style.display = 'none'; // Sembunyikan kanvas untuk menghemat waktu komposit
+                    }
+                    
+                    drawCanvas(); 
                     
                     if (videoEncoder.state === 'configured') {
                         const vframe = new VideoFrame(canvas, { timestamp: Math.round(currentTime * 1e6) });
@@ -1626,6 +1635,9 @@
             btn.classList.add('btn-danger');
             btn.classList.remove('bg-red-600', 'text-white', 'border-red-500');
             document.getElementById('recording-indicator').classList.add('hidden');
+            
+            // Restore canvas visibility
+            if (canvas) canvas.style.display = 'block';
             
             if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
             if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
