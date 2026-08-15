@@ -1399,6 +1399,12 @@
             // agar beban GPU/Compositor UI browser jauh lebih ringan saat render
             originalCtx.fillStyle = '#050505';
             originalCtx.fillRect(0, 0, originalCanvas.width, originalCanvas.height);
+            originalCanvas.style.display = 'none'; // Sembunyikan elemen fisik dari layout DOM
+
+            // MATIKAN ANIMASI CSS: Hentikan putaran dan kedipan loading agar tidak menyita GPU
+            document.querySelectorAll('#recording-indicator .animate-spin, #recording-indicator .animate-ping, #recording-indicator .animate-pulse').forEach(el => {
+                el.style.animation = 'none';
+            });
 
             const indicator = document.getElementById('recording-status');
             const playlistIndicator = document.getElementById('recording-playlist-status');
@@ -1556,7 +1562,8 @@
                         state.overlay.element.currentTime = window.offlineCurrentTime % state.overlay.element.duration;
                     }
 
-                    if (frameIdx % 15 === 0) {
+                    // UPDATE UI DIKURANGI: Update indikator teks setiap 30 frame (1 detik sekali) bukan 15
+                    if (frameIdx % 30 === 0) {
                         const progress = Math.min(100, Math.round((currentTime / duration) * 100));
                         indicator.textContent = `RENDER VIDEO... ${progress}%`;
                         const percent = (currentTime / duration) * 100;
@@ -1711,6 +1718,11 @@
             btn.classList.remove('bg-red-600', 'text-white', 'border-red-500');
             document.getElementById('recording-indicator').classList.add('hidden');
             
+            // Nyalakan kembali animasi CSS Loading
+            document.querySelectorAll('#recording-indicator [style*="animation: none"]').forEach(el => {
+                el.style.animation = '';
+            });
+
             // Restore canvas visibility
             if (canvas && canvas.style) canvas.style.display = 'block';
             
