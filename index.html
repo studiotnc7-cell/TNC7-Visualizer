@@ -802,8 +802,8 @@
 
         let bboxes = { viz: null, overlay: null, text: null, time: null };
 
-        const canvas = document.getElementById('previewCanvas');
-        const ctx = canvas.getContext('2d');
+        let canvas = document.getElementById('previewCanvas');
+        let ctx = canvas.getContext('2d');
         const wrapper = document.getElementById('canvas-wrapper');
         const audioElement = new Audio();
         
@@ -1367,6 +1367,10 @@
             isRecording = true;
             abortOfflineRender = false;
 
+            // Simpan kanvas asli untuk UI
+            let originalCanvas = canvas;
+            let originalCtx = ctx;
+
             const indicator = document.getElementById('recording-status');
             const playlistIndicator = document.getElementById('recording-playlist-status');
             
@@ -1384,25 +1388,28 @@
                 const arrayBuffer = await file.arrayBuffer();
 
                 indicator.textContent = 'DEKODE AUDIO...';
-                const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Gunakan sample rate statis (44.1kHz) untuk kompatibilitas encoder maksimal
+                const targetSampleRate = 44100;
+                const decodeCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: targetSampleRate });
                 const originalAudioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
                 decodeCtx.close();
 
                 const duration = originalAudioBuffer.duration;
-                const sampleRate = originalAudioBuffer.sampleRate;
+                const numChannels = originalAudioBuffer.numberOfChannels;
 
                 indicator.textContent = 'SETUP MESIN RENDER...';
                 muxer = new Mp4Muxer.Muxer({
                     target: new Mp4Muxer.ArrayBufferTarget(),
                     video: { codec: 'avc', width: 1280, height: 720, frameRate: 30 },
-                    audio: { codec: 'aac', sampleRate: sampleRate, numberOfChannels: originalAudioBuffer.numberOfChannels },
+                    audio: { codec: 'aac', sampleRate: targetSampleRate, numberOfChannels: numChannels },
                     fastStart: "in-memory"
                 });
 
                 videoEncoder = new VideoEncoder({
                     output: (chunk, meta) => {
                         try { muxer.addVideoChunk(chunk, meta); } 
-                        catch (chunkErr) { console.warn("Muxer skip chunk (Aman):", chunkErr); }
+                        catch (chunkErr) {}
                     },
                     error: (e) => { 
                         console.error("VideoEncoder Error:", e.message);
@@ -1410,13 +1417,14 @@
                     }
                 });
                 
+                // Menggunakan profil Baseline (42E01F) untuk stabilitas 100% dan fallback otomatis ke software
                 videoEncoder.configure({
-                    codec: 'avc1.4D0028', 
+                    codec: 'avc1.42E01F', 
                     width: 1280, 
                     height: 720,
                     bitrate: state.render.targetBitrate,
                     framerate: 30,
-                    bitrateMode: state.render.bitrateMode 
+                    bitrateMode: state.render.bitrateMode
                 });
 
                 audioEncoder = new AudioEncoder({
@@ -1431,36 +1439,41 @@
                 
                 audioEncoder.configure({
                     codec: 'mp4a.40.2',
-                    sampleRate: sampleRate,
-                    numberOfChannels: originalAudioBuffer.numberOfChannels,
+                    sampleRate: targetSampleRate,
+                    numberOfChannels: numChannels,
                     bitrate: 128000
                 });
                 
                 async function processAudio(audioBuf, enc) {
                     const totalFrames = audioBuf.length;
-                    const numChannels = audioBuf.numberOfChannels;
                     const framesPerChunk = 4096; 
                     
                     for (let offset = 0; offset < totalFrames; offset += framesPerChunk) {
                         if (abortOfflineRender) break;
                         
-                        const data = new Float32Array(framesPerChunk * numChannels);
+                        let currentFrames = Math.min(framesPerChunk, totalFrames - offset);
+                        const data = new Float32Array(currentFrames * numChannels);
                         for (let c = 0; c < numChannels; c++) {
-                            const endIdx = Math.min(offset + framesPerChunk, totalFrames);
-                            const srcData = audioBuf.getChannelData(c).subarray(offset, endIdx);
-                            data.set(srcData, c * framesPerChunk);
+                            const srcData = audioBuf.getChannelData(c).subarray(offset, offset + currentFrames);
+                            data.set(srcData, c * currentFrames);
                         }
                         
                         try {
                             const audioData = new AudioData({ 
-                                format: 'f32-planar', sampleRate, numberOfFrames: framesPerChunk, 
-                                numberOfChannels: numChannels, timestamp: Math.round((offset / sampleRate) * 1e6), data: data 
+                                format: 'f32-planar', 
+                                sampleRate: targetSampleRate, 
+                                numberOfFrames: currentFrames, 
+                                numberOfChannels: numChannels, 
+                                timestamp: Math.round((offset / targetSampleRate) * 1e6), 
+                                data: data 
                             });
                             enc.encode(audioData); 
                             audioData.close();
                         } catch(e) { console.error("Format audio chunk error:", e); }
                         
-                        while (enc.encodeQueueSize >= 30) { await new Promise(r => setTimeout(r, 1)); }
+                        while (enc.state === 'configured' && enc.encodeQueueSize >= 50) { 
+                            await new Promise(r => setTimeout(r, 2)); 
+                        }
                         if (offset % (framesPerChunk * 20) === 0) {
                             indicator.textContent = `PROSES AUDIO... ${Math.round((offset/totalFrames)*100)}%`;
                             await new Promise(r => setTimeout(r, 0));
@@ -1471,7 +1484,16 @@
                 await processAudio(originalAudioBuffer, audioEncoder);
 
                 indicator.textContent = 'RENDER VIDEO... 0%';
-                const offlineCtx = new OfflineAudioContext(originalAudioBuffer.numberOfChannels, Math.ceil(sampleRate * duration), sampleRate);
+
+                if (typeof OffscreenCanvas !== 'undefined') {
+                    canvas = new OffscreenCanvas(1280, 720);
+                } else {
+                    canvas = document.createElement('canvas');
+                    canvas.width = 1280; canvas.height = 720;
+                }
+                ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+                const offlineCtx = new OfflineAudioContext(numChannels, Math.ceil(targetSampleRate * duration), targetSampleRate);
                 const source = offlineCtx.createBufferSource();
                 source.buffer = originalAudioBuffer;
 
@@ -1514,15 +1536,6 @@
                         await new Promise(r => setTimeout(r, 0));
                     }
 
-                    // Hanya gambar jika ini adalah frame pertama (untuk inisialisasi)
-                    // Jika tidak, kita bisa melewati drawCanvas() untuk mempercepat,
-                    // NAMUN VideoEncoder membutuhkan kanvas untuk memiliki konten.
-                    // Jika kita sama sekali tidak menggambar, video akan kosong/statis.
-                    // Solusi: Tetap gambar, tapi sembunyikan kanvas dari DOM untuk menghindari komposit browser
-                    if (frameIdx === 0) {
-                        canvas.style.display = 'none'; // Sembunyikan kanvas untuk menghemat waktu komposit
-                    }
-                    
                     drawCanvas(); 
                     
                     if (videoEncoder.state === 'configured') {
@@ -1531,29 +1544,52 @@
                         vframe.close();
                     }
 
-                    while (videoEncoder.encodeQueueSize >= 3) {
+                    while (videoEncoder.state === 'configured' && videoEncoder.encodeQueueSize >= 15) {
                         if (abortOfflineRender) break;
-                        await new Promise(r => setTimeout(r, 2)); 
+                        await new Promise(r => setTimeout(r, 5)); 
                     }
 
                     frameIdx++;
                     let nextTime = frameIdx * interval;
                     
                     if (nextTime < duration && !abortOfflineRender) {
-                        offlineCtx.suspend(nextTime).then(handleSuspend);
+                        // FIX: Memastikan waktu suspend selalu valid di masa depan agar tidak hang
+                        let safeSuspendTime = nextTime;
+                        const minAdvance = 128 / targetSampleRate;
+                        if (safeSuspendTime <= offlineCtx.currentTime + minAdvance) {
+                            safeSuspendTime = offlineCtx.currentTime + minAdvance * 2;
+                        }
+                        
+                        try {
+                            offlineCtx.suspend(safeSuspendTime).then(handleSuspend).catch(e => {
+                                console.warn("Siklus frame diskip:", e);
+                                processFrameResolve();
+                            });
+                            offlineCtx.resume();
+                        } catch(e) {
+                            console.warn("Gagal melanjutkan loop:", e);
+                            processFrameResolve();
+                        }
+                    } else {
+                        processFrameResolve();
                     }
-                    
-                    try { offlineCtx.resume(); } catch(e) {}
                 };
 
-                offlineCtx.suspend(0).then(handleSuspend);
-                
-                offlineCtx.startRendering().then(() => {
+                try {
+                    offlineCtx.suspend(0).then(handleSuspend).catch(e => {
+                        console.error("Gagal memulai suspend:", e);
+                        processFrameResolve();
+                    });
+                    
+                    offlineCtx.startRendering().then(() => {
+                        processFrameResolve();
+                    }).catch(err => {
+                        console.error("AudioRendering Error:", err);
+                        processFrameResolve();
+                    });
+                } catch(e) {
                     processFrameResolve();
-                }).catch(err => {
-                    console.error("AudioRendering Error:", err);
-                    processFrameResolve();
-                });
+                }
 
                 await processFramePromise;
 
@@ -1613,13 +1649,20 @@
                 forceGarbageCollection();
 
             } catch (err) {
+                console.error(err);
                 if (err.message !== "Render dibatalkan pengguna") {
-                    showNotification(`Gagal merender lagu ${trackIndex+1}: ${err.message}`);
+                    indicator.textContent = 'GAGAL RENDER';
+                    playlistIndicator.textContent = `Error: ${err.message}`;
+                    showNotification(`Gagal merender lagu: ${err.message}`);
+                    await new Promise(r => setTimeout(r, 4000));
                 }
                 abortOfflineRender = true;
             } finally {
-                if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
-                if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
+                canvas = originalCanvas;
+                ctx = originalCtx;
+
+                if (videoEncoder && videoEncoder.state !== 'closed') { try { videoEncoder.close(); } catch(e){} }
+                if (audioEncoder && audioEncoder.state !== 'closed') { try { audioEncoder.close(); } catch(e){} }
                 muxer = null;
             }
         }
@@ -1637,7 +1680,7 @@
             document.getElementById('recording-indicator').classList.add('hidden');
             
             // Restore canvas visibility
-            if (canvas) canvas.style.display = 'block';
+            if (canvas && canvas.style) canvas.style.display = 'block';
             
             if (videoEncoder && videoEncoder.state !== 'closed') videoEncoder.close();
             if (audioEncoder && audioEncoder.state !== 'closed') audioEncoder.close();
