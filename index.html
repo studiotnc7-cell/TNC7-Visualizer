@@ -341,6 +341,9 @@
                 <i class="fa-solid fa-circle-play text-yellow-400"></i>
                 <span class="logo-text-viz">TNC7 Visualizer</span>
             </div>
+            <button id="btn-logout" class="btn-custom btn-danger text-[10px] hidden" title="Keluar dari Aplikasi">
+                <i class="fa-solid fa-power-off"></i> Keluar
+            </button>
         </div>
         
         <div class="flex items-center gap-2">
@@ -2548,7 +2551,7 @@
     <!-- Modul Firebase Auth & Firestore (Pelacakan Perangkat) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -2569,10 +2572,12 @@
         const pwdInput = document.getElementById('app-password');
         const loginBtn = document.getElementById('btn-login');
         const pwdError = document.getElementById('password-error');
+        const logoutBtn = document.getElementById('btn-logout');
 
         function grantAccess() {
             pwdScreen.style.opacity = '0';
             setTimeout(() => { pwdScreen.style.display = 'none'; }, 500);
+            if(logoutBtn) logoutBtn.classList.remove('hidden');
         }
 
         function showError(msg) {
@@ -2619,8 +2624,17 @@
                 pwdScreen.style.opacity = '1';
                 loginBtn.textContent = "MASUK";
                 loginBtn.disabled = false;
+                if(logoutBtn) logoutBtn.classList.add('hidden');
             }
         });
+
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                signOut(auth).catch((error) => {
+                    console.error("Error saat logout:", error);
+                });
+            });
+        }
 
         function handleLogin() {
             const email = emailInput.value.trim();
