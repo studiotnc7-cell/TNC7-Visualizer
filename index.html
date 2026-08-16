@@ -321,9 +321,12 @@
         </div>
         <div class="bg-[#161a22] p-8 rounded-xl border border-[#2a3142] flex flex-col items-center shadow-2xl w-80">
             <h2 class="text-gray-400 text-xs tracking-widest font-bold mb-6 uppercase">Akses Aplikasi Terkunci</h2>
-            <input type="password" id="app-password" class="w-full bg-[#0f1115] border border-[#2a3142] text-white text-center text-2xl rounded-lg py-3 mb-4 focus:outline-none focus:border-yellow-400 transition-all duration-200" placeholder="***" autocomplete="off">
+            
+            <input type="email" id="app-email" class="w-full bg-[#0f1115] border border-[#2a3142] text-white text-center text-lg rounded-lg py-3 mb-2 focus:outline-none focus:border-yellow-400 transition-all duration-200" placeholder="Email Terdaftar" autocomplete="off">
+            <input type="password" id="app-password" class="w-full bg-[#0f1115] border border-[#2a3142] text-white text-center text-lg rounded-lg py-3 mb-4 focus:outline-none focus:border-yellow-400 transition-all duration-200" placeholder="Password" autocomplete="off">
+            
             <button id="btn-login" class="w-full bg-yellow-400 hover:bg-yellow-500 text-[#0f1115] font-bold py-3 rounded-lg transition-colors">MASUK</button>
-            <p id="password-error" class="text-red-500 text-xs mt-4 opacity-0 transition-opacity duration-300 font-medium">Password salah, coba lagi!</p>
+            <p id="password-error" class="text-red-500 text-xs mt-4 opacity-0 transition-opacity duration-300 font-medium text-center">Gagal masuk. Periksa email/password atau akun dinonaktifkan!</p>
         </div>
     </div>
 
@@ -2544,45 +2547,108 @@
         });
         console.log("%cBERHENTI!", "color: red; font-size: 50px; font-weight: bold; text-shadow: 2px 2px 0 #000;");
         console.log("%cIni adalah area untuk developer.", "font-size: 16px;");
+    </script>
+
+    <!-- Modul Firebase Auth -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // ========================================================
+        // KODE FIREBASE ANDA SUDAH SAYA MASUKKAN DI SINI
+        // ========================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1hxTceWANgQU8vwKpXDCJABvYpWQQNmk",
+            authDomain: "tnc7-visualizer.firebaseapp.com",
+            projectId: "tnc7-visualizer",
+            storageBucket: "tnc7-visualizer.firebasestorage.app",
+            messagingSenderId: "1098792876538",
+            appId: "1:1098792876538:web:28304ee128f7d156190c43"
+        };
+        // ========================================================
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
         const pwdScreen = document.getElementById('password-screen');
+        const emailInput = document.getElementById('app-email');
         const pwdInput = document.getElementById('app-password');
         const loginBtn = document.getElementById('btn-login');
         const pwdError = document.getElementById('password-error');
 
-        function checkPassword() {
-            if (pwdInput.value === '0') {
-                pwdScreen.style.opacity = '0';
-                setTimeout(() => {
-                    pwdScreen.remove();
-                }, 500);
-            } else {
-                pwdError.style.opacity = '1';
-                pwdInput.classList.add('border-red-500');
-                pwdInput.value = '';
-                pwdInput.focus();
-                
-                // Efek getar (shake) saat salah
-                pwdInput.style.transform = 'translateX(-10px)';
-                setTimeout(() => pwdInput.style.transform = 'translateX(10px)', 50);
-                setTimeout(() => pwdInput.style.transform = 'translateX(-10px)', 100);
-                setTimeout(() => pwdInput.style.transform = 'translateX(10px)', 150);
-                setTimeout(() => {
-                    pwdInput.style.transform = 'translateX(0)';
-                    pwdInput.classList.remove('border-red-500');
-                }, 200);
-                
-                setTimeout(() => { pwdError.style.opacity = '0'; }, 2500);
-            }
+        function grantAccess() {
+            pwdScreen.style.opacity = '0';
+            setTimeout(() => { pwdScreen.style.display = 'none'; }, 500);
         }
 
-        loginBtn.addEventListener('click', checkPassword);
+        function showError(msg) {
+            loginBtn.textContent = "MASUK";
+            loginBtn.disabled = false;
+            pwdError.textContent = msg;
+            pwdError.style.opacity = '1';
+            
+            pwdInput.style.transform = 'translateX(-10px)';
+            setTimeout(() => pwdInput.style.transform = 'translateX(10px)', 50);
+            setTimeout(() => pwdInput.style.transform = 'translateX(-10px)', 100);
+            setTimeout(() => pwdInput.style.transform = 'translateX(10px)', 150);
+            setTimeout(() => pwdInput.style.transform = 'translateX(0)', 200);
+            
+            setTimeout(() => { pwdError.style.opacity = '0'; }, 4000);
+        }
+
+        // Pengecekan status login setiap kali aplikasi dibuka
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Jika user valid (ada di database dan belum di-disable) -> Buka Akses
+                grantAccess();
+            } else {
+                // Jika belum login, salah password, atau akun di-disable -> Tahan di layar login
+                pwdScreen.style.display = 'flex';
+                // Trigger reflow untuk transisi CSS
+                void pwdScreen.offsetWidth;
+                pwdScreen.style.opacity = '1';
+                loginBtn.textContent = "MASUK";
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Tombol Login Ditekan
+        function handleLogin() {
+            const email = emailInput.value.trim();
+            const password = pwdInput.value;
+            if(!email || !password) return;
+
+            loginBtn.textContent = "MEMERIKSA LISENSI...";
+            loginBtn.disabled = true;
+
+            // Proses verifikasi ke Server Google
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Berhasil masuk, onAuthStateChanged akan otomatis berjalan
+                    emailInput.value = '';
+                    pwdInput.value = '';
+                })
+                .catch((error) => {
+                    console.error("Login Error:", error.code);
+                    if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                        showError("Akses Ditolak! Email/Password salah.");
+                    } else if (error.code === 'auth/user-disabled') {
+                        showError("Lisensi Habis! Akun ini telah dinonaktifkan Admin.");
+                    } else if (error.code === 'auth/network-request-failed') {
+                        showError("Koneksi gagal. Periksa jaringan internet Anda.");
+                    } else {
+                        showError("Gagal masuk: " + error.message);
+                    }
+                });
+        }
+
+        loginBtn.addEventListener('click', handleLogin);
         pwdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkPassword();
+            if (e.key === 'Enter') handleLogin();
         });
         
-        // Auto-focus input password saat web dimuat
-        setTimeout(() => pwdInput.focus(), 300);
+        setTimeout(() => emailInput.focus(), 300);
     </script>
 </body>
 </html>
