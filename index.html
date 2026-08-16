@@ -239,8 +239,8 @@
             flex-shrink: 0;
         }
         
-        .control-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-top: 1px; } /* Gap dan margin lebih kecil */
-        .control-label { font-size: 0.6rem; color: var(--text-secondary); width: 40px; } /* Ukuran font label */
+        .control-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-top: 1px; }
+        .control-label { font-size: 0.6rem; color: var(--text-secondary); width: 40px; }
         
         #notification-modal {
             position: fixed;
@@ -314,6 +314,7 @@
     </style>
 </head>
 <body>
+    <!-- LAYAR LOGIN -->
     <div id="password-screen" class="fixed inset-0 bg-[#0f1115] z-[999999] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="logo mb-8 text-4xl flex items-center gap-3">
             <i class="fa-solid fa-circle-play text-yellow-400"></i>
@@ -326,7 +327,7 @@
             <input type="password" id="app-password" class="w-full bg-[#0f1115] border border-[#2a3142] text-white text-center text-lg rounded-lg py-3 mb-4 focus:outline-none focus:border-yellow-400 transition-all duration-200" placeholder="Password" autocomplete="off">
             
             <button id="btn-login" class="w-full bg-yellow-400 hover:bg-yellow-500 text-[#0f1115] font-bold py-3 rounded-lg transition-colors">MASUK</button>
-            <p id="password-error" class="text-red-500 text-xs mt-4 opacity-0 transition-opacity duration-300 font-medium text-center">Gagal masuk. Periksa email/password atau akun dinonaktifkan!</p>
+            <p id="password-error" class="text-red-500 text-xs mt-4 opacity-0 transition-opacity duration-300 font-medium text-center">Gagal masuk. Periksa email/password!</p>
         </div>
     </div>
 
@@ -513,12 +514,6 @@
                 <div class="control-row mt-0">
                     <span class="control-label text-[9px] w-8 uppercase">Skala</span>
                     <div class="flex-1"><input type="range" id="bgScaleSlider" min="10" max="300" value="100" title="Geser untuk perbesar/perkecil foto"></div>
-                </div>
-                
-                <div class="control-row hidden">
-                    <span class="control-label text-[9px] w-8">Warna</span>
-                    <input type="color" id="bgColorPicker" value="#0f1115" class="w-6 h-4 rounded cursor-pointer border border-gray-600 p-0 flex-shrink-0">
-                    <span class="text-[8px] text-gray-500 ml-1">(Terlihat jika BG kosong)</span>
                 </div>
             </div>
 
@@ -794,6 +789,7 @@
 
     </div>
 
+    <!-- SCRIPT UTAMA APLIKASI -->
     <script>
         const state = {
             viz: { enabled: true, align: 'full', size: 0.5, width: 0.5, opacity: 1.0, type: 'bars', offsetX: 0, offsetY: 0, colorMode: 'auto', hue: 0, argbSpeed: 15 },
@@ -1065,7 +1061,6 @@
         });
 
         document.getElementById('bgMirrorEnable').addEventListener('change', (e) => { state.bg.mirror = e.target.checked; });
-        document.getElementById('bgColorPicker').addEventListener('input', (e) => { state.bg.color = e.target.value; });
         document.getElementById('bgDarknessSlider').addEventListener('input', (e) => { state.bg.darkness = e.target.value / 100; });
         document.getElementById('bgScaleSlider').addEventListener('input', (e) => { state.bg.scale = e.target.value / 100; });
         document.getElementById('bgPulseIntensitySlider').addEventListener('input', (e) => { state.bg.pulseIntensity = e.target.value / 100; });
@@ -2545,18 +2540,17 @@
             if(e.ctrlKey && e.shiftKey && e.keyCode === 74) { e.preventDefault(); return false; }
             if(e.ctrlKey && e.keyCode === 85) { e.preventDefault(); return false; }
         });
+        
         console.log("%cBERHENTI!", "color: red; font-size: 50px; font-weight: bold; text-shadow: 2px 2px 0 #000;");
         console.log("%cIni adalah area untuk developer.", "font-size: 16px;");
     </script>
 
-    <!-- Modul Firebase Auth -->
+    <!-- Modul Firebase Auth & Firestore (Pelacakan Perangkat) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ========================================================
-        // KODE FIREBASE ANDA SUDAH SAYA MASUKKAN DI SINI
-        // ========================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA1hxTceWANgQU8vwKpXDCJABvYpWQQNmk",
             authDomain: "tnc7-visualizer.firebaseapp.com",
@@ -2565,11 +2559,10 @@
             messagingSenderId: "1098792876538",
             appId: "1:1098792876538:web:28304ee128f7d156190c43"
         };
-        // ========================================================
 
-        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         const pwdScreen = document.getElementById('password-screen');
         const emailInput = document.getElementById('app-email');
@@ -2597,15 +2590,31 @@
             setTimeout(() => { pwdError.style.opacity = '0'; }, 4000);
         }
 
-        // Pengecekan status login setiap kali aplikasi dibuka
+        async function logDeviceAccess(user) {
+            try {
+                const deviceInfo = {
+                    uid: user.uid,
+                    email: user.email,
+                    waktu_login: serverTimestamp(),
+                    user_agent: navigator.userAgent,
+                    platform: navigator.platform,
+                    bahasa: navigator.language,
+                    resolusi_layar: `${window.screen.width}x${window.screen.height}`,
+                    zona_waktu: Intl.DateTimeFormat().resolvedOptions().timeZone
+                };
+                
+                await addDoc(collection(db, "login_history"), deviceInfo);
+                console.log("Pelacakan login berhasil dikirim ke database.");
+            } catch (error) {
+                console.error("Gagal menyimpan data pelacakan: ", error);
+            }
+        }
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Jika user valid (ada di database dan belum di-disable) -> Buka Akses
                 grantAccess();
             } else {
-                // Jika belum login, salah password, atau akun di-disable -> Tahan di layar login
                 pwdScreen.style.display = 'flex';
-                // Trigger reflow untuk transisi CSS
                 void pwdScreen.offsetWidth;
                 pwdScreen.style.opacity = '1';
                 loginBtn.textContent = "MASUK";
@@ -2613,42 +2622,51 @@
             }
         });
 
-        // Tombol Login Ditekan
         function handleLogin() {
             const email = emailInput.value.trim();
             const password = pwdInput.value;
-            if(!email || !password) return;
+            
+            if(!email || !password) {
+                showError("Email dan Password tidak boleh kosong!");
+                return;
+            }
 
             loginBtn.textContent = "MEMERIKSA LISENSI...";
             loginBtn.disabled = true;
 
-            // Proses verifikasi ke Server Google
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // Berhasil masuk, onAuthStateChanged akan otomatis berjalan
+                    const user = userCredential.user;
+                    logDeviceAccess(user);
                     emailInput.value = '';
                     pwdInput.value = '';
                 })
                 .catch((error) => {
                     console.error("Login Error:", error.code);
                     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                        showError("Akses Ditolak! Email/Password salah.");
+                        showError("Akses Ditolak! Email atau Password salah.");
                     } else if (error.code === 'auth/user-disabled') {
                         showError("Lisensi Habis! Akun ini telah dinonaktifkan Admin.");
-                    } else if (error.code === 'auth/network-request-failed') {
-                        showError("Koneksi gagal. Periksa jaringan internet Anda.");
                     } else {
-                        showError("Gagal masuk: " + error.message);
+                        showError("Gagal masuk. Periksa jaringan internet Anda.");
                     }
                 });
         }
 
-        loginBtn.addEventListener('click', handleLogin);
-        pwdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
+        if(loginBtn) loginBtn.addEventListener('click', handleLogin);
         
-        setTimeout(() => emailInput.focus(), 300);
+        if(pwdInput) {
+            pwdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+        }
+        
+        if(emailInput) {
+            emailInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') pwdInput.focus();
+            });
+            setTimeout(() => emailInput.focus(), 300);
+        }
     </script>
 </body>
 </html>
