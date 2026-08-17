@@ -2605,7 +2605,8 @@
                     platform: navigator.platform,
                     bahasa: navigator.language,
                     resolusi_layar: `${window.screen.width}x${window.screen.height}`,
-                    zona_waktu: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    zona_waktu: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    aplikasi: "TNC7 Visualizer"
                 };
                 
                 await addDoc(collection(db, "login_history"), deviceInfo);
